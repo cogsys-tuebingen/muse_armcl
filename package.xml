@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>muse_armcl</name>
+  <version>0.0.4</version>
+  <description>The muse_armcl package</description>
+
+  <maintainer email="cornelia.schulz@uni-tuebingen.de">Cornelia Schulz</maintainer>
+  <maintainer email="adrian.zwiener@uni-tuebingen.de">Adrian Zwiener</maintainer>
+
+  <author email="cornelia.schulz@uni-tuebingen.de">Cornelia Schulz</author>
+  <author email="adrian.zwiener@uni-tuebingen.de">Adrian Zwiener</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>muse_smc</depend>
+  <depend>cslibs_plugins</depend>
+  <depend>cslibs_plugins_data</depend>
+
+  <export>
+    <muse_armcl plugin="${prefix}/plugins.xml" />
+  </export>
+</package>
