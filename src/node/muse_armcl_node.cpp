@@ -11,6 +11,7 @@ MuseARMCLNode::~MuseARMCLNode()
 
 bool MuseARMCLNode::setup()
 {
+    return true;
 }
 
 void MuseARMCLNode::start()

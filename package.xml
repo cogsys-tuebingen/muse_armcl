@@ -16,6 +16,7 @@
   <depend>muse_smc</depend>
   <depend>cslibs_plugins</depend>
   <depend>cslibs_plugins_data</depend>
+  <depend>cslibs_mesh_map</depend>
 
   <export>
     <muse_armcl plugin="${prefix}/plugins.xml" />
