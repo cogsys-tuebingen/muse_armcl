@@ -21,6 +21,8 @@
 #include <cslibs_plugins/plugin_factory.hpp>
 #include <cslibs_plugins_data/data_provider.hpp>
 
+#include <cslibs_math_ros/tf/tf_listener.hpp>
+
 #include <ros/ros.h>
 
 namespace muse_armcl {
@@ -36,6 +38,7 @@ public:
 private:
     using data_t                 = cslibs_plugins_data::Data;
     using data_provider_t        = cslibs_plugins_data::DataProvider;
+    using tf_listener_t          = cslibs_math_ros::tf::TFListener;
 
     using map_provider_map_t     = std::map<std::string, MeshMapProvider::Ptr>;
     using data_provider_map_t    = std::map<std::string, typename data_provider_t::Ptr>;
@@ -53,6 +56,8 @@ private:
     ros::NodeHandle             nh_public_;
 
     /// map providers & data providers
+    tf_listener_t::Ptr          tf_provider_frontend_;  /// for data providers and data conversion
+    tf_listener_t::Ptr          tf_provider_backend_;   /// for the backend (the particle filter and the sensor updates)
     map_provider_map_t          map_providers_;
     data_provider_map_t         data_providers_;
 
@@ -76,6 +81,9 @@ private:
     /// density & publishing
     SampleDensity::Ptr          sample_density_;
     StatePublisher::Ptr         state_publisher_;
+
+    bool getUpdateModelProviderMapping(update_model_mapping_t &update_mapping);
+    bool getPredictionProvider(data_provider_t::Ptr &prediction_provider);
 };
 }
 

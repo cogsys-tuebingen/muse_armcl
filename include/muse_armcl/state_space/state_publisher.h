@@ -5,7 +5,7 @@
 #include <muse_armcl/state_space/state_space_description.hpp>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16 StatePublisher : muse_smc::SMCState<StateSpaceDescription>
+class EIGEN_ALIGN16 StatePublisher : public muse_smc::SMCState<StateSpaceDescription>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

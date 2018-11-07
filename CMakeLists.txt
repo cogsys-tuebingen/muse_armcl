@@ -30,6 +30,7 @@ include_directories(
 
 add_executable(${PROJECT_NAME}_node
   src/node/muse_armcl_node.cpp
+  src/state_space/state_publisher.cpp
 )
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
