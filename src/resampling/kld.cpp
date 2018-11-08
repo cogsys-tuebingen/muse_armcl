@@ -62,7 +62,8 @@ protected:
     }
 
     void doApplyRecovery(sample_set_t &sample_set)
-    {const auto &p_t_1 = sample_set.getSamples();
+    {
+        const auto &p_t_1 = sample_set.getSamples();
         auto  i_p_t = sample_set.getInsertion();
         const std::size_t size = p_t_1.size();
 
