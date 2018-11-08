@@ -3,4 +3,9 @@
    <class type="muse_armcl::MeshMapLoader" base_class_type="muse_armcl::MeshMapProvider">
      <description>Provides mesh map, looks up transformations between links at each step.</description>
    </class>
+
+   <!-- Resampling -->
+   <class type="muse_armcl::KLD" base_class_type="muse_armcl::Resampling">
+     <description>Implements KLD resampling.</description>
+   </class>
 </library>

@@ -24,6 +24,7 @@ public:
     }
 
     virtual void setup(ros::NodeHandle &nh) = 0;
+    virtual std::size_t histogramSize() const = 0;
     virtual void contacts(std::vector<sample_t> &states) const = 0;
 };
 }
