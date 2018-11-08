@@ -4,7 +4,6 @@
 #include <condition_variable>
 
 #include <muse_armcl/state_space/mesh_map_provider.hpp>
-#include <muse_armcl/state_space/mesh_map.h>
 
 #include <cslibs_mesh_map/cslibs_mesh_map_visualization.h>
 #include <ros/ros.h>
@@ -32,21 +31,23 @@ public:
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
 
         const std::string              path       = nh.param<std::string>(param_name("path"), "");
-        const std::vector<std::string> files      = nh.param<std::vector<std::string>>("meshes",std::vector<std::string>());
-        const std::vector<std::string> parent_ids = nh.param<std::vector<std::string>>("parent_id",std::vector<std::string>());
-        frame_ids_                                = nh.param<std::vector<std::string>>("frame_id",std::vector<std::string>());
+        const std::vector<std::string> files      = nh.param<std::vector<std::string>>(param_name("meshes"),     std::vector<std::string>());
+        const std::vector<std::string> parent_ids = nh.param<std::vector<std::string>>(param_name("parent_ids"), std::vector<std::string>());
+        frame_ids_                                = nh.param<std::vector<std::string>>(param_name("frame_ids"),  std::vector<std::string>());
 
-        auto load = [this, path]() {
+        auto load = [this, &path, &files, &parent_ids]() {
             if (!map_) {
                 ROS_INFO_STREAM("[" << name_ << "]: Loading mesh map [" << path << "]");
 
                 /// load map
                 std::unique_lock<std::mutex> l(map_mutex_);
-                map_.reset(new mesh_map_tree_t);
-                map_->loadFromFile(path, parent_ids, frame_ids_, files);
+                map_.reset(new MeshMap(mesh_map_tree_t::Ptr(new mesh_map_tree_t()), frame_ids_.front()));
+                map_->data()->loadFromFile(path, parent_ids, frame_ids_, files);
 
                 /// update transformations
+                first_load_ = true;
                 updateTransformations();
+                first_load_ = false;
 
                 /// finish load by unlocking mutex
                 l.unlock();
@@ -69,8 +70,8 @@ private:
 
     mutable MeshMap::Ptr                    map_;
     std::vector<std::string>                frame_ids_;
-    bool                                    first_load_ = true;
-    ros::Time                               last_update_;
+    bool                                    first_load_;
+    mutable ros::Time                       last_update_;
 
     ros::Publisher                          pub_surface_;
     mutable visualization_msgs::MarkerArray markers_;
@@ -82,13 +83,12 @@ private:
         if (!map_ || (!first_load_ && (now == last_update_)))
             return;
 
-        first_load_  = false;
         last_update_ = now;
         resetMarkers();
 
         /// set current transforms between links
         for (const std::string& frame_id : frame_ids_) {
-            const mesh_map_tree_t* m = map_->data()->getNode(frame_id);
+            mesh_map_tree_t* m = map_->data()->getNode(frame_id);
 
             std::string root = m->parent_id_;
             if (root == "") root = frame_id;
@@ -113,7 +113,7 @@ private:
         msg_.id = 0;
     }
 
-    inline void addMarker(const mesh_map_t& link) const
+    inline void addMarker(mesh_map_t& link) const
     {
         cslibs_mesh_map::visualization::visualizeVertices(link, msg_);
         markers_.markers.push_back(msg_);

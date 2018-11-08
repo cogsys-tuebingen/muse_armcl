@@ -38,7 +38,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded update function models.");
         ROS_INFO_STREAM(update_model_list);
     }
-    {   /// Prediction Model
+    {   /// prediction model
         loader.load<PredictionModel, /*tf_provider_t::Ptr, */ros::NodeHandle&>(
                     prediction_model_, /*tf_provider_backend_, */nh_private_);
         if (!prediction_model_) {
@@ -49,7 +49,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded prediction function model.");
         ROS_INFO_STREAM("[" << prediction_model_->getName() << "]");
     }
-    {   /// Map Providers
+    {   /// map providers
         loader.load<MeshMapProvider, tf_provider_t::Ptr, ros::NodeHandle&>(
                     map_providers_, tf_provider_frontend_, nh_private_);
         if (map_providers_.empty()) {
@@ -65,7 +65,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded map providers.");
         ROS_INFO_STREAM(map_provider_list);
     }
-    {   /// Data Providers -> TODO: all of them need to be defined in muse_armcl!
+    {   /// data providers -> TODO: all of them need to be defined in muse_armcl!
         loader.load<data_provider_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     data_providers_, tf_provider_frontend_, nh_private_);
         if (data_providers_.empty()) {
@@ -172,7 +172,7 @@ bool MuseARMCLNode::setup()
                                            reset_weights_after_insertion,
                                            reset_weights_to_one));
         state_publisher_.reset(new StatePublisher);
-        state_publisher_->setup(nh_private_);
+        state_publisher_->setup(nh_private_, map_providers_);
 
         particle_filter_.reset(new smc_t);
         particle_filter_->setup(sample_set_,

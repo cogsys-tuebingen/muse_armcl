@@ -20,12 +20,14 @@ include_directories(
 )
 
 
-#add_library(${PROJECT_NAME}_lib
-#  # put plugins here
-#)
-#target_link_libraries(${PROJECT_NAME}_lib
-#  ${catkin_LIBRARIES}
-#)
+add_library(${PROJECT_NAME}_lib SHARED
+  src/state_space/mesh_map.cpp
+  src/state_space/mesh_map_loader.cpp
+  # put plugins here
+)
+target_link_libraries(${PROJECT_NAME}_lib
+  ${catkin_LIBRARIES}
+)
 
 
 add_executable(${PROJECT_NAME}_node
@@ -34,16 +36,17 @@ add_executable(${PROJECT_NAME}_node
 )
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
-#  ${PROJECT_NAME}_lib
+  ${PROJECT_NAME}_lib
 )
+#add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 install(FILES plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
-#install(TARGETS ${PROJECT_NAME}_lib
-#        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+install(TARGETS ${PROJECT_NAME}_lib
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
 
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

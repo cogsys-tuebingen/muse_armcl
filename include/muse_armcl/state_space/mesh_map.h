@@ -15,10 +15,10 @@ public:
 
     MeshMap(const map_t::Ptr &map, const std::string &frame_id);
 
-    state_space_boundary_t getMin() const override;
-    state_space_boundary_t getMax() const override;
-    state_space_transform_t getOrigin() const override;
-    bool validate(const state_t &p) const override;
+    virtual bool validate(const state_t &p) const override;
+    virtual state_space_boundary_t getMin() const override;
+    virtual state_space_boundary_t getMax() const override;
+    virtual state_space_transform_t getOrigin() const override;
     map_t::Ptr& data();
     map_t::Ptr const & data() const;
 
