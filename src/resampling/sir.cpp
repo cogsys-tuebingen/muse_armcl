@@ -1,5 +1,4 @@
 #include <muse_armcl/resampling/resampling.hpp>
-#include <muse_armcl/samples/sample_density.hpp>
 
 namespace muse_armcl {
 class SIR : public Resampling

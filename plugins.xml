@@ -11,4 +11,16 @@
    <class type="muse_armcl::SIR" base_class_type="muse_armcl::Resampling">
      <description>Implements SIR resampling.</description>
    </class>
+   <class type="muse_armcl::Residual" base_class_type="muse_armcl::Resampling">
+     <description>Implements Residual resampling.</description>
+   </class>
+   <class type="muse_armcl::Stratified" base_class_type="muse_armcl::Resampling">
+     <description>Implements Stratified resampling.</description>
+   </class>
+   <class type="muse_armcl::Systematic" base_class_type="muse_armcl::Resampling">
+     <description>Implements Systematic resampling.</description>
+   </class>
+   <class type="muse_armcl::WheelOfFortune" base_class_type="muse_armcl::Resampling">
+     <description>Implements WheelOfFortune resampling.</description>
+   </class>
 </library>

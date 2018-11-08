@@ -25,6 +25,10 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/state_space/mesh_map_loader.cpp
   src/resampling/kld.cpp
   src/resampling/sir.cpp
+  src/resampling/residual.cpp
+  src/resampling/stratified.cpp
+  src/resampling/systematic.cpp
+  src/resampling/wheel.cpp
   # put plugins here
 )
 target_link_libraries(${PROJECT_NAME}_lib

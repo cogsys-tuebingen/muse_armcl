@@ -24,6 +24,10 @@
         </group>
 
         <group ns="resampling">
+            <param name="class"               value="muse_armcl::KLD" />
+            <param name="base_class"          value="muse_armcl::Resampling" />
+            <param name="recovery_alpha_slow" value="0.0"/>
+            <param name="recovery_alpha_fast" value="0.0"/>
         </group>
 
         <!-- density estimation -->
@@ -44,7 +48,6 @@
             <!--<param name="sample_size" value=""/>-->       <!-- if set, maximum and minimum are this value -->
             <param name="minimum_sample_size" value="100" />  <!-- if not sample_size is already set -->
             <param name="maximum_sample_size" value="5000"/>  <!-- if not sample_size is already set -->
-
         </group>
     </group>
 
