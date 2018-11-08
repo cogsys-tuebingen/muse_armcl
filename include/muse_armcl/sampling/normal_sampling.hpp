@@ -40,7 +40,7 @@ protected:
     tf_provider_t::Ptr tf_;
 
     virtual void doSetup(const std::map<std::string, MeshMapProvider::Ptr> &map_providers,
-                         ros::NodeHandle &nh) = 0 ;
+                         ros::NodeHandle &nh) = 0;
 };
 }
 

@@ -4,6 +4,14 @@
      <description>Provides mesh map, looks up transformations between links at each step.</description>
    </class>
 
+   <!-- Sampling -->
+   <class type="muse_armcl::Normal" base_class_type="muse_armcl::NormalSampling">
+     <description>Implements normal sampling.</description>
+   </class>
+   <class type="muse_armcl::UniformAllMaps" base_class_type="muse_armcl::UniformSampling">
+     <description>Implements uniform sampling on all maps and links.</description>
+   </class>
+
    <!-- Resampling -->
    <class type="muse_armcl::KLD" base_class_type="muse_armcl::Resampling">
      <description>Implements KLD resampling.</description>

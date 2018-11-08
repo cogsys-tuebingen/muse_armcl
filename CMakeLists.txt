@@ -29,6 +29,8 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/resampling/stratified.cpp
   src/resampling/systematic.cpp
   src/resampling/wheel.cpp
+  src/sampling/normal.cpp
+  src/sampling/uniform_all_maps.cpp
   # put plugins here
 )
 target_link_libraries(${PROJECT_NAME}_lib
