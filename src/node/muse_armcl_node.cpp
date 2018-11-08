@@ -23,7 +23,7 @@ bool MuseARMCLNode::setup()
     cslibs_plugins::PluginLoader loader("muse_armcl", nh_private_);
 
     {   /// Update Models
-        loader.load<UpdateModel, /*cslibs_math_ros::tf::TFProvider::Ptr, */ros::NodeHandle&>(
+        loader.load<UpdateModel, /*tf_provider_t::Ptr, */ros::NodeHandle&>(
                     update_models_, /*tf_provider_backend_, */nh_private_);
         if(update_models_.empty()) {
             ROS_ERROR_STREAM("No update model functions were found!");
@@ -39,7 +39,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM(update_model_list);
     }
     {   /// Prediction Model
-        loader.load<PredictionModel, /*cslibs_math_ros::tf::TFProvider::Ptr, */ros::NodeHandle&>(
+        loader.load<PredictionModel, /*tf_provider_t::Ptr, */ros::NodeHandle&>(
                     prediction_model_, /*tf_provider_backend_, */nh_private_);
         if (!prediction_model_) {
             ROS_ERROR_STREAM("No prediction model functions was found!");
@@ -50,8 +50,8 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("[" << prediction_model_->getName() << "]");
     }
     {   /// Map Providers
-        loader.load<MeshMapProvider, ros::NodeHandle&>(
-                    map_providers_, nh_private_);
+        loader.load<MeshMapProvider, tf_provider_t::Ptr, ros::NodeHandle&>(
+                    map_providers_, tf_provider_frontend_, nh_private_);
         if (map_providers_.empty()) {
             ROS_ERROR_STREAM("No map provider was found!");
             ROS_ERROR_STREAM("Setup is incomplete and is aborted!");
@@ -66,7 +66,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM(map_provider_list);
     }
     {   /// Data Providers -> TODO: all of them need to be defined in muse_armcl!
-        loader.load<data_provider_t, cslibs_math_ros::tf::TFProvider::Ptr, ros::NodeHandle&>(
+        loader.load<data_provider_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     data_providers_, tf_provider_frontend_, nh_private_);
         if (data_providers_.empty()) {
             ROS_ERROR_STREAM("No data provider was found!");
@@ -81,7 +81,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM(data_provider_list);
     }
     { /// sampling algorithms -> TODO: TF unnecessary?
-        loader.load<UniformSampling, map_provider_map_t, cslibs_math_ros::tf::TFProvider::Ptr, ros::NodeHandle&>(
+        loader.load<UniformSampling, map_provider_map_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     uniform_sampling_, map_providers_, tf_provider_backend_, nh_private_);
         if (!uniform_sampling_) {
             ROS_ERROR_STREAM("No uniform sampling function was found!");
@@ -90,7 +90,7 @@ bool MuseARMCLNode::setup()
         }
         ROS_INFO_STREAM("Loaded uniform sampler.");
         ROS_INFO_STREAM("[" << uniform_sampling_->getName() << "]");
-        loader.load<NormalSampling, map_provider_map_t, cslibs_math_ros::tf::TFProvider::Ptr, ros::NodeHandle&>(
+        loader.load<NormalSampling, map_provider_map_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     normal_sampling_, map_providers_,  tf_provider_backend_, nh_private_);
         if (!normal_sampling_) {
             ROS_ERROR_STREAM("No gaussian sampling function was found!");

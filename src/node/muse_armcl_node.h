@@ -39,6 +39,7 @@ private:
     using data_t                 = cslibs_plugins_data::Data;
     using data_provider_t        = cslibs_plugins_data::DataProvider;
     using tf_listener_t          = cslibs_math_ros::tf::TFListener;
+    using tf_provider_t          = cslibs_math_ros::tf::TFProvider;
 
     using map_provider_map_t     = std::map<std::string, MeshMapProvider::Ptr>;
     using data_provider_map_t    = std::map<std::string, typename data_provider_t::Ptr>;

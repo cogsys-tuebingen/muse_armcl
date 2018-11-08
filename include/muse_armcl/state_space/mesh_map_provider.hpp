@@ -5,6 +5,7 @@
 #include <muse_armcl/state_space/mesh_map.h>
 
 #include <cslibs_plugins/plugin.hpp>
+#include <cslibs_math_ros/tf/tf_provider.hpp>
 
 namespace muse_armcl {
 class MeshMapProvider : public muse_smc::StateSpaceProvider<StateSpaceDescription>,
@@ -13,6 +14,7 @@ class MeshMapProvider : public muse_smc::StateSpaceProvider<StateSpaceDescriptio
 public:
     using Ptr      = std::shared_ptr<MeshMapProvider>;
     using ConstPtr = std::shared_ptr<MeshMapProvider const>;
+    using tf_provider_t = cslibs_math_ros::tf::TFProvider;
 
     virtual ~MeshMapProvider() = default;
 
@@ -26,7 +28,22 @@ public:
         return cslibs_plugins::Plugin::getName();
     }
 
-    virtual void setup(ros::NodeHandle &nh) = 0;
+    virtual void setup(const tf_provider_t::Ptr &tf,
+                       ros::NodeHandle &nh)
+    {
+        auto param_name = [this](const std::string &name){return name_ + "/" + name;};
+
+        tf_timeout_ = ros::Duration(nh.param(param_name("tf_timeout"), 0.1));
+        tf_ = tf;
+
+        doSetup(nh);
+    }
+
+protected:
+    ros::Duration      tf_timeout_;
+    tf_provider_t::Ptr tf_;
+
+    virtual void doSetup(ros::NodeHandle &nh) = 0;
 };
 }
 

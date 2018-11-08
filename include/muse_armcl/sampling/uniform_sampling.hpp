@@ -13,6 +13,7 @@ class UniformSampling : public muse_smc::UniformSampling<StateSpaceDescription>,
 {
 public:
     using Ptr = std::shared_ptr<UniformSampling>;
+    using tf_provider_t = cslibs_math_ros::tf::TFProvider;
 
     inline const static std::string Type()
     {
@@ -20,7 +21,7 @@ public:
     }
 
     inline void setup(const std::map<std::string, MeshMapProvider::Ptr> &map_providers,
-                      const cslibs_math_ros::tf::TFProvider::Ptr &tf,
+                      const tf_provider_t::Ptr &tf,
                       ros::NodeHandle &nh)
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
@@ -33,10 +34,10 @@ public:
     }
 
 protected:
-    std::size_t                            sample_size_;
-    ros::Duration                          sampling_timeout_;
-    ros::Duration                          tf_timeout_;
-    cslibs_math_ros::tf::TFProvider::Ptr   tf_;
+    std::size_t        sample_size_;
+    ros::Duration      sampling_timeout_;
+    ros::Duration      tf_timeout_;
+    tf_provider_t::Ptr tf_;
 
     virtual void doSetup(const std::map<std::string, MeshMapProvider::Ptr> &map_providers,
                          ros::NodeHandle &nh) = 0 ;
