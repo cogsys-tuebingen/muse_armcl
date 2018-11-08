@@ -63,6 +63,19 @@ private:
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
     using mesh_map_t      = cslibs_mesh_map::MeshMap;
 
+    mutable std::mutex                      map_mutex_;
+    std::thread                             worker_;
+    mutable std::condition_variable         notify_;
+
+    mutable MeshMap::Ptr                    map_;
+    std::vector<std::string>                frame_ids_;
+    bool                                    first_load_ = true;
+    ros::Time                               last_update_;
+
+    ros::Publisher                          pub_surface_;
+    mutable visualization_msgs::MarkerArray markers_;
+    mutable visualization_msgs::Marker      msg_;
+
     inline void updateTransformations() const
     {
         const ros::Time now = ros::Time(0);
@@ -114,20 +127,6 @@ private:
             m.header.stamp = now;
         pub_surface_.publish(markers_);
     }
-
-protected:
-    mutable std::mutex               map_mutex_;
-    std::thread                      worker_;
-    mutable std::condition_variable  notify_;
-
-    mutable MeshMap::Ptr             map_;
-    std::vector<std::string>         frame_ids_;
-    bool                             first_load_ = true;
-    ros::Time                        last_update_;
-
-    ros::Publisher                          pub_surface_;
-    mutable visualization_msgs::MarkerArray markers_;
-    mutable visualization_msgs::Marker      msg_;
 };
 }
 
