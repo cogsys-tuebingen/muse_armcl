@@ -16,8 +16,7 @@ public:
 
     using Ptr          = std::shared_ptr<SampleDensity>;
     using ConstPtr     = std::shared_ptr<SampleDensity const>;
-    using state_t      = StateSpaceDescription::state_t;
-    using covariance_t = StateSpaceDescription::covariance_t;
+    using sample_t     = StateSpaceDescription::sample_t;
 
     inline const static std::string Type()
     {
@@ -25,8 +24,7 @@ public:
     }
 
     virtual void setup(ros::NodeHandle &nh) = 0;
-    // TODO: mean, bzw. cluster und multi-mean... ? what to provide?
-    virtual void means(std::vector<state_t> &means, std::vector<covariance_t> &covariances) const = 0;
+    virtual void contacts(std::vector<sample_t> &states) const = 0;
 };
 }
 
