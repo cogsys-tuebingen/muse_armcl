@@ -18,6 +18,15 @@
 
         <!-- sampling algorithms -->
         <group ns="uniform_sampler">
+            <param name="class"       value="muse_armcl::UniformAllMaps" />
+            <param name="base_class"  value="muse_armcl::UniformSampling" />
+            <rosparam param="maps">
+                ["mesh_map"]
+            </rosparam>
+            <param name="seed"        value="2" />
+            <param name="timeout"     value="10.0" />
+            <param name="tf_timeout"  value="0.1" />
+            <param name="sample_size" value="5000" />
         </group>
 
         <group ns="normal_sampler">

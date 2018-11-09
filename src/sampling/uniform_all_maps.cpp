@@ -32,12 +32,13 @@ public:
         /// get map
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_providers_[map_i]->getStateSpace();
         if (!ss->isType<MeshMap>())
-            return false;
+            return;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_t      = cslibs_mesh_map::MeshMap;
         const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
-        const std::vector<std::string> frame_ids = map->getFrameIds();
+        std::vector<std::string> frame_ids;
+        map->getFrameIds(frame_ids);
 
         /// random link
         rng_t::Ptr rng(new rng_t(0.0, frame_ids.size()));
@@ -45,8 +46,8 @@ public:
             rng.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
 
         std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng->get()));
-        const mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
-        const mesh_map_t& mesh = link->map_;
+        mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
+        mesh_map_t& mesh = link->map_;
 
         /// cumsum
         const std::size_t size = mesh.numberOfEdges();
@@ -61,7 +62,7 @@ public:
             rng.reset(new rng_t(0.0, cumsum.back(), random_seed_));
 
         /// random element
-        const double u = rng.get();
+        const double u = rng->get();
         i = 0;
         auto edge_it = mesh.edgeBegin();
         for (; edge_it != mesh.edgeEnd(); ++edge_it, ++i)
@@ -79,11 +80,16 @@ private:
     int                               random_seed_;
     std::vector<MeshMapProvider::Ptr> map_providers_;
 
-    virtual bool apply(sample_set_t &particle_set) override
+    virtual bool apply(sample_set_t &sample_set) override
     {
-        const std::size_t n_maps = map_providers_.size();
-        const std::size_t particles_per_map = sample_size_;
+        sample_set_t::sample_insertion_t insertion = sample_set.getInsertion();
+        const double weight = 1.0 / static_cast<double>(sample_size_);
 
+        const std::size_t n_maps = map_providers_.size();
+        const std::size_t particles_per_map = static_cast<std::size_t>(
+                    std::round(static_cast<double>(sample_size_) / static_cast<double>(n_maps)));
+
+        /// uniform over all maps
         for (auto &map_provider : map_providers_) {
             const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider->getStateSpace();
             if (!ss->isType<MeshMap>())
@@ -92,10 +98,50 @@ private:
             using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
             using mesh_map_t      = cslibs_mesh_map::MeshMap;
             const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
-            const std::vector<std::string> frame_ids = map->getFrameIds(); // TO IMPLEMENT!
+            std::vector<std::string> frame_ids;
+            map->getFrameIds(frame_ids);
 
-            // TODO...
+            const std::size_t particles_per_frame = static_cast<std::size_t>(
+                        std::round(static_cast<double>(particles_per_map) / static_cast<double>(frame_ids.size())));
+
+            /// uniform over all links
+            for (const auto &frame_id : frame_ids) {
+                mesh_map_tree_t* link = map->getNode(frame_id);
+                mesh_map_t& mesh = link->map_;
+                const double edges_length = mesh.sumEdgeLength();
+
+                /// prepare ordered sequence of random numbers
+                cslibs_math::random::Uniform<1> rng(0.0, 1.0);
+                std::vector<double> u(particles_per_frame, std::pow(rng.get(), 1.0 / static_cast<double>(particles_per_frame)));
+                for (std::size_t k = particles_per_frame - 1; k > 0; --k) {
+                    const double _u = std::pow(rng.get(), 1.0 / static_cast<double>(k));
+                    u[k-1] = u[k] * _u;
+                }
+
+                /// draw samples
+                auto edge_it = mesh.edgeBegin();
+                double cumsum_last = 0.0;
+                double cumsum = mesh.calculateEdgeLength(edge_it)/edges_length;
+                for (auto &u_r : u) {
+                    while (u_r < cumsum_last) {
+                        ++edge_it;
+                        cumsum_last = cumsum;
+                        cumsum += mesh.calculateEdgeLength(edge_it)/edges_length;
+                    }
+
+                    /// insert sample
+                    sample_t p;
+                    p.active_vertex = mesh.fromVertexHandle(edge_it);
+                    p.goal_vertex = mesh.toVertexHandle(edge_it);
+                    p.updateEdgeLength(mesh);
+                    p.s = 0;
+                    p.map_id = mesh.id_;
+                    p.weight = weight;
+                    insertion.insert(p);
+                }
+            }
         }
+        return true;
     }
 
     using map_provider_map_t = std::map<std::string, MeshMapProvider::Ptr>;
@@ -126,4 +172,4 @@ private:
 }
 
 #include <class_loader/class_loader_register_macro.h>
-CLASS_LOADER_REGISTER_CLASS(muse_armcl::UniformAllMaps, muse_armcl::NormalSampling)
+CLASS_LOADER_REGISTER_CLASS(muse_armcl::UniformAllMaps, muse_armcl::UniformSampling)
