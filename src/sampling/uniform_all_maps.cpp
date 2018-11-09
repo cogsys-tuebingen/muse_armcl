@@ -136,7 +136,7 @@ private:
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
         random_seed_ = nh.param(param_name("seed"), -1);
 
-        const std::string map_provider_id = nh.param<std::string>(param_name("map"), "");
+        const std::string map_provider_id = nh.param<std::string>("map", ""); /// toplevel parameter
         if (map_provider_id == "")
             throw std::runtime_error("[UniformSampling]: No map provider was found!");
 

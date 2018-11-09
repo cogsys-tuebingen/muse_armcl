@@ -9,7 +9,14 @@
 namespace muse_armcl {
 void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_providers)
 {
-    map_providers_ = map_providers;
+    const std::string map_provider_id = nh.param<std::string>("map", ""); /// toplevel parameter
+    if (map_provider_id == "")
+        throw std::runtime_error("[UniformSampling]: No map provider was found!");
+
+    if (map_providers.find(map_provider_id) == map_providers.end())
+        throw std::runtime_error("[UniformSampling]: Cannot find map provider '" + map_provider_id + "'!");
+
+    map_provider_ = map_providers.at(map_provider_id);
 
     const std::string topic_particles = nh.param<std::string>("topic_particles", "muse_armcl/particles");
     const std::string topic_contacts  = nh.param<std::string>("topic_contacts", "muse_armcl/contacts");
@@ -35,11 +42,11 @@ void StatePublisher::publishConstant(const sample_set_t::ConstPtr &sample_set)
 
 void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const bool &publish_contacts)
 {
-    if (map_providers_.empty())
+    if (!map_provider_)
         return;
 
-    /// use only the first map...
-    const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_providers_.begin()->second->getStateSpace();
+    /// get the map
+    const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
     if (!ss->isType<MeshMap>())
         return;
 

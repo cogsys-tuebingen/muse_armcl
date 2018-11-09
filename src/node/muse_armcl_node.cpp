@@ -234,7 +234,7 @@ void MuseARMCLNode::start()
 
 bool MuseARMCLNode::getPredictionDataProvider(data_provider_t::Ptr &prediction_provider)
 {
-    const std::string param_name    = prediction_model_->getName() + "/data_provider";
+    const std::string param_name    = nh_private_.param<std::string>("map", ""); /// toplevel parameter
     const std::string provider_name = nh_private_.param<std::string>(param_name, "");
 
     if (data_providers_.find(provider_name) == data_providers_.end()) {

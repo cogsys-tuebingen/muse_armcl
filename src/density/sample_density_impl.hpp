@@ -38,7 +38,7 @@ public:
         kdtree_.reset(new kd_tree_t);
         kdtree_->set<cis::option::tags::node_allocator_chunk_size>(2 * maximum_sample_size + 1);
 
-        const std::string map_provider_id = nh.param<std::string>(param_name("map"), "");
+        const std::string map_provider_id = nh.param<std::string>("map", ""); /// toplevel parameter
         if (map_provider_id == "")
             throw std::runtime_error("[SampleDensity]: No map provider was found!");
 
