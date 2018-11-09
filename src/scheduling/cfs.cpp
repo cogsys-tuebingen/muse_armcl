@@ -95,8 +95,8 @@ public:
             return time_t(ros::Time::now().toNSec());
         };
 
-        const time_t time_now  = now();
-        const time_t stamp     = u->getStamp();
+        const time_t time_now = now();
+        const time_t stamp    = u->getStamp();
         if (next_update_time_.isZero())
             next_update_time_ = time_now;
 
@@ -122,14 +122,12 @@ public:
     virtual bool apply(typename resampling_t::Ptr &r,
                        typename sample_set_t::Ptr &s) override
     {
-        const cslibs_time::Time &stamp = s->getStamp();
-
+        const time_t &stamp = s->getStamp();
         if (resampling_time_.isZero())
             resampling_time_ = stamp;
 
         auto do_apply = [&stamp, &r, &s, this] () {
             r->apply(*s);
-
             resampling_time_ = stamp + resampling_period_;
 
             int64_t min_vtime = q_.top().vtime;
@@ -142,10 +140,7 @@ public:
             may_resample_ = false;
             return true;
         };
-        auto do_not_apply = [] () {
-            return false;
-        };
-        return (may_resample_ && resampling_time_ < stamp) ? do_apply() : do_not_apply();
+        return (may_resample_ && resampling_time_ < stamp) ? do_apply() : false;
     }
 
 private:
