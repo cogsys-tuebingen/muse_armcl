@@ -30,14 +30,14 @@ public:
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
 
-        const std::string              path       = nh.param<std::string>(param_name("path"), "");
-        const std::vector<std::string> files      = nh.param<std::vector<std::string>>(param_name("meshes"),     std::vector<std::string>());
-        const std::vector<std::string> parent_ids = nh.param<std::vector<std::string>>(param_name("parent_ids"), std::vector<std::string>());
-        frame_ids_                                = nh.param<std::vector<std::string>>(param_name("frame_ids"),  std::vector<std::string>());
+        path_        = nh.param<std::string>(param_name("path"), "");
+        files_       = nh.param<std::vector<std::string>>(param_name("meshes"),     std::vector<std::string>());
+        parent_ids_  = nh.param<std::vector<std::string>>(param_name("parent_ids"), std::vector<std::string>());
+        frame_ids_   = nh.param<std::vector<std::string>>(param_name("frame_ids"),  std::vector<std::string>());
 
-        auto load = [this, &path, &files, &parent_ids]() {
+        auto load = [this]() {
             if (!map_) {
-                ROS_INFO_STREAM("[" << name_ << "]: Loading mesh map [" << path << "]");
+                ROS_INFO_STREAM("[" << name_ << "]: Loading mesh map [" << path_ << "]");
 
                 if (frame_ids_.empty())
                     throw std::runtime_error("[" + name_ + "]: No frame id found!");
@@ -45,7 +45,7 @@ public:
                 /// load map
                 std::unique_lock<std::mutex> l(map_mutex_);
                 map_.reset(new MeshMap(mesh_map_tree_t::Ptr(new mesh_map_tree_t()), frame_ids_.front()));
-                map_->data()->loadFromFile(path, parent_ids, frame_ids_, files);
+                map_->data()->loadFromFile(path_, parent_ids_, frame_ids_, files_);
 
                 /// update transformations
                 first_load_ = true;
@@ -72,9 +72,13 @@ private:
     mutable std::condition_variable         notify_;
 
     mutable MeshMap::Ptr                    map_;
-    std::vector<std::string>                frame_ids_;
     bool                                    first_load_;
     mutable ros::Time                       last_update_;
+
+    std::string                             path_;
+    std::vector<std::string>                files_;
+    std::vector<std::string>                parent_ids_;
+    std::vector<std::string>                frame_ids_;
 
     ros::Publisher                          pub_surface_;
     mutable visualization_msgs::MarkerArray markers_;

@@ -1,13 +1,15 @@
 <?xml version="1.0" ?>
 <launch>
+    <param name="/use_sim_time" value="true" />
     <arg name="mesh_path"           value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
-    <arg name="joint_state_topic"   value="/dummy_topic_name"/> <!-- TODO -->
+    <arg name="joint_state_topic"   value="/joint_states"/>
     <arg name="minimum_sample_size" value="100"/>
     <arg name="maximum_sample_size" value="5000"/>
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
-        <param name="map" value="mesh_map" />
+        <param name="map"       value="mesh_map" />
+        <param name="node_rate" value="0.0" />
 
         <!-- data providers -->
         <group ns="dummy_data">
@@ -28,13 +30,34 @@
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
             <rosparam param="meshes">
-                [] <!-- TODO -->
+                ["jaco2_link_2.obj", 
+                 "jaco2_link_3.obj", 
+                 "jaco2_link_4_5.obj", 
+                 "jaco2_link_4_5.obj", 
+                 "jaco2_link_hand.obj", 
+                 "jaco2_link_finger.obj", 
+                 "jaco2_link_finger.obj", 
+                 "jaco2_link_finger.obj"]
             </rosparam>
             <rosparam param="parent_ids">
-                [] <!-- TODO -->
+                ["jaco_link_2", 
+                 "jaco_link_3", 
+                 "jaco_link_4", 
+                 "jaco_link_5", 
+                 "jaco_link_hand", 
+                 "jaco_link_finger_1", 
+                 "jaco_link_finger_2", 
+                 "jaco_link_finger_3"]
             </rosparam>
             <rosparam param="frame_ids">
-                [] <!-- TODO -->
+                ["jaco_link_2", 
+                 "jaco_link_2", 
+                 "jaco_link_3", 
+                 "jaco_link_4", 
+                 "jaco_link_5", 
+                 "jaco_link_hand", 
+                 "jaco_link_hand", 
+                 "jaco_link_hand"]
             </rosparam>
         </group>
 
@@ -112,5 +135,9 @@
     </group>
 
     <!-- MuSe ARMCL node -->
-    <node type="muse_armcl_node" name="muse_armcl" pkg="muse_armcl" output="screen" clear_params="true" />
+    <node type="muse_armcl_node" 
+          name="muse_armcl" 
+          pkg="muse_armcl" 
+          output="screen"  
+          clear_params="true" />
 </launch>
