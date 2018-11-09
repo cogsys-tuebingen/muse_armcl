@@ -7,7 +7,7 @@
         <param name="map" value="mesh_map" />
 
         <!-- data providers -->
-        <group ns="dummy">
+        <group ns="dummy_data">
             <param name="class"      value="muse_armcl::DummyDataProvider" />
             <param name="base_class" value="cslibs_plugins_data::DataProvider" />
         </group>
@@ -23,7 +23,7 @@
         <group ns="prediction">
             <param name="class"            value="muse_armcl::RandomWalk" />
             <param name="base_class"       value="muse_armcl::PredictionModel"/>
-            <param name="data_provider"    value="dummy" />
+            <param name="data_provider"    value="dummy_data" />
             <param name="seed"             value="0" />
             <param name="min_distance"     value="0.0" />
             <param name="max_distance"     value="0.1" />
@@ -31,7 +31,12 @@
         </group>
 
         <!-- update model -->
-
+        <group ns="dummy_update">
+            <param name="class"         value="muse_armcl::DummyUpdateModel" />
+            <param name="base_class"    value="muse_armcl::UpdateModel" />
+            <param name="data_provider" value="..." />
+            <param name="map_provider"  value="mesh_map" />
+        </group>
 
         <!-- sampling algorithms -->
         <group ns="uniform_sampler">
@@ -78,13 +83,14 @@
 
         <!-- particle filter setup -->
         <group ns="particle_filter">
-            <param name="world_frame"                   value="/world"/>
-            <param name="reset_weights_after_insertion" value="true"  />
-            <param name="reset_weights_to_one"          value="false" />
-            <param name="enable_lag_correction"         value="false" />
+            <param name="world_frame"         value="/world"/>
 
             <param name="minimum_sample_size" value="100" />
             <param name="maximum_sample_size" value="5000"/>
+
+            <param name="reset_weights_after_insertion" value="true"  />
+            <param name="reset_weights_to_one"          value="false" />
+            <param name="enable_lag_correction"         value="false" />
         </group>
     </group>
 

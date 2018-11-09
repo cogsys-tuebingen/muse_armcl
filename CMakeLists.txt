@@ -22,6 +22,7 @@ include_directories(
 
 
 add_library(${PROJECT_NAME}_lib SHARED
+  # contains all plugins...
   src/state_space/mesh_map.cpp
   src/state_space/mesh_map_loader.cpp
   src/resampling/kld.cpp
@@ -40,7 +41,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/density/weighted_means.cpp
   src/prediction/dummy_data_provider.cpp
   src/prediction/random_walk.cpp
-  # put plugins here
+  src/update/dummy_update_model.cpp
 )
 target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}

@@ -63,4 +63,9 @@
    <class type="muse_armcl::RandomWalk" base_class_type="muse_armcl::PredictionModel">
      <description>Prediction via random walk.</description>
    </class>
+
+   <!-- Update Models -->
+   <class type="muse_armcl::DummyUpdateModel" base_class_type="muse_armcl::UpdateModel">
+     <description>Dummy update model, doesn't do anything, only for demonstration.</description>
+   </class>
 </library>
