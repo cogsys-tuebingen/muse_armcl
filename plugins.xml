@@ -8,8 +8,11 @@
    <class type="muse_armcl::Normal" base_class_type="muse_armcl::NormalSampling">
      <description>Implements normal sampling.</description>
    </class>
-   <class type="muse_armcl::UniformAllMaps" base_class_type="muse_armcl::UniformSampling">
+   <class type="muse_armcl::UniformAllLinks" base_class_type="muse_armcl::UniformSampling">
      <description>Implements uniform sampling on all maps and links.</description>
+   </class>
+   <class type="muse_armcl::UniformPerLink" base_class_type="muse_armcl::UniformSampling">
+     <description>Implements uniform sampling per link, same amount of particles on each link.</description>
    </class>
 
    <!-- Resampling -->

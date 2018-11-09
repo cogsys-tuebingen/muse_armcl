@@ -84,7 +84,7 @@
 
         <!-- sampling algorithms -->
         <group ns="uniform_sampler">
-            <param name="class"       value="muse_armcl::UniformAllMaps" />
+            <param name="class"       value="muse_armcl::UniformAllLinks" />
             <param name="base_class"  value="muse_armcl::UniformSampling" />
             <param name="seed"        value="1" />
             <param name="timeout"     value="10.0" />

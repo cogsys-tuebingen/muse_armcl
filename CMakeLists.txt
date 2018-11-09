@@ -32,7 +32,8 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/resampling/systematic.cpp
   src/resampling/wheel.cpp
   src/sampling/normal.cpp
-  src/sampling/uniform_all_maps.cpp
+  src/sampling/uniform_all_links.cpp
+  src/sampling/uniform_per_link.cpp
   src/scheduling/cfs.cpp
   src/scheduling/rate.cpp
   src/scheduling/dummy.cpp

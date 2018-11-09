@@ -58,7 +58,6 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     visualization_msgs::Marker msg;
     msg.header.stamp = stamp;
     msg.action = visualization_msgs::Marker::MODIFY;
-    msg.lifetime = ros::Duration(0.2);
     msg.id = 0;
 
     /// publish all particles
@@ -67,6 +66,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         if (p_map) {
             cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
             //msg.scale.x = p.weight; // TODO: test
+            msg.lifetime = ros::Duration(0.0); // TODO: inf for debugging
             markers.markers.push_back(msg);
         }
     }
@@ -90,6 +90,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
             if (p_map) {
                 cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
                 //msg.scale.x = p.weight; // TODO: test
+                msg.lifetime = ros::Duration(0.0); // TODO: inf for debugging
                 markers.markers.push_back(msg);
             }
         }

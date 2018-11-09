@@ -4,11 +4,11 @@
 #include <cslibs_math/sampling/uniform.hpp>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16 UniformAllMaps : public UniformSampling
+class EIGEN_ALIGN16 UniformPerLink : public UniformSampling
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using allocator_t = Eigen::aligned_allocator<UniformAllMaps>;
+    using allocator_t = Eigen::aligned_allocator<UniformPerLink>;
 
     virtual bool update(const std::string &frame) override
     {
@@ -25,7 +25,6 @@ public:
             return;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        using mesh_map_t      = cslibs_mesh_map::MeshMap;
         const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
@@ -39,34 +38,12 @@ public:
         mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
         if (!link)
             throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
-        mesh_map_t& mesh = link->map_;
 
-        /// cumsum
-        const std::size_t size = mesh.numberOfEdges();
-        std::vector<double> cumsum(size + 1);
-        cumsum[0] = 0.0;
-        std::size_t i = 0;
-        for (auto edge_it = mesh.edgeBegin(); edge_it != mesh.edgeEnd(); ++edge_it, ++i)
-            cumsum[i+1] = cumsum[i] + mesh.calculateEdgeLength(edge_it);
-
-        rng.reset(new rng_t(0.0, cumsum.back()));
-        if (random_seed_ >= 0)
-            rng.reset(new rng_t(0.0, cumsum.back(), random_seed_));
-
-        /// random element
-        const double u = rng->get();
-        i = 0;
-        auto edge_it = mesh.edgeBegin();
-        for (; edge_it != mesh.edgeEnd(); ++edge_it, ++i)
-            if (cumsum[i] <= u && u < cumsum[i+1])
-                break;
-
-        auto &state = sample.state;
-        state.active_vertex = mesh.fromVertexHandle(edge_it);
-        state.goal_vertex = mesh.toVertexHandle(edge_it);
-        state.updateEdgeLength(mesh);
-        state.s = 0;
-        state.map_id = mesh.id_;
+        /// draw random element
+        cslibs_mesh_map::RandomWalk walk;
+        using state_t = StateSpaceDescription::state_t;
+        std::vector<state_t> particles = walk.createParticleSetForOneMap(1, *link);
+        sample = sample_t(particles[0], 0.0);
     }
 
 private:
@@ -83,7 +60,6 @@ private:
             return false;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        using mesh_map_t      = cslibs_mesh_map::MeshMap;
         const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
@@ -91,44 +67,20 @@ private:
         const std::size_t particles_per_frame = static_cast<std::size_t>(
                     std::round(static_cast<double>(sample_size_) / static_cast<double>(frame_ids.size())));
 
-        /// uniform over all links
+        cslibs_mesh_map::RandomWalk walk;
+
+        /// uniform per links
         for (const auto &frame_id : frame_ids) {
             mesh_map_tree_t* link = map->getNode(frame_id);
             if (!link)
                 throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
-            mesh_map_t& mesh = link->map_;
-            const double edges_length = mesh.sumEdgeLength();
 
-            /// prepare ordered sequence of random numbers
-            cslibs_math::random::Uniform<1> rng(0.0, 1.0);
-            std::vector<double> u(particles_per_frame, std::pow(rng.get(), 1.0 / static_cast<double>(particles_per_frame)));
-            for (std::size_t k = particles_per_frame - 1; k > 0; --k) {
-                const double _u = std::pow(rng.get(), 1.0 / static_cast<double>(k));
-                u[k-1] = u[k] * _u;
-            }
-
-            /// draw samples
-            auto edge_it = mesh.edgeBegin();
-            double cumsum_last = 0.0;
-            double cumsum = mesh.calculateEdgeLength(edge_it)/edges_length;
-            for (auto &u_r : u) {
-                while (u_r < cumsum_last) {
-                    ++edge_it;
-                    cumsum_last = cumsum;
-                    cumsum += mesh.calculateEdgeLength(edge_it)/edges_length;
-                }
-
-                /// insert sample
-                sample_t p;
-                auto &state = p.state;
-                state.active_vertex = mesh.fromVertexHandle(edge_it);
-                state.goal_vertex = mesh.toVertexHandle(edge_it);
-                state.updateEdgeLength(mesh);
-                state.s = 0;
-                state.map_id = mesh.id_;
-                p.weight = weight;
-                insertion.insert(p);
-            }
+            /// draw random elements
+            using state_t = StateSpaceDescription::state_t;
+            std::vector<state_t> particles = walk.createParticleSetForOneMap(particles_per_frame, *link);
+            for (state_t &p : particles)
+                if (insertion.canInsert())
+                    insertion.insert(sample_t(p, weight));
         }
         return true;
     }
@@ -153,4 +105,4 @@ private:
 }
 
 #include <class_loader/class_loader_register_macro.h>
-CLASS_LOADER_REGISTER_CLASS(muse_armcl::UniformAllMaps, muse_armcl::UniformSampling)
+CLASS_LOADER_REGISTER_CLASS(muse_armcl::UniformPerLink, muse_armcl::UniformSampling)
