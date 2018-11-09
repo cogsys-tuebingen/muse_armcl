@@ -40,9 +40,7 @@ public:
     virtual bool apply(typename resampling_t::Ptr &r,
                        typename sample_set_t::Ptr &s) override
     {
-        const time_t time_now(ros::Time::now().toNSec());
-
-        auto do_apply = [ &r, &s, &time_now, this] () {
+        auto do_apply = [ &r, &s, this] () {
             r->apply(*s);
 
             may_resample_ = false;
