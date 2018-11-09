@@ -37,6 +37,8 @@ public:
 
     virtual void setup(ros::NodeHandle &nh)
     {
+        /// TODO: if TF is needed, modify setup method in update model interface and pass via muse_armcl_node
+
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
         /// TODO: load parameters with nh.param(param_name(<name>), <default>);
     }
