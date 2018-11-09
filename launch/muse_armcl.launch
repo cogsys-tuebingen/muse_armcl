@@ -8,8 +8,10 @@
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
-        <param name="map"       value="mesh_map" />
-        <param name="node_rate" value="0.0" />
+        <param name="map"             value="mesh_map" />
+        <param name="topic_particles" value="particles"/>
+        <param name="topic_contacts"  value="contacts"/>
+        <param name="node_rate"       value="0.0" />
 
         <!-- data providers -->
         <group ns="dummy_data">
@@ -39,7 +41,7 @@
                  "jaco2_link_finger.obj", 
                  "jaco2_link_finger.obj"]
             </rosparam>
-            <rosparam param="parent_ids">
+            <rosparam param="frame_ids">
                 ["jaco_link_2", 
                  "jaco_link_3", 
                  "jaco_link_4", 
@@ -49,7 +51,7 @@
                  "jaco_link_finger_2", 
                  "jaco_link_finger_3"]
             </rosparam>
-            <rosparam param="frame_ids">
+            <rosparam param="parent_ids">
                 ["jaco_link_2", 
                  "jaco_link_2", 
                  "jaco_link_3", 

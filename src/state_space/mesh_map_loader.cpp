@@ -44,9 +44,17 @@ public:
 
                 /// load map
                 std::unique_lock<std::mutex> l(map_mutex_);
-                map_.reset(new MeshMap(mesh_map_tree_t::Ptr(new mesh_map_tree_t()), frame_ids_.front()));
-                map_->data()->loadFromFile(path_, parent_ids_, frame_ids_, files_);
 
+                mesh_map_tree_t tree;
+                tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
+
+                mesh_map_tree_t* l1 = tree.getNode(frame_ids_.front());
+                map_.reset(new MeshMap(mesh_map_tree_t::Ptr(l1), frame_ids_.front()));
+/*/
+                map_.reset(new MeshMap(mesh_map_tree_t::Ptr(new mesh_map_tree_t), frame_ids_.front()));
+                map_->data()->loadFromFile(path_, parent_ids_, frame_ids_, files_);
+                map_->data().reset(map_->data()->getNode(frame_ids_.front()));
+*/
                 /// update transformations
                 first_load_ = true;
                 updateTransformations();
@@ -96,6 +104,8 @@ private:
         /// set current transforms between links
         for (const std::string& frame_id : frame_ids_) {
             mesh_map_tree_t* m = map_->data()->getNode(frame_id);
+            if (!m)
+                throw std::runtime_error("[" + name_ + "]: Mesh for frame " + frame_id + " does not exist!");
 
             std::string root = m->parent_id_;
             if (root == "") root = frame_id;

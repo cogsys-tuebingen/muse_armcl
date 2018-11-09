@@ -18,8 +18,8 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
 
     map_provider_ = map_providers.at(map_provider_id);
 
-    const std::string topic_particles = nh.param<std::string>("topic_particles", "muse_armcl/particles");
-    const std::string topic_contacts  = nh.param<std::string>("topic_contacts", "muse_armcl/contacts");
+    const std::string topic_particles = nh.param<std::string>("topic_particles", "particles");
+    const std::string topic_contacts  = nh.param<std::string>("topic_contacts", "contacts");
 
     pub_particles_ = nh.advertise<visualization_msgs::MarkerArray>(topic_particles, 1);
     pub_contacts_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts, 1);
