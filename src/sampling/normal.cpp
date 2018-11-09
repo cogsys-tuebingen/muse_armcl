@@ -6,6 +6,7 @@
 namespace muse_armcl {
 class EIGEN_ALIGN16 Normal : public NormalSampling
 {
+    /// TODO: fix me maybe...
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<Normal>;
