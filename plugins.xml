@@ -39,4 +39,7 @@
    <class type="muse_armcl::CFS" base_class_type="muse_armcl::Scheduler">
      <description>Implements CFS scheduling.</description>
    </class>
+   <class type="muse_armcl::Dummy" base_class_type="muse_armcl::Scheduler">
+     <description>Implements Dummy scheduling, always allows resampling.</description>
+   </class>
 </library>

@@ -1,10 +1,10 @@
 #include <muse_armcl/scheduling/scheduler.hpp>
 
 namespace muse_armcl {
-class Rate : public Scheduler
+class Dummy : public Scheduler
 {
 public:
-    using Ptr                 = std::shared_ptr<Rate>;
+    using Ptr                 = std::shared_ptr<Dummy>;
     using update_t            = muse_smc::Update<StateSpaceDescription, cslibs_plugins_data::Data>;
     using resampling_t        = muse_smc::Resampling<StateSpaceDescription>;
     using sample_set_t        = muse_smc::SampleSet<StateSpaceDescription>;
@@ -15,10 +15,6 @@ public:
     inline void setup(const update_model_map_t &update_models,
                       ros::NodeHandle &nh) override
     {
-        auto param_name = [this](const std::string &name){return name_ + "/" + name;};
-
-        double resampling_rate = nh.param<double>(param_name("resampling_rate"), 5.0);
-        resampling_period_ = duration_t(resampling_rate > 0.0 ? 1.0 / resampling_rate : 0.0);
         may_resample_ = false;
     }
 
@@ -44,29 +40,22 @@ public:
     virtual bool apply(typename resampling_t::Ptr &r,
                        typename sample_set_t::Ptr &s) override
     {
-        const time_t &stamp = s->getStamp();
         const time_t time_now(ros::Time::now().toNSec());
-
-        if (resampling_time_.isZero())
-            resampling_time_ = time_now;
 
         auto do_apply = [ &r, &s, &time_now, this] () {
             r->apply(*s);
 
-            resampling_time_ = time_now + resampling_period_;
             may_resample_ = false;
             return true;
         };
-        return (may_resample_ && resampling_time_ <= stamp) ? do_apply() : false;
+        return  may_resample_ ? do_apply() : false;
     }
 
 private:
-    time_t              next_update_time_;
-    time_t              resampling_time_;
-    duration_t          resampling_period_;
-    bool                may_resample_;
+    time_t next_update_time_;
+    bool   may_resample_;
 };
 }
 
 #include <class_loader/class_loader_register_macro.h>
-CLASS_LOADER_REGISTER_CLASS(muse_armcl::Rate, muse_armcl::Scheduler)
+CLASS_LOADER_REGISTER_CLASS(muse_armcl::Dummy, muse_armcl::Scheduler)

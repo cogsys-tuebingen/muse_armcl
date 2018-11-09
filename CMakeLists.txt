@@ -33,6 +33,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/sampling/uniform_all_maps.cpp
   src/scheduling/cfs.cpp
   src/scheduling/rate.cpp
+  src/scheduling/dummy.cpp
   # put plugins here
 )
 target_link_libraries(${PROJECT_NAME}_lib

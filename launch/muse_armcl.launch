@@ -56,6 +56,8 @@
 
         <!-- scheduling -->
         <group ns="scheduler">
+            <param name="class"      value="muse_armcl::Dummy" />
+            <param name="base_class" value="muse_armcl::Scheduler" />
         </group>
 
         <!-- particle filter setup -->
