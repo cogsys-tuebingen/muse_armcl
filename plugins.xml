@@ -31,4 +31,12 @@
    <class type="muse_armcl::WheelOfFortune" base_class_type="muse_armcl::Resampling">
      <description>Implements WheelOfFortune resampling.</description>
    </class>
+
+   <!-- Scheduling -->
+   <class type="muse_armcl::Rate" base_class_type="muse_armcl::Scheduler">
+     <description>Implements Rate scheduling.</description>
+   </class>
+   <class type="muse_armcl::CFS" base_class_type="muse_armcl::Scheduler">
+     <description>Implements CFS scheduling.</description>
+   </class>
 </library>
