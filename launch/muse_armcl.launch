@@ -48,6 +48,11 @@
 
         <!-- density estimation -->
         <group ns="density">
+            <param name="class"               value="muse_armcl::Dominants" />
+            <param name="base_class"          value="muse_armcl::SampleDensity" />
+            <param name="maximum_sample_size" value="5000" />
+            <param name="resolution"          value="0.1" />
+            <param name="weight_threshold"    value="0.1"/>
         </group>
 
         <!-- scheduling -->

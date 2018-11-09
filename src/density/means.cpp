@@ -1,43 +1,8 @@
-#include <muse_armcl/density/sample_density.hpp>
+#include "sample_density_impl.hpp"
+#include <muse_armcl/density/cluster_distribution.hpp>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16 Means : public SampleDensity
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using allocator_t = Eigen::aligned_allocator<Means>;
-
-    virtual void setup(const map_provider_map_t &map_providers,
-                       ros::NodeHandle &nh)
-    {
-
-    }
-
-    virtual void clear()
-    {
-
-    }
-
-    virtual void insert(const sample_t &sample)
-    {
-
-    }
-
-    virtual void estimate()
-    {
-
-    }
-
-    virtual std::size_t histogramSize() const
-    {
-
-    }
-
-    virtual void contacts(std::vector<sample_t> &states) const
-    {
-
-    }
-};
+using Means = SampleDensityImpl<ClusterDistribution>;
 }
 
 #include <class_loader/class_loader_register_macro.h>

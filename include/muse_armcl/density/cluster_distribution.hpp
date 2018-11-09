@@ -83,11 +83,12 @@ struct EIGEN_ALIGN16 ClusterDistribution
 
         for (auto &d : distributions) {
             const int cluster = d.first;
-            const position_t mean = distributions[current_cluster].getMean();
+            const auto m = d.second.getMean();
+            const position_t mean(m(0), m(1), m(2));
             double dist = std::numeric_limits<double>::max();
 
-            sample_t* res;
-            for (auto &s : samples[cluster]) {
+            const sample_t* res = NULL;
+            for (auto &s : samples.at(cluster)) {
                 const position_t pos = s.second;
                 const double d = (mean - pos).length();
                 if (d < dist) {
@@ -101,7 +102,7 @@ struct EIGEN_ALIGN16 ClusterDistribution
         return map;
     }
 
-    int                 current_cluster = -1;   /// keep track of the current cluster index
+    int current_cluster = -1;   /// keep track of the current cluster index
     sample_vector_map_t samples;
     distribution_map_t  distributions;
 };
