@@ -14,7 +14,7 @@
 #include <muse_armcl/resampling/resampling.hpp>
 #include <muse_armcl/scheduling/scheduler.hpp>
 
-#include <muse_armcl/samples/sample_density.hpp>
+#include <muse_armcl/density/sample_density.hpp>
 #include <muse_armcl/state_space/state_publisher.h>
 
 #include <cslibs_plugins/plugin_loader.hpp>

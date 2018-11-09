@@ -7,11 +7,12 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_plugins
   cslibs_plugins_data
   cslibs_mesh_map
+  cslibs_indexed_storage
 )
 
 catkin_package(
   INCLUDE_DIRS    include
-  CATKIN_DEPENDS  muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map
+  CATKIN_DEPENDS  muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage
 )
 
 include_directories(
@@ -34,6 +35,9 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/scheduling/cfs.cpp
   src/scheduling/rate.cpp
   src/scheduling/dummy.cpp
+  src/density/dominants.cpp
+  src/density/means.cpp
+  src/density/weighted_means.cpp
   # put plugins here
 )
 target_link_libraries(${PROJECT_NAME}_lib

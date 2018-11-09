@@ -19,18 +19,8 @@ public:
     {
         using rng_t  = cslibs_math::random::Uniform<1>;
 
-        std::size_t map_i = 0;
-        if (map_providers_.size() > 1) {
-            rng_t::Ptr rng(new rng_t(0.0, map_providers_.size()));
-            if (random_seed_ >= 0)
-                rng.reset(new rng_t(0.0, map_providers_.size(), random_seed_));
-
-            /// random map
-            map_i = std::min(map_providers_.size()-1, static_cast<std::size_t>(rng->get()));
-        }
-
         /// get map
-        const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_providers_[map_i]->getStateSpace();
+        const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
         if (!ss->isType<MeshMap>())
             return;
 
@@ -77,68 +67,61 @@ public:
     }
 
 private:
-    int                               random_seed_;
-    std::vector<MeshMapProvider::Ptr> map_providers_;
+    int                  random_seed_;
+    MeshMapProvider::Ptr map_provider_;
 
     virtual bool apply(sample_set_t &sample_set) override
     {
         sample_set_t::sample_insertion_t insertion = sample_set.getInsertion();
         const double weight = 1.0 / static_cast<double>(sample_size_);
 
-        const std::size_t n_maps = map_providers_.size();
-        const std::size_t particles_per_map = static_cast<std::size_t>(
-                    std::round(static_cast<double>(sample_size_) / static_cast<double>(n_maps)));
+        const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
+        if (!ss->isType<MeshMap>())
+            return false;
 
-        /// uniform over all maps
-        for (auto &map_provider : map_providers_) {
-            const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider->getStateSpace();
-            if (!ss->isType<MeshMap>())
-                continue;
+        using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
+        using mesh_map_t      = cslibs_mesh_map::MeshMap;
+        const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
+        std::vector<std::string> frame_ids;
+        map->getFrameIds(frame_ids);
 
-            using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-            using mesh_map_t      = cslibs_mesh_map::MeshMap;
-            const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
-            std::vector<std::string> frame_ids;
-            map->getFrameIds(frame_ids);
+        const std::size_t particles_per_frame = static_cast<std::size_t>(
+                    std::round(static_cast<double>(sample_size_) / static_cast<double>(frame_ids.size())));
 
-            const std::size_t particles_per_frame = static_cast<std::size_t>(
-                        std::round(static_cast<double>(particles_per_map) / static_cast<double>(frame_ids.size())));
+        /// uniform over all links
+        for (const auto &frame_id : frame_ids) {
+            mesh_map_tree_t* link = map->getNode(frame_id);
+            mesh_map_t& mesh = link->map_;
+            const double edges_length = mesh.sumEdgeLength();
 
-            /// uniform over all links
-            for (const auto &frame_id : frame_ids) {
-                mesh_map_tree_t* link = map->getNode(frame_id);
-                mesh_map_t& mesh = link->map_;
-                const double edges_length = mesh.sumEdgeLength();
+            /// prepare ordered sequence of random numbers
+            cslibs_math::random::Uniform<1> rng(0.0, 1.0);
+            std::vector<double> u(particles_per_frame, std::pow(rng.get(), 1.0 / static_cast<double>(particles_per_frame)));
+            for (std::size_t k = particles_per_frame - 1; k > 0; --k) {
+                const double _u = std::pow(rng.get(), 1.0 / static_cast<double>(k));
+                u[k-1] = u[k] * _u;
+            }
 
-                /// prepare ordered sequence of random numbers
-                cslibs_math::random::Uniform<1> rng(0.0, 1.0);
-                std::vector<double> u(particles_per_frame, std::pow(rng.get(), 1.0 / static_cast<double>(particles_per_frame)));
-                for (std::size_t k = particles_per_frame - 1; k > 0; --k) {
-                    const double _u = std::pow(rng.get(), 1.0 / static_cast<double>(k));
-                    u[k-1] = u[k] * _u;
+            /// draw samples
+            auto edge_it = mesh.edgeBegin();
+            double cumsum_last = 0.0;
+            double cumsum = mesh.calculateEdgeLength(edge_it)/edges_length;
+            for (auto &u_r : u) {
+                while (u_r < cumsum_last) {
+                    ++edge_it;
+                    cumsum_last = cumsum;
+                    cumsum += mesh.calculateEdgeLength(edge_it)/edges_length;
                 }
 
-                /// draw samples
-                auto edge_it = mesh.edgeBegin();
-                double cumsum_last = 0.0;
-                double cumsum = mesh.calculateEdgeLength(edge_it)/edges_length;
-                for (auto &u_r : u) {
-                    while (u_r < cumsum_last) {
-                        ++edge_it;
-                        cumsum_last = cumsum;
-                        cumsum += mesh.calculateEdgeLength(edge_it)/edges_length;
-                    }
-
-                    /// insert sample
-                    sample_t p;
-                    p.active_vertex = mesh.fromVertexHandle(edge_it);
-                    p.goal_vertex = mesh.toVertexHandle(edge_it);
-                    p.updateEdgeLength(mesh);
-                    p.s = 0;
-                    p.map_id = mesh.id_;
-                    p.weight = weight;
-                    insertion.insert(p);
-                }
+                /// insert sample
+                sample_t p;
+                p.active_vertex = mesh.fromVertexHandle(edge_it);
+                p.goal_vertex = mesh.toVertexHandle(edge_it);
+                p.updateEdgeLength(mesh);
+                p.s = 0;
+                p.map_id = mesh.id_;
+                p.weight = weight;
+                insertion.insert(p);
             }
         }
         return true;
@@ -151,22 +134,14 @@ private:
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
         random_seed_ = nh.param(param_name("seed"), -1);
 
-        std::vector<std::string> map_provider_ids;
-        nh.getParam(param_name("maps"), map_provider_ids);
+        const std::string map_provider_id = nh.param<std::string>(param_name("map"), "");
+        if (map_provider_id == "")
+            throw std::runtime_error("[UniformSampling]: No map provider was found!");
 
-        if (map_provider_ids.size() == 0) {
-            throw std::runtime_error("[NormalSampling]: No map providers were found!");
-        }
+        if (map_providers.find(map_provider_id) == map_providers.end())
+            throw std::runtime_error("[UniformSampling]: Cannot find map provider '" + map_provider_id + "'!");
 
-        std::string ms ="[";
-        for (auto m : map_provider_ids) {
-            if (map_providers.find(m) == map_providers.end())
-                throw std::runtime_error("[NormalSampling]: Cannot find map provider '" + m + "'!");
-
-            map_providers_.emplace_back(map_providers.at(m));
-            ms += m + ",";
-        }
-        ms.back() = ']';
+        map_provider_ = map_providers.at(map_provider_id);
     }
 };
 }

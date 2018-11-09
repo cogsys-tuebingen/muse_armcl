@@ -3,6 +3,7 @@
 
 #include <muse_smc/samples/sample_density.hpp>
 #include <muse_armcl/state_space/state_space_description.hpp>
+#include <muse_armcl/state_space/mesh_map_provider.hpp>
 
 #include <cslibs_plugins/plugin.hpp>
 
@@ -14,16 +15,18 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<SampleDensity>;
 
-    using Ptr          = std::shared_ptr<SampleDensity>;
-    using ConstPtr     = std::shared_ptr<SampleDensity const>;
-    using sample_t     = StateSpaceDescription::sample_t;
+    using Ptr                = std::shared_ptr<SampleDensity>;
+    using ConstPtr           = std::shared_ptr<SampleDensity const>;
+    using sample_t           = StateSpaceDescription::sample_t;
+    using map_provider_map_t = std::map<std::string, MeshMapProvider::Ptr>;
 
     inline const static std::string Type()
     {
         return "muse_armcl::SampleDensity";
     }
 
-    virtual void setup(ros::NodeHandle &nh) = 0;
+    virtual void setup(const map_provider_map_t &map_providers,
+                       ros::NodeHandle &nh) = 0;
     virtual std::size_t histogramSize() const = 0;
     virtual void contacts(std::vector<sample_t> &states) const = 0;
 };

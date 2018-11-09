@@ -17,6 +17,7 @@
   <depend>cslibs_plugins</depend>
   <depend>cslibs_plugins_data</depend>
   <depend>cslibs_mesh_map</depend>
+  <depend>cslibs_indexed_storage</depend>
 
   <export>
     <muse_armcl plugin="${prefix}/plugins.xml" />

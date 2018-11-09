@@ -1,5 +1,5 @@
 #include <muse_armcl/state_space/state_publisher.h>
-#include <muse_armcl/samples/sample_density.hpp>
+#include <muse_armcl/density/sample_density.hpp>
 
 #include <cslibs_mesh_map/mesh_map_tree.h>
 #include <cslibs_mesh_map/cslibs_mesh_map_visualization.h>

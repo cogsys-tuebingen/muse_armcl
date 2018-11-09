@@ -1,5 +1,5 @@
 #include <muse_armcl/resampling/resampling.hpp>
-#include <muse_armcl/samples/sample_density.hpp>
+#include <muse_armcl/density/sample_density.hpp>
 
 namespace muse_armcl {
 class KLD : public Resampling

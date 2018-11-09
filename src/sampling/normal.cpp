@@ -18,8 +18,7 @@ public:
         using Metric = cslibs_math::sampling::Metric;
         using rng_t  = cslibs_math::sampling::Normal<Metric, Metric, Metric>;
 
-        /// use only the first map...
-        const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_providers_.front()->getStateSpace();
+        const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
         if (!ss->isType<MeshMap>())
             return false;
 
@@ -91,10 +90,10 @@ public:
     }
 
 private:
-    int                               random_seed_;
-    double                            jump_probability_;
-    double                            likelihood_tolerance_;
-    std::vector<MeshMapProvider::Ptr> map_providers_;
+    int                  random_seed_;
+    double               jump_probability_;
+    double               likelihood_tolerance_;
+    MeshMapProvider::Ptr map_provider_;
 
     using map_provider_map_t = std::map<std::string, MeshMapProvider::Ptr>;
     virtual void doSetup(const map_provider_map_t &map_providers,
@@ -105,22 +104,14 @@ private:
         jump_probability_     = nh.param(param_name("jump_probability"), 0.3);
         likelihood_tolerance_ = nh.param(param_name("likelihood_tolerance"), 0.1);
 
-        std::vector<std::string> map_provider_ids;
-        nh.getParam(param_name("maps"), map_provider_ids);
+        const std::string map_provider_id = nh.param<std::string>(param_name("map"), "");
+        if (map_provider_id == "")
+            throw std::runtime_error("[NormalSampling]: No map provider was found!");
 
-        if (map_provider_ids.size() == 0) {
-            throw std::runtime_error("[NormalSampling]: No map providers were found!");
-        }
+        if (map_providers.find(map_provider_id) == map_providers.end())
+            throw std::runtime_error("[NormalSampling]: Cannot find map provider '" + map_provider_id + "'!");
 
-        std::string ms ="[";
-        for (auto m : map_provider_ids) {
-            if (map_providers.find(m) == map_providers.end())
-                throw std::runtime_error("[NormalSampling]: Cannot find map provider '" + m + "'!");
-
-            map_providers_.emplace_back(map_providers.at(m));
-            ms += m + ",";
-        }
-        ms.back() = ']';
+        map_provider_ = map_providers.at(map_provider_id);
     }
 };
 }

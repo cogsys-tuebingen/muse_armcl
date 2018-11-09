@@ -38,7 +38,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded update function models.");
         ROS_INFO_STREAM(update_model_list);
     }
-    {   /// prediction model
+    {   /// Prediction Model
         loader.load<PredictionModel, /*tf_provider_t::Ptr, */ros::NodeHandle&>(
                     prediction_model_, /*tf_provider_backend_, */nh_private_);
         if (!prediction_model_) {
@@ -49,7 +49,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded prediction function model.");
         ROS_INFO_STREAM("[" << prediction_model_->getName() << "]");
     }
-    {   /// map providers
+    {   /// Map Providers
         loader.load<MeshMapProvider, tf_provider_t::Ptr, ros::NodeHandle&>(
                     map_providers_, tf_provider_frontend_, nh_private_);
         if (map_providers_.empty()) {
@@ -65,7 +65,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded map providers.");
         ROS_INFO_STREAM(map_provider_list);
     }
-    {   /// data providers -> TODO: all of them need to be defined in muse_armcl!
+    {   /// Data Providers -> TODO: all of them need to be defined in muse_armcl!
         loader.load<data_provider_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     data_providers_, tf_provider_frontend_, nh_private_);
         if (data_providers_.empty()) {
@@ -80,7 +80,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded data providers.");
         ROS_INFO_STREAM(data_provider_list);
     }
-    { /// sampling algorithms -> TODO: TF unnecessary?
+    { /// Sampling Algorithms -> TODO: TF unnecessary?
         loader.load<UniformSampling, map_provider_map_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     uniform_sampling_, map_providers_, tf_provider_backend_, nh_private_);
         if (!uniform_sampling_) {
@@ -109,9 +109,9 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded resampling algorithm.");
         ROS_INFO_STREAM("[" << resampling_->getName() << "]");
     }
-    { /// density estimation
-        loader.load<SampleDensity, ros::NodeHandle&>(
-                    sample_density_, nh_private_);
+    { /// Density Estimation
+        loader.load<SampleDensity, map_provider_map_t, ros::NodeHandle&>(
+                    sample_density_, map_providers_, nh_private_);
         if (!sample_density_) {
             ROS_ERROR_STREAM("No sample density estimation function was found!");
             ROS_ERROR_STREAM("Setup is incomplete and is aborted!");
@@ -121,7 +121,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded density estimation function.");
         ROS_INFO_STREAM("[" << sample_density_->getName() << "]");
     }
-    { /// scheduling
+    { /// Scheduling
         loader.load<Scheduler, const update_model_map_t&, ros::NodeHandle&>(
                     scheduler_, update_models_, nh_private_);
         if (!scheduler_) {
