@@ -14,10 +14,6 @@
         <param name="node_rate"       value="0.0" />
 
         <!-- data providers -->
-        <group ns="dummy_data">
-            <param name="class"      value="muse_armcl::DummyDataProvider" />
-            <param name="base_class" value="cslibs_plugins_data::DataProvider" />
-        </group>
         <group ns="joint_states">
             <param name="class"      value="muse_armcl::JointStateProvider" />
             <param name="base_class" value="cslibs_plugins_data::DataProvider" />
@@ -67,7 +63,7 @@
         <group ns="prediction">
             <param name="class"            value="muse_armcl::RandomWalk" />
             <param name="base_class"       value="muse_armcl::PredictionModel"/>
-            <param name="data_provider"    value="dummy_data" />
+            <param name="data_provider"    value="joint_states" />
             <param name="seed"             value="0" />
             <param name="min_distance"     value="0.0" />
             <param name="max_distance"     value="0.1" />

@@ -25,7 +25,8 @@ public:
                               const cslibs_time::Time        &until,
                               sample_set_t::state_iterator_t  states) override
     {
-        throw std::runtime_error("[PredictionModel]: Model called without map!");
+        std::cerr << "[PredictionModel]: Model called without map!" << std::endl;
+        return Result::Ptr(new Result(data));
     }
 
     virtual Result::Ptr apply(const data_t::ConstPtr                 &data,
@@ -51,7 +52,7 @@ public:
         random_walk.jump_probability_ = jump_probability_;
         for (sample_t &sample : states)
             random_walk.update(sample, *map, rng_->get());
-        return Result::Ptr(new Result(data, data));
+        return Result::Ptr(new Result(data));
     }
 
 private:

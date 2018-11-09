@@ -57,8 +57,10 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     visualization_msgs::MarkerArray markers;
     visualization_msgs::Marker msg;
     msg.header.stamp = stamp;
-    msg.action = visualization_msgs::Marker::MODIFY;
     msg.id = 0;
+
+    msg.action = visualization_msgs::Marker::DELETEALL;
+    markers.markers.push_back(msg);
 
     /// publish all particles
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
@@ -66,7 +68,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         if (p_map) {
             cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
             //msg.scale.x = p.weight; // TODO: test
-            msg.lifetime = ros::Duration(0.0); // TODO: inf for debugging
+            msg.lifetime = ros::Duration(0.0);
             markers.markers.push_back(msg);
         }
     }
@@ -74,6 +76,8 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
 
     if (publish_contacts) {
         markers.markers.clear();
+        msg.action = visualization_msgs::Marker::DELETEALL;
+        markers.markers.push_back(msg);
 
         /// density estimation
         SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
@@ -90,7 +94,10 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
             if (p_map) {
                 cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
                 //msg.scale.x = p.weight; // TODO: test
-                msg.lifetime = ros::Duration(0.0); // TODO: inf for debugging
+                msg.lifetime = ros::Duration(0.0);
+                msg.color.r = 1.0;
+                msg.color.g = 0.0;
+                msg.color.b = 0.0;
                 markers.markers.push_back(msg);
             }
         }

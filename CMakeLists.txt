@@ -40,7 +40,6 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/density/dominants.cpp
   src/density/means.cpp
   src/density/weighted_means.cpp
-  src/prediction/dummy_data_provider.cpp
   src/prediction/random_walk.cpp
   src/update/dummy_update_model.cpp
   src/update/joint_state_provider.cpp
