@@ -58,6 +58,9 @@
    <class type="muse_armcl::DummyDataProvider" base_class_type="cslibs_plugins_data::DataProvider">
      <description>Provides exactly one data packet, as soon as connection is enabled.</description>
    </class>
+   <class type="muse_armcl::JointStateProvider" base_class_type="cslibs_plugins_data::DataProvider">
+     <description>Provides joint states.</description>
+   </class>
 
    <!-- Prediction Models -->
    <class type="muse_armcl::RandomWalk" base_class_type="muse_armcl::PredictionModel">

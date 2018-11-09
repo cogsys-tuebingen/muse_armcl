@@ -42,6 +42,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/prediction/dummy_data_provider.cpp
   src/prediction/random_walk.cpp
   src/update/dummy_update_model.cpp
+  src/update/joint_state_provider.cpp
 )
 target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}

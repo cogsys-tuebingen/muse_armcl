@@ -1,6 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
-    <arg name="mesh_path" value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+    <arg name="mesh_path"         value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+    <arg name="joint_state_topic" value="/dummy_topic_name"/> <!-- TODO -->
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
@@ -11,12 +12,28 @@
             <param name="class"      value="muse_armcl::DummyDataProvider" />
             <param name="base_class" value="cslibs_plugins_data::DataProvider" />
         </group>
+        <group ns="joint_states">
+            <param name="class"      value="muse_armcl::JointStateProvider" />
+            <param name="base_class" value="cslibs_plugins_data::DataProvider" />
+            <param name="topic"      value="$(arg joint_state_topic)" />
+            <param name="queue_size" value="10" />
+            <param name="rate"       value="0.0" />
+        </group>
 
         <!-- map providers -->
         <group ns="mesh_map">
             <param name="class"      value="muse_armcl::MeshMapLoader" />
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
+            <rosparam param="meshes">
+                [] <!-- TODO -->
+            </rosparam>
+            <rosparam param="parent_ids">
+                [] <!-- TODO -->
+            </rosparam>
+            <rosparam param="frame_ids">
+                [] <!-- TODO -->
+            </rosparam>
         </group>
 
         <!-- prediction model -->
@@ -31,10 +48,10 @@
         </group>
 
         <!-- update model -->
-        <group ns="dummy_update">
+        <group ns="update">
             <param name="class"         value="muse_armcl::DummyUpdateModel" />
             <param name="base_class"    value="muse_armcl::UpdateModel" />
-            <param name="data_provider" value="..." />
+            <param name="data_provider" value="joint_states" />
             <param name="map_provider"  value="mesh_map" />
         </group>
 
@@ -47,7 +64,6 @@
             <param name="tf_timeout"  value="0.1" />
             <param name="sample_size" value="5000" />
         </group>
-
         <group ns="normal_sampler">
             <param name="class"       value="muse_armcl::Normal" />
             <param name="base_class"  value="muse_armcl::NormalSampling" />
@@ -58,7 +74,6 @@
             <param name="jump_probability"     value="0.3" />
             <param name="likelihood_tolerance" value="0.1" />
         </group>
-
         <group ns="resampling">
             <param name="class"               value="muse_armcl::KLD" />
             <param name="base_class"          value="muse_armcl::Resampling" />

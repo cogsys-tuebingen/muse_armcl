@@ -1,5 +1,7 @@
 #include <muse_armcl/update/update_model.hpp>
+
 #include <muse_armcl/state_space/mesh_map.h>
+#include <muse_armcl/update/joint_state_data.hpp>
 
 namespace muse_armcl {
 class DummyUpdateModel : public UpdateModel
@@ -9,7 +11,7 @@ public:
                        const typename state_space_t::ConstPtr   &ss,
                        typename sample_set_t::weight_iterator_t  set) override
     {
-        if (!ss->isType<MeshMap>()) /// || !data->isType<YourType>()
+        if (!ss->isType<MeshMap>() || !data->isType<JointStateData>())
             return;
 
         /// cast map to specific type
@@ -18,7 +20,8 @@ public:
         const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
 
         /// cast data to specific type
-        // const YourType &your_data = data->as<YourType>();
+        const JointStateData &joint_states = data->as<JointStateData>();
+        // -> access data via joint_states.position, joint_states.velocity, ...
 
         for(auto it = set.begin() ; it != set.end() ; ++it) {
             /// access particle

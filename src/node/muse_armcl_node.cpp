@@ -65,7 +65,7 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded map providers.");
         ROS_INFO_STREAM(map_provider_list);
     }
-    {   /// Data Providers -> TODO: all of them need to be defined in muse_armcl!
+    {   /// Data Providers
         loader.load<data_provider_t, tf_provider_t::Ptr, ros::NodeHandle&>(
                     data_providers_, tf_provider_frontend_, nh_private_);
         if (data_providers_.empty()) {
@@ -80,9 +80,9 @@ bool MuseARMCLNode::setup()
         ROS_INFO_STREAM("Loaded data providers.");
         ROS_INFO_STREAM(data_provider_list);
     }
-    { /// Sampling Algorithms -> TODO: TF unnecessary?
-        loader.load<UniformSampling, map_provider_map_t, tf_provider_t::Ptr, ros::NodeHandle&>(
-                    uniform_sampling_, map_providers_, tf_provider_backend_, nh_private_);
+    { /// Sampling Algorithms
+        loader.load<UniformSampling, map_provider_map_t, ros::NodeHandle&>(
+                    uniform_sampling_, map_providers_, nh_private_);
         if (!uniform_sampling_) {
             ROS_ERROR_STREAM("No uniform sampling function was found!");
             ROS_ERROR_STREAM("Setup is incomplete and is aborted!");
@@ -90,8 +90,8 @@ bool MuseARMCLNode::setup()
         }
         ROS_INFO_STREAM("Loaded uniform sampler.");
         ROS_INFO_STREAM("[" << uniform_sampling_->getName() << "]");
-        loader.load<NormalSampling, map_provider_map_t, tf_provider_t::Ptr, ros::NodeHandle&>(
-                    normal_sampling_, map_providers_,  tf_provider_backend_, nh_private_);
+        loader.load<NormalSampling, map_provider_map_t, ros::NodeHandle&>(
+                    normal_sampling_, map_providers_, nh_private_);
         if (!normal_sampling_) {
             ROS_ERROR_STREAM("No gaussian sampling function was found!");
             ROS_ERROR_STREAM("Setup is incomplete and is aborted!");
@@ -234,7 +234,7 @@ void MuseARMCLNode::start()
 
 bool MuseARMCLNode::getPredictionDataProvider(data_provider_t::Ptr &prediction_provider)
 {
-    const std::string param_name    = nh_private_.param<std::string>("map", ""); /// toplevel parameter
+    const std::string param_name    = prediction_model_->getName() + "/data_provider";
     const std::string provider_name = nh_private_.param<std::string>(param_name, "");
 
     if (data_providers_.find(provider_name) == data_providers_.end()) {
@@ -249,8 +249,7 @@ bool MuseARMCLNode::getPredictionDataProvider(data_provider_t::Ptr &prediction_p
 
 bool MuseARMCLNode::getPredictionMapProvider(MeshMapProvider::Ptr &map_provider)
 {
-    const std::string param_name    = prediction_model_->getName() + "/map_provider";
-    const std::string provider_name = nh_private_.param<std::string>(param_name, "");
+    const std::string provider_name  = nh_private_.param<std::string>("map", ""); /// toplevel parameter
 
     if (map_providers_.find(provider_name) == map_providers_.end()) {
         std::cerr << "[MuseARMCLNode]: Could not find map provider '" << provider_name

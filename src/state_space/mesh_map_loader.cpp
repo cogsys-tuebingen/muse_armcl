@@ -39,6 +39,9 @@ public:
             if (!map_) {
                 ROS_INFO_STREAM("[" << name_ << "]: Loading mesh map [" << path << "]");
 
+                if (frame_ids_.empty())
+                    throw std::runtime_error("[" + name_ + "]: No frame id found!");
+
                 /// load map
                 std::unique_lock<std::mutex> l(map_mutex_);
                 map_.reset(new MeshMap(mesh_map_tree_t::Ptr(new mesh_map_tree_t()), frame_ids_.front()));
