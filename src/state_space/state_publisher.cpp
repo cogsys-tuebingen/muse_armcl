@@ -56,9 +56,9 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
 
     /// publish all particles
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
-        mesh_map_tree_t* p_map = map->getNode(p.map_id);
+        mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
         if (p_map) {
-            cslibs_mesh_map::visualization::visualizeEdgeParticle(p, p_map->map_, msg);
+            cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
             markers.markers.push_back(msg);
         }
     }
@@ -78,9 +78,9 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         std::vector<StateSpaceDescription::sample_t> states;
         density->contacts(states);
         for (const StateSpaceDescription::sample_t& p : states) {
-            mesh_map_tree_t* p_map = map->getNode(p.map_id);
+            mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
-                cslibs_mesh_map::visualization::visualizeEdgeParticle(p, p_map->map_, msg);
+                cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
                 markers.markers.push_back(msg);
             }
         }

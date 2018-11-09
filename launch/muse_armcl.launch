@@ -3,9 +3,11 @@
     <arg name="mesh_path" value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
 
     <group ns="muse_armcl">
-        <!-- update models -->
-
-        <!-- prediction model -->
+        <!-- data providers -->
+        <group ns="dummy">
+            <param name="class"      value="muse_armcl::DummyDataProvider" />
+            <param name="base_class" value="cslibs_plugins_data::DataProvider" />
+        </group>
 
         <!-- map providers -->
         <group ns="mesh_map">
@@ -14,14 +16,27 @@
             <param name="path"       value="$(arg mesh_path)" />
         </group>
 
-        <!-- data providers -->
+        <!-- prediction model -->
+        <group ns="prediction">
+            <param name="class"            value="muse_armcl::RandomWalk" />
+            <param name="base_class"       value="muse_armcl::PredictionModel"/>
+            <param name="data_provider"    value="dummy" />
+            <param name="map_provider"     value="mesh_map" />
+            <param name="seed"             value="0" />
+            <param name="min_distance"     value="0.0" />
+            <param name="max_distance"     value="0.1" />
+            <param name="jump_probability" value="0.3" />
+        </group>
+
+        <!-- update models -->
+
 
         <!-- sampling algorithms -->
         <group ns="uniform_sampler">
             <param name="class"       value="muse_armcl::UniformAllMaps" />
             <param name="base_class"  value="muse_armcl::UniformSampling" />
 	    <param name="map"         value="mesh_map" />
-            <param name="seed"        value="2" />
+            <param name="seed"        value="1" />
             <param name="timeout"     value="10.0" />
             <param name="tf_timeout"  value="0.1" />
             <param name="sample_size" value="5000" />
@@ -34,7 +49,7 @@
             <param name="timeout"     value="10.0" />
             <param name="tf_timeout"  value="0.1" />
             <param name="sample_size" value="5000" />
-            <param name="seed"        value="0" />
+            <param name="seed"        value="2" />
             <param name="jump_probability"     value="0.3" />
             <param name="likelihood_tolerance" value="0.1" />
         </group>

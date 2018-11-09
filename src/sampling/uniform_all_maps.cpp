@@ -59,11 +59,12 @@ public:
             if (cumsum[i] <= u && u < cumsum[i+1])
                 break;
 
-        sample.active_vertex = mesh.fromVertexHandle(edge_it);
-        sample.goal_vertex = mesh.toVertexHandle(edge_it);
-        sample.updateEdgeLength(mesh);
-        sample.s = 0;
-        sample.map_id = mesh.id_;
+        auto &state = sample.state;
+        state.active_vertex = mesh.fromVertexHandle(edge_it);
+        state.goal_vertex = mesh.toVertexHandle(edge_it);
+        state.updateEdgeLength(mesh);
+        state.s = 0;
+        state.map_id = mesh.id_;
     }
 
 private:
@@ -115,11 +116,12 @@ private:
 
                 /// insert sample
                 sample_t p;
-                p.active_vertex = mesh.fromVertexHandle(edge_it);
-                p.goal_vertex = mesh.toVertexHandle(edge_it);
-                p.updateEdgeLength(mesh);
-                p.s = 0;
-                p.map_id = mesh.id_;
+                auto &state = p.state;
+                state.active_vertex = mesh.fromVertexHandle(edge_it);
+                state.goal_vertex = mesh.toVertexHandle(edge_it);
+                state.updateEdgeLength(mesh);
+                state.s = 0;
+                state.map_id = mesh.id_;
                 p.weight = weight;
                 insertion.insert(p);
             }

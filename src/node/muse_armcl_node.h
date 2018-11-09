@@ -83,8 +83,9 @@ private:
     SampleDensity::Ptr          sample_density_;
     StatePublisher::Ptr         state_publisher_;
 
+    bool getPredictionDataProvider(data_provider_t::Ptr &prediction_provider);
+    bool getPredictionMapProvider(MeshMapProvider::Ptr &map_provider);
     bool getUpdateModelProviderMapping(update_model_mapping_t &update_mapping);
-    bool getPredictionProvider(data_provider_t::Ptr &prediction_provider);
 };
 }
 

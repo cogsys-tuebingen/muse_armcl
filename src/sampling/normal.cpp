@@ -69,14 +69,15 @@ public:
                 /// do random walk by length
                 state_t p = state;
                 random_walk.update(p, *map);
-                p.weight = weight;
                 cslibs_math_3d::Vector3d reached = p.getPosition(map->getNode(p.map_id)->map_);
 
                 /// check if reached point has about the same likelihood as target
                 const double reached_lk = likelihood(reached);
                 valid = std::fabs((end_lk - reached_lk) / end_lk) < likelihood_tolerance_;
-                if (valid)
-                    insertion.insert(p);
+                if (valid) {
+                    sample_t s(p, weight);
+                    insertion.insert(s);
+                }
 
                 /// if not, don't insert into sample set, discard, draw again...
             }

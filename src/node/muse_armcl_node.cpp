@@ -187,11 +187,12 @@ bool MuseARMCLNode::setup()
 
     predicition_forwarder_.reset(new prediction_relay_t(particle_filter_));
     data_provider_t::Ptr prediction_provider;
-    if (!getPredictionProvider(prediction_provider)) {
+    MeshMapProvider::Ptr map_provider;
+    if (!getPredictionDataProvider(prediction_provider) || !getPredictionMapProvider(map_provider)) {
         ROS_ERROR_STREAM("Setup is incomplete and is aborted!");
         return false;
     }
-    predicition_forwarder_->relay(prediction_model_, prediction_provider);
+    predicition_forwarder_->relay(prediction_model_, prediction_provider, map_provider);
 
     update_forwarder_.reset(new update_relay_t(particle_filter_));
     update_model_mapping_t update_mapping;
@@ -231,7 +232,7 @@ void MuseARMCLNode::start()
     }
 }
 
-bool MuseARMCLNode::getPredictionProvider(data_provider_t::Ptr &prediction_provider)
+bool MuseARMCLNode::getPredictionDataProvider(data_provider_t::Ptr &prediction_provider)
 {
     const std::string param_name    = prediction_model_->getName() + "/data_provider";
     const std::string provider_name = nh_private_.param<std::string>(param_name, "");
@@ -243,6 +244,21 @@ bool MuseARMCLNode::getPredictionProvider(data_provider_t::Ptr &prediction_provi
         return false;
     }
     prediction_provider = data_providers_.at(provider_name);
+    return true;
+}
+
+bool MuseARMCLNode::getPredictionMapProvider(MeshMapProvider::Ptr &map_provider)
+{
+    const std::string param_name    = prediction_model_->getName() + "/map_provider";
+    const std::string provider_name = nh_private_.param<std::string>(param_name, "");
+
+    if (map_providers_.find(provider_name) == map_providers_.end()) {
+        std::cerr << "[MuseARMCLNode]: Could not find map provider '" << provider_name
+                  << "' for prediction model '" << prediction_model_->getName()
+                  << "' !" << "\n";
+        return false;
+    }
+    map_provider = map_providers_.at(provider_name);
     return true;
 }
 

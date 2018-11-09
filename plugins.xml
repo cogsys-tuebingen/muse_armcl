@@ -53,4 +53,14 @@
    <class type="muse_armcl::WeightedMeans" base_class_type="muse_armcl::SampleDensity">
      <description>Implements density estimation, where the particle closest to the weighted mean is estimated per cluster.</description>
    </class>
+
+   <!-- Data Providers -->
+   <class type="muse_armcl::DummyDataProvider" base_class_type="cslibs_plugins_data::DataProvider">
+     <description>Provides exactly one data packet, as soon as connection is enabled.</description>
+   </class>
+
+   <!-- Prediction Models -->
+   <class type="muse_armcl::RandomWalk" base_class_type="muse_armcl::PredictionModel">
+     <description>Prediction via random walk.</description>
+   </class>
 </library>

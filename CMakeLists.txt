@@ -38,6 +38,8 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/density/dominants.cpp
   src/density/means.cpp
   src/density/weighted_means.cpp
+  src/prediction/dummy_data_provider.cpp
+  src/prediction/random_walk.cpp
   # put plugins here
 )
 target_link_libraries(${PROJECT_NAME}_lib
