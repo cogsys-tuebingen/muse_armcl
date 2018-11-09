@@ -211,6 +211,10 @@ void MuseARMCLNode::start()
         d.second->enable();
     }
 
+    /// trigger uniform initialization
+    ros::Time::waitForValid();
+    particle_filter_->requestUniformInitialization(time_t(ros::Time::now().toNSec()));
+
     if (!particle_filter_->start()) {
         ROS_ERROR_STREAM("Couldn't start the filter!");
         return;
