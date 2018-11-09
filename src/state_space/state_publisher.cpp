@@ -66,7 +66,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
         if (p_map) {
             cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
-            msg.scale.x = p.weight; // TODO: test
+            //msg.scale.x = p.weight; // TODO: test
             markers.markers.push_back(msg);
         }
     }
@@ -89,7 +89,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
             mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
                 cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
-                msg.scale.x = p.weight; // TODO: test
+                //msg.scale.x = p.weight; // TODO: test
                 markers.markers.push_back(msg);
             }
         }

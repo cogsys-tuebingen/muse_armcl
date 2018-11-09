@@ -141,5 +141,5 @@
           name="muse_armcl" 
           pkg="muse_armcl" 
           output="screen"  
-          clear_params="true" />
+          clear_params="true"/>
 </launch>

@@ -37,6 +37,8 @@ public:
 
         std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng->get()));
         mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
+        if (!link)
+            throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
         mesh_map_t& mesh = link->map_;
 
         /// cumsum
@@ -92,6 +94,8 @@ private:
         /// uniform over all links
         for (const auto &frame_id : frame_ids) {
             mesh_map_tree_t* link = map->getNode(frame_id);
+            if (!link)
+                throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
             mesh_map_t& mesh = link->map_;
             const double edges_length = mesh.sumEdgeLength();
 
