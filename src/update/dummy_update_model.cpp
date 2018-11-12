@@ -1,6 +1,6 @@
 #include <muse_armcl/update/update_model.hpp>
 
-#include <muse_armcl/state_space/mesh_map.h>
+#include <muse_armcl/state_space/mesh_map.hpp>
 #include <muse_armcl/update/joint_state_data.hpp>
 
 namespace muse_armcl {

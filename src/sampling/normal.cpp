@@ -37,8 +37,7 @@ public:
             throw std::runtime_error("[NormalSampling]: Initialization sample size invalid!");
 
         /// set up random walk
-        cslibs_mesh_map::RandomWalk random_walk;
-        random_walk.jump_probability_ = jump_probability_;
+        random_walk_.jump_probability_ = jump_probability_;
 
         /// draw samples
         sample_set_t::sample_insertion_t insertion = sample_set.getInsertion();
@@ -64,12 +63,12 @@ public:
 
                 /// estimate length
                 cslibs_math_3d::Vector3d end(rng->get());
-                random_walk.distance_to_travel_ = (end - start).length();
+                random_walk_.distance_to_travel_ = (end - start).length();
                 const double end_lk = likelihood(end);
 
                 /// do random walk by length
                 state_t p = state;
-                random_walk.update(p, *map);
+                random_walk_.update(p, *map);
                 cslibs_math_3d::Vector3d reached = p.getPosition(map->getNode(p.map_id)->map_);
 
                 /// check if reached point has about the same likelihood as target
@@ -92,10 +91,11 @@ public:
     }
 
 private:
-    int                  random_seed_;
-    double               jump_probability_;
-    double               likelihood_tolerance_;
-    MeshMapProvider::Ptr map_provider_;
+    int                         random_seed_;
+    double                      jump_probability_;
+    double                      likelihood_tolerance_;
+    MeshMapProvider::Ptr        map_provider_;
+    cslibs_mesh_map::RandomWalk random_walk_;
 
     using map_provider_map_t = std::map<std::string, MeshMapProvider::Ptr>;
     virtual void doSetup(const map_provider_map_t &map_providers,

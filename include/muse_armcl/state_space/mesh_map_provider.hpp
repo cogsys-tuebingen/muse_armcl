@@ -2,7 +2,7 @@
 #define MUSE_ARMCL_MESH_MAP_PROVIDER_HPP
 
 #include <muse_smc/state_space/state_space_provider.hpp>
-#include <muse_armcl/state_space/mesh_map.h>
+#include <muse_armcl/state_space/mesh_map.hpp>
 
 #include <cslibs_plugins/plugin.hpp>
 #include <cslibs_math_ros/tf/tf_provider.hpp>

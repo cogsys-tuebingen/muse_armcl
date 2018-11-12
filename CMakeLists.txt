@@ -11,8 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS    include
-  CATKIN_DEPENDS  muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage
+  INCLUDE_DIRS   include
+  CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage
 )
 
 include_directories(
@@ -23,7 +23,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}_lib SHARED
   # contains all plugins...
-  src/state_space/mesh_map.cpp
   src/state_space/mesh_map_loader.cpp
   src/resampling/kld.cpp
   src/resampling/sir.cpp
