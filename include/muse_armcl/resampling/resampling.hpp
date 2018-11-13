@@ -5,7 +5,7 @@
 #include <muse_armcl/state_space/state_space_description.hpp>
 
 #include <cslibs_plugins/plugin.hpp>
-
+#include <ros/ros.h>
 namespace muse_armcl {
 class Resampling : public muse_smc::Resampling<StateSpaceDescription>,
                    public cslibs_plugins::Plugin

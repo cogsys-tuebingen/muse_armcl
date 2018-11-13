@@ -40,15 +40,15 @@ public:
             throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
 
         /// draw random element
-        cslibs_mesh_map::RandomWalk walk;
         using state_t = StateSpaceDescription::state_t;
-        std::vector<state_t> particles = walk.createParticleSetForOneMap(1, *link);
+        std::vector<state_t> particles = random_walk_.createParticleSetForOneMap(1, *link);
         sample = sample_t(particles[0], 0.0);
     }
 
 private:
-    int                  random_seed_;
-    MeshMapProvider::Ptr map_provider_;
+    int                         random_seed_;
+    MeshMapProvider::Ptr        map_provider_;
+    cslibs_mesh_map::RandomWalk random_walk_;
 
     virtual bool apply(sample_set_t &sample_set) override
     {
@@ -74,8 +74,6 @@ private:
             total_edges_length += link->map_.sumEdgeLength();
         }
 
-        cslibs_mesh_map::RandomWalk walk;
-
         /// uniform over all links
         for (const auto &frame_id : frame_ids) {
             mesh_map_tree_t* link = map->getNode(frame_id);
@@ -89,7 +87,7 @@ private:
 
             /// draw random elements
             using state_t = StateSpaceDescription::state_t;
-            std::vector<state_t> particles = walk.createParticleSetForOneMap(particles_per_frame, *link);
+            std::vector<state_t> particles = random_walk_.createParticleSetForOneMap(particles_per_frame, *link);
             for (state_t &p : particles)
                 if (insertion.canInsert())
                     insertion.insert(sample_t(p, weight));

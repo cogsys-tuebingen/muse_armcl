@@ -71,4 +71,7 @@
    <class type="muse_armcl::DummyUpdateModel" base_class_type="muse_armcl::UpdateModel">
      <description>Dummy update model, doesn't do anything, only for demonstration.</description>
    </class>
+   <class type="muse_armcl::NormalizedUpdateModel" base_class_type="muse_armcl::UpdateModel">
+     <description>Minimizes the orientation between the nD residual vector.</description>
+   </class>
 </library>

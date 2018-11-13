@@ -6,7 +6,7 @@
 
 #include <cslibs_plugins/plugin.hpp>
 #include <cslibs_plugins_data/data.hpp>
-
+#include <ros/ros.h>
 namespace muse_armcl {
 class UpdateModel : public muse_smc::UpdateModel<StateSpaceDescription, cslibs_plugins_data::Data>,
                     public cslibs_plugins::Plugin

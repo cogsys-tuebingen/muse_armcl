@@ -6,7 +6,7 @@
 
 #include <cslibs_plugins/plugin.hpp>
 #include <cslibs_plugins_data/data.hpp>
-
+#include <ros/ros.h>
 namespace muse_armcl {
 class PredictionModel : public muse_smc::PredictionModel<StateSpaceDescription, cslibs_plugins_data::Data>,
                         public cslibs_plugins::Plugin

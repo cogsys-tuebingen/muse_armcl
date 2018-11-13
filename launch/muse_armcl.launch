@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <launch>
-    <param name="/use_sim_time" value="true" />
+    <param name="/use_sim_time" value="false" />
     <arg name="mesh_path"           value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
-    <arg name="joint_state_topic"   value="/joint_states"/>
+    <arg name="joint_state_topic"   value="/estimated_ext_torque"/>
     <arg name="minimum_sample_size" value="100"/>
     <arg name="maximum_sample_size" value="5000"/>
 
@@ -72,10 +72,17 @@
 
         <!-- update model -->
         <group ns="update">
-            <param name="class"         value="muse_armcl::DummyUpdateModel" />
-            <param name="base_class"    value="muse_armcl::UpdateModel" />
-            <param name="data_provider" value="joint_states" />
-            <param name="map_provider"  value="mesh_map" />
+            <param name="class"             value="muse_armcl::NormalizedUpdateModel" />
+            <param name="base_class"        value="muse_armcl::UpdateModel" />
+            <param name="data_provider"     value="joint_states" />
+            <param name="map_provider"      value="mesh_map" />
+            <param name="robot_description" value="robot_description"/>
+            <param name="chain_root"        value="jaco_link_base"/>
+            <param name="chain_tip"         value="jaco_link_hand"/>
+            <param name="finger_1_tip"      value="jaco_finger_1_tip"/>
+            <param name="finger_2_tip"      value="jaco_finger_2_tip"/>
+            <param name="finger_3_tip"      value="jaco_finger_3_tip"/>
+            <param name="measurment_noise"  value="0.01"/>
         </group>
 
         <!-- sampling algorithms -->

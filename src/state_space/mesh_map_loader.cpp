@@ -35,6 +35,8 @@ public:
         parent_ids_  = nh.param<std::vector<std::string>>(param_name("parent_ids"), std::vector<std::string>());
         frame_ids_   = nh.param<std::vector<std::string>>(param_name("frame_ids"),  std::vector<std::string>());
 
+        pub_surface_ = nh.advertise<visualization_msgs::MarkerArray>("surface",1);
+
         auto load = [this]() {
             if (!map_) {
                 ROS_INFO_STREAM("[" << name_ << "]: Loading mesh map [" << path_ << "]");

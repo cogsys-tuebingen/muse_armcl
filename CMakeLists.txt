@@ -11,20 +11,23 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_kdl
 )
 
+find_package(orocos_kdl REQUIRED)
+
 catkin_package(
-  INCLUDE_DIRS    include
-  CATKIN_DEPENDS  muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage cslibs_kdl
+  INCLUDE_DIRS   include
+  CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage cslibs_kdl
+  DEPENDS orocos_kdl
 )
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${orocos_kdl_INCLUDE_DIRS}
 )
 
 
 add_library(${PROJECT_NAME}_lib SHARED
   # contains all plugins...
-  src/state_space/mesh_map.cpp
   src/state_space/mesh_map_loader.cpp
   src/resampling/kld.cpp
   src/resampling/sir.cpp
@@ -44,9 +47,11 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/prediction/random_walk.cpp
   src/update/dummy_update_model.cpp
   src/update/joint_state_provider.cpp
+  src/update/normalized_update_model.cpp
 )
 target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}
+  ${orocos_kdl_LIBRARIES}
 )
 
 
@@ -57,6 +62,7 @@ add_executable(${PROJECT_NAME}_node
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
 )
 
 

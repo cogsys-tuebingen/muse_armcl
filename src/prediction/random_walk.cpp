@@ -1,5 +1,5 @@
 #include <muse_armcl/prediction/prediction_model.hpp>
-#include <muse_armcl/state_space/mesh_map.h>
+#include <muse_armcl/state_space/mesh_map.hpp>
 
 #include <cslibs_mesh_map/random_walk.hpp>
 #include <cslibs_math/random/random.hpp>
@@ -49,9 +49,9 @@ public:
 
         /// execute random walk for all particles
         /// use random step width between given min_distance and max_distance
-        random_walk.jump_probability_ = jump_probability_;
+        random_walk_.jump_probability_ = jump_probability_;
         for (sample_t &sample : states)
-            random_walk.update(sample, *map, rng_->get());
+            random_walk_.update(sample, *map, rng_->get());
         return Result::Ptr(new Result(data));
     }
 
@@ -62,7 +62,7 @@ private:
     double                      jump_probability_;
 
     rng_t::Ptr                  rng_;
-    cslibs_mesh_map::RandomWalk random_walk;
+    cslibs_mesh_map::RandomWalk random_walk_;
 };
 }
 
