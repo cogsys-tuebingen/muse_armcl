@@ -8,11 +8,12 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_plugins_data
   cslibs_mesh_map
   cslibs_indexed_storage
+  cslibs_kdl
 )
 
 catkin_package(
   INCLUDE_DIRS    include
-  CATKIN_DEPENDS  muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage
+  CATKIN_DEPENDS  muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage cslibs_kdl
 )
 
 include_directories(
