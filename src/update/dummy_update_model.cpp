@@ -20,7 +20,7 @@ public:
         /// cast map to specific type
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_t      = cslibs_mesh_map::MeshMap;
-        const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
+        const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
         /// cast data to specific type
         const JointStateData &joint_states = data->as<JointStateData>();

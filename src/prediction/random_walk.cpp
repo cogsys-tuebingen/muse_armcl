@@ -40,7 +40,7 @@ public:
             return false;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        const mesh_map_tree_t::Ptr &map = state_space->as<MeshMap>().data();
+        const mesh_map_tree_t* map = state_space->as<MeshMap>().data();
 
         if (!rng_) {
             rng_.reset(random_seed_ >= 0 ?

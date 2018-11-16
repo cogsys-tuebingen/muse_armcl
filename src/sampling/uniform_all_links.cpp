@@ -25,7 +25,7 @@ public:
             return;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
+        mesh_map_tree_t::ConstPtr map(ss->as<MeshMap>().data());
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
 
@@ -35,7 +35,7 @@ public:
             rng.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
 
         std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng->get()));
-        mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
+        const mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
         if (!link)
             throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
 
@@ -60,14 +60,14 @@ private:
             return false;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
+        mesh_map_tree_t::ConstPtr map(ss->as<MeshMap>().data());
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
 
         /// estimate total edges length
         double total_edges_length = 0.0;
         for (const auto &frame_id : frame_ids) {
-            mesh_map_tree_t* link = map->getNode(frame_id);
+            const mesh_map_tree_t* link = map->getNode(frame_id);
             if (!link)
                 throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
 
@@ -76,7 +76,7 @@ private:
 
         /// uniform over all links
         for (const auto &frame_id : frame_ids) {
-            mesh_map_tree_t* link = map->getNode(frame_id);
+            const mesh_map_tree_t* link = map->getNode(frame_id);
             if (!link)
                 throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
 

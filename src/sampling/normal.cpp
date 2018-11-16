@@ -24,7 +24,7 @@ public:
             return false;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        mesh_map_tree_t* map = ss->as<MeshMap>().data();
+        const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
         /// set up random generator
         cslibs_math_3d::Vector3d start = state.getPosition(map->getNode(state.map_id)->map_);

@@ -23,7 +23,7 @@ public:
         /// cast map to specific type
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_t      = cslibs_mesh_map::MeshMap;
-        const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
+        const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
         /// cast data to specific type
         const JointStateData &joint_states = data->as<JointStateData>();
@@ -40,7 +40,7 @@ public:
 
     virtual double calculateWeight(const state_t& state,
                                    const JointStateData& joint_state,
-                                   const cslibs_mesh_map::MeshMapTree::Ptr& map) = 0;
+                                   const cslibs_mesh_map::MeshMapTree* map) = 0;
 
     virtual void setup(ros::NodeHandle &nh) override
     {

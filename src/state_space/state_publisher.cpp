@@ -51,7 +51,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         return;
 
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-    const mesh_map_tree_t::Ptr &map = ss->as<MeshMap>().data();
+    const mesh_map_tree_t* map = ss->as<MeshMap>().data();
     const ros::Time stamp = ros::Time().fromNSec(sample_set->getStamp().nanoseconds());
 
     visualization_msgs::MarkerArray markers;
@@ -64,7 +64,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
 
     /// publish all particles
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
-        mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
+        const mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
         if (p_map) {
             cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
             //msg.scale.x = p.weight; // TODO: test
@@ -90,7 +90,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
         for (const StateSpaceDescription::sample_t& p : states) {
-            mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
+            const mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
                 cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
                 //msg.scale.x = p.weight; // TODO: test

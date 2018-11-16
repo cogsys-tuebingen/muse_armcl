@@ -11,10 +11,10 @@ class EIGEN_ALIGN16  NormalizedUpdateModel : public ContactLocalizationUpdateMod
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<NormalizedUpdateModel>;
-    virtual double calculateWeight(const state_t &state, const JointStateData &joint_state, const cslibs_mesh_map::MeshMapTree::Ptr& maps) override
+    virtual double calculateWeight(const state_t &state, const JointStateData &joint_state, const cslibs_mesh_map::MeshMapTree *maps) override
     {
-        cslibs_mesh_map::MeshMapTree* particle_map = maps->getNode(state.map_id);
-        cslibs_mesh_map::MeshMap& map = particle_map->map_;
+        const cslibs_mesh_map::MeshMapTree* particle_map = maps->getNode(state.map_id);
+        const cslibs_mesh_map::MeshMap& map = particle_map->map_;
         std::string frame_id = map.frame_id_;
         cslibs_math_3d::Vector3d pos = state.getPosition(map);
         cslibs_math_3d::Vector3d normal = state.getNormal(map);
