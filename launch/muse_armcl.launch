@@ -82,7 +82,7 @@
             <param name="finger_1_tip"      value="jaco_link_finger_tip_1"/>
             <param name="finger_2_tip"      value="jaco_link_finger_tip_2"/>
             <param name="finger_3_tip"      value="jaco_link_finger_tip_3"/>
-            <param name="measurment_noise"  value="0.01"/>
+            <param name="measurment_noise"  value="0.4"/>
         </group>
 
         <!-- sampling algorithms -->
