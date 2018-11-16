@@ -25,15 +25,12 @@ struct EIGEN_ALIGN16 ClusterData
 
     using sample_t        = StateSpaceDescription::sample_t;
     using position_t      = cslibs_math_3d::Vector3d;
-//    using pair_t          = std::pair<const sample_t*, position_t>;
-    using pair_t          = pair;
-    using sample_vector_t = std::vector<pair_t, Eigen::aligned_allocator<pair_t>>;
+    using sample_vector_t = std::vector<pair, pair::allocator_t>;
 
     inline ClusterData() = default;
     inline ClusterData(const sample_t &sample, const position_t &position)
     {
-//        samples.push_back(std::make_pair(&sample, position));
-        samples.push_back(pair(&sample, position));
+        samples.emplace_back(pair(&sample, position));
     }
 
     inline void merge(const ClusterData& other)

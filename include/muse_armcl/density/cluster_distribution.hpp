@@ -14,7 +14,7 @@ namespace muse_armcl {
 struct EIGEN_ALIGN16 ClusterDistribution
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using allocator_t = Eigen::aligned_allocator<ClusterDistribution>;
+    using allocator_t         = Eigen::aligned_allocator<ClusterDistribution>;
 
     using index_t             = Indexation::index_t;
     using position_t          = Indexation::position_t;

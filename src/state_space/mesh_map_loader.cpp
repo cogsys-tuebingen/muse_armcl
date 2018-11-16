@@ -50,7 +50,7 @@ public:
                 std::unique_lock<std::mutex> l(map_mutex_);
                 tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
                 mesh_map_tree_t* l1 = tree.getNode(frame_ids_.front());
-                map_.reset(new MeshMap(mesh_map_tree_t::Ptr(l1), frame_ids_.front()));
+                map_.reset(new MeshMap(l1, frame_ids_.front()));
 
                 /// update transformations
                 first_load_ = true;

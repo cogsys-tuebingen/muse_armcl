@@ -11,14 +11,19 @@ class EIGEN_ALIGN16 MeshMap : public muse_smc::StateSpace<StateSpaceDescription>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using allocator_t = Eigen::aligned_allocator<MeshMap>;
-    using Ptr = std::shared_ptr<MeshMap>;
-    using map_t = cslibs_mesh_map::MeshMapTree;
+    using allocator_t   = Eigen::aligned_allocator<MeshMap>;
+    using Ptr           = std::shared_ptr<MeshMap>;
+    using map_t         = cslibs_mesh_map::MeshMapTree;
 
-    MeshMap(const map_t::Ptr &map, const std::string &frame_id) :
+    MeshMap(map_t* map, const std::string &frame_id) :
         muse_smc::StateSpace<StateSpaceDescription>(frame_id),
         data_(map)
     {
+    }
+
+    virtual ~MeshMap()
+    {
+
     }
 
     virtual bool validate(const state_t &p) const override
@@ -41,18 +46,18 @@ public:
         return state_space_transform_t();
     }
 
-    map_t::Ptr& data()
+    const map_t* data() const
     {
         return data_;
     }
 
-    map_t::Ptr const & data() const
+    map_t* data()
     {
         return data_;
     }
 
 private:
-    map_t::Ptr data_;
+    map_t* data_;
 };
 }
 
