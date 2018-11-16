@@ -32,7 +32,6 @@ public:
 
         double expo = (diff.transpose()).eval() * info_matrix_ * diff;
         return std::exp(-0.5*expo);
-
     }
     
 };

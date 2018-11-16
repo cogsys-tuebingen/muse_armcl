@@ -25,10 +25,16 @@ public:
 private:
     MeshMapProvider::Ptr map_provider_;
 
+    bool           publish_cloud_;
+
     ros::Publisher pub_particles_;
     ros::Publisher pub_contacts_;
 
     void publish(const typename sample_set_t::ConstPtr &sample_set, const bool &publish_contacts);
+
+
+
+
 };
 }
 
