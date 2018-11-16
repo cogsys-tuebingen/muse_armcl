@@ -25,7 +25,7 @@ public:
             return;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        mesh_map_tree_t::ConstPtr map(ss->as<MeshMap>().data());
+        const mesh_map_tree_t *map = ss->as<MeshMap>().data();
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
 
@@ -60,7 +60,7 @@ private:
             return false;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        mesh_map_tree_t::ConstPtr map(ss->as<MeshMap>().data());
+        const mesh_map_tree_t *map = ss->as<MeshMap>().data();
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
 
