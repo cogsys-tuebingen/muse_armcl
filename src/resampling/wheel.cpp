@@ -2,8 +2,11 @@
 #include <muse_smc/resampling/impl/wheel.hpp>
 
 namespace muse_armcl {
-class WheelOfFortune : public Resampling
+class EIGEN_ALIGN16 WheelOfFortune : public Resampling
 {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<WheelOfFortune>;
 protected:
     virtual void doSetup(ros::NodeHandle &nh) override
     {

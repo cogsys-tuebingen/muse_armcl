@@ -9,10 +9,12 @@
 #include <ros/ros.h>
 
 namespace muse_armcl {
-class MeshMapProvider : public muse_smc::StateSpaceProvider<StateSpaceDescription>,
+class EIGEN_ALIGN16 MeshMapProvider : public muse_smc::StateSpaceProvider<StateSpaceDescription>,
                         public cslibs_plugins::Plugin
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<MeshMapProvider>;
     using Ptr      = std::shared_ptr<MeshMapProvider>;
     using ConstPtr = std::shared_ptr<MeshMapProvider const>;
     using tf_provider_t = cslibs_math_ros::tf::TFProvider;

@@ -8,9 +8,11 @@
 #include <cslibs_kdl/external_forces.h>
 
 namespace muse_armcl {
-class ContactLocalizationUpdateModel : public muse_armcl::UpdateModel
+class EIGEN_ALIGN16 ContactLocalizationUpdateModel : public muse_armcl::UpdateModel
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<ContactLocalizationUpdateModel>;
     virtual void apply(const typename data_t::ConstPtr          &data,
                        const typename state_space_t::ConstPtr   &ss,
                        typename sample_set_t::weight_iterator_t  set) override

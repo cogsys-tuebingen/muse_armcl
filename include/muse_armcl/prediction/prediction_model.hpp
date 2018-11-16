@@ -8,10 +8,12 @@
 #include <cslibs_plugins_data/data.hpp>
 #include <ros/ros.h>
 namespace muse_armcl {
-class PredictionModel : public muse_smc::PredictionModel<StateSpaceDescription, cslibs_plugins_data::Data>,
+class EIGEN_ALIGN16 PredictionModel : public muse_smc::PredictionModel<StateSpaceDescription, cslibs_plugins_data::Data>,
                         public cslibs_plugins::Plugin
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<PredictionModel>;
     using Ptr = std::shared_ptr<PredictionModel>;
 
     inline const static std::string Type()

@@ -2,8 +2,11 @@
 #include <muse_armcl/density/sample_density.hpp>
 
 namespace muse_armcl {
-class KLD : public Resampling
+class EIGEN_ALIGN16 KLD : public Resampling
 {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<KLD>;
 protected:
     double kld_error_;
     double kld_z_;

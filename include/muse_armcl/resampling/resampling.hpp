@@ -7,10 +7,12 @@
 #include <cslibs_plugins/plugin.hpp>
 #include <ros/ros.h>
 namespace muse_armcl {
-class Resampling : public muse_smc::Resampling<StateSpaceDescription>,
-                   public cslibs_plugins::Plugin
+class EIGEN_ALIGN16 Resampling : public muse_smc::Resampling<StateSpaceDescription>,
+                                 public cslibs_plugins::Plugin
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<Resampling>;
     using Ptr = std::shared_ptr<Resampling>;
 
     inline const static std::string Type()

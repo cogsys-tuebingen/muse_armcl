@@ -8,10 +8,12 @@
 #include <cslibs_math_ros/tf/tf_provider.hpp>
 
 namespace muse_armcl {
-class NormalSampling : public muse_smc::NormalSampling<StateSpaceDescription>,
+class EIGEN_ALIGN16 NormalSampling : public muse_smc::NormalSampling<StateSpaceDescription>,
                        public cslibs_plugins::Plugin
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<NormalSampling>;
     using Ptr = std::shared_ptr<NormalSampling>;
     using tf_provider_t = cslibs_math_ros::tf::TFProvider;
     using map_provider_map_t = std::map<std::string, MeshMapProvider::Ptr>;

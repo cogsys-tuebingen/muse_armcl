@@ -9,9 +9,11 @@
 #include <ros/ros.h>
 
 namespace muse_armcl {
-class MeshMapLoader : public MeshMapProvider
+class EIGEN_ALIGN16 MeshMapLoader : public MeshMapProvider
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<MeshMapLoader>;
     state_space_t::ConstPtr getStateSpace() const override
     {
         std::unique_lock<std::mutex> l(map_mutex_);

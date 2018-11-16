@@ -2,8 +2,11 @@
 #include <muse_smc/resampling/impl/stratified.hpp>
 
 namespace muse_armcl {
-class Stratified : public Resampling
+class EIGEN_ALIGN16 Stratified : public Resampling
 {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<Stratified>;
 protected:
     virtual void doSetup(ros::NodeHandle &nh) override
     {

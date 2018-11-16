@@ -8,10 +8,12 @@
 #include <cslibs_plugins_data/data.hpp>
 #include <ros/ros.h>
 namespace muse_armcl {
-class UpdateModel : public muse_smc::UpdateModel<StateSpaceDescription, cslibs_plugins_data::Data>,
+class EIGEN_ALIGN16 UpdateModel : public muse_smc::UpdateModel<StateSpaceDescription, cslibs_plugins_data::Data>,
                     public cslibs_plugins::Plugin
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<UpdateModel>;
     using Ptr = std::shared_ptr<UpdateModel>;
     using data_t  = cslibs_plugins_data::Data;
     using state_t = StateSpaceDescription::state_t;

@@ -6,9 +6,11 @@
 #include <cslibs_kdl/kdl_conversion.h>
 
 namespace muse_armcl {
-class NormalizedUpdateModel : public ContactLocalizationUpdateModel
+class EIGEN_ALIGN16  NormalizedUpdateModel : public ContactLocalizationUpdateModel
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<NormalizedUpdateModel>;
     virtual double calculateWeight(const state_t &state, const JointStateData &joint_state, const cslibs_mesh_map::MeshMapTree::Ptr& maps) override
     {
         cslibs_mesh_map::MeshMapTree* particle_map = maps->getNode(state.map_id);
@@ -26,9 +28,9 @@ public:
         Eigen::VectorXd tau_f;
         cslibs_kdl::convert(joint_state.position, tau_f,  joint_state.position.size() - model_.getNrJoints());
         tau_f.normalize();
-        Eigen::Matrix<double, Eigen::Dynamic, 1> diff = tau_f - tau_p;
+        Eigen::VectorXd diff = tau_f - tau_p;
 
-        double expo = diff.transpose() * info_matrix_ * diff;
+        double expo = (diff.transpose()).eval() * info_matrix_ * diff;
         return std::exp(-0.5*expo);
 
     }

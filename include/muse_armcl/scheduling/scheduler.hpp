@@ -9,10 +9,12 @@
 #include <cslibs_plugins_data/data.hpp>
 
 namespace muse_armcl {
-class Scheduler : public muse_smc::Scheduler<StateSpaceDescription, cslibs_plugins_data::Data>,
+class EIGEN_ALIGN16 Scheduler : public muse_smc::Scheduler<StateSpaceDescription, cslibs_plugins_data::Data>,
                   public cslibs_plugins::Plugin
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<Scheduler>;
     using Ptr                = std::shared_ptr<Scheduler>;
     using update_model_map_t = std::map<std::string, UpdateModel::Ptr>;
 

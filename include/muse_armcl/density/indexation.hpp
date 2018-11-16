@@ -4,9 +4,11 @@
 #include <cslibs_math_3d/linear/vector.hpp>
 
 namespace muse_armcl {
-class Indexation
+class EIGEN_ALIGN16 Indexation
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<Indexation>;
     using resolution_t = std::array<double, 3>;
     using index_t      = std::array<int, 3>;
     using position_t   = cslibs_math_3d::Vector3d;

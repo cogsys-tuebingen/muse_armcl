@@ -1,9 +1,11 @@
 #include <muse_armcl/scheduling/scheduler.hpp>
 
 namespace muse_armcl {
-class Rate : public Scheduler
+class EIGEN_ALIGN16 Rate : public Scheduler
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<Rate>;
     using Ptr                 = std::shared_ptr<Rate>;
     using update_t            = muse_smc::Update<StateSpaceDescription, cslibs_plugins_data::Data>;
     using resampling_t        = muse_smc::Resampling<StateSpaceDescription>;

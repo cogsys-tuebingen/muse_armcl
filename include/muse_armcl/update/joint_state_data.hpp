@@ -1,13 +1,15 @@
 #ifndef MUSE_ARMCL_JOINT_STATE_DATA_HPP
 #define MUSE_ARMCL_JOINT_STATE_DATA_HPP
-
+#include <eigen3/Eigen/Core>
 #include <cslibs_plugins_data/data.hpp>
 #include <sensor_msgs/JointState.h>
 
 namespace muse_armcl {
-class JointStateData : public cslibs_plugins_data::Data
+class EIGEN_ALIGN16 JointStateData : public cslibs_plugins_data::Data
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<JointStateData>;
     using Ptr = std::shared_ptr<JointStateData>;
 
     JointStateData() = delete;

@@ -22,10 +22,17 @@ struct EIGEN_ALIGN16 ClusterDistribution
     using sample_t            = ClusterData::sample_t;
     using sample_map_t        = std::unordered_map<int, const sample_t*>;
     using sample_vector_t     = ClusterData::sample_vector_t;
-    using sample_vector_map_t = std::unordered_map<int, sample_vector_t>;
+    using sample_vector_map_t = std::unordered_map<int,
+                                                   sample_vector_t,
+                                                   std::hash<int>,
+                                                   std::equal_to<int>,
+                                                   Eigen::aligned_allocator<std::pair<int, sample_vector_t>>>;
     using distribution_t      = cslibs_math::statistics::Distribution<3>;
-    using distribution_map_t  = std::unordered_map<int, distribution_t>;
-
+    using distribution_map_t  = std::unordered_map<int,
+                                                   distribution_t,
+                                                   std::hash<int>,
+                                                   std::equal_to<int>,
+                                                   Eigen::aligned_allocator<std::pair<const int, distribution_t>>>;
     inline void clear()
     {
         current_cluster = -1;

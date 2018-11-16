@@ -21,8 +21,10 @@ struct EIGEN_ALIGN16 Sample {
     Sample(state_t& s, const double w) : state(s), weight(w) { }
 };
 
-struct StateSpaceDescription
+struct EIGEN_ALIGN16  StateSpaceDescription
 {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<StateSpaceDescription>;
     using sample_t               = Sample;
     using state_t                = cslibs_mesh_map::EdgeParticle;
     using state_space_boundary_t = cslibs_math_3d::Vector3d;

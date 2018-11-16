@@ -7,9 +7,11 @@
 #include <cslibs_mesh_map/mesh_map_tree.h>
 
 namespace muse_armcl {
-class MeshMap : public muse_smc::StateSpace<StateSpaceDescription>
+class EIGEN_ALIGN16 MeshMap : public muse_smc::StateSpace<StateSpaceDescription>
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<MeshMap>;
     using Ptr = std::shared_ptr<MeshMap>;
     using map_t = cslibs_mesh_map::MeshMapTree;
 

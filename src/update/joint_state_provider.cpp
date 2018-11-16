@@ -2,8 +2,11 @@
 #include <cslibs_plugins_data/data_provider.hpp>
 
 namespace muse_armcl {
-class JointStateProvider : public cslibs_plugins_data::DataProvider
+class EIGEN_ALIGN16 JointStateProvider : public cslibs_plugins_data::DataProvider
 {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<JointStateProvider>;
 protected:
     ros::Subscriber source_; /// the subscriber to be used
     std::string     topic_;  /// topic to listen to

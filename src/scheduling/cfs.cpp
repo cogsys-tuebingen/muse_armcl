@@ -4,8 +4,11 @@
 #include <ext/pb_ds/priority_queue.hpp>
 
 namespace muse_armcl {
-class CFS : public Scheduler
+class EIGEN_ALIGN16 CFS : public Scheduler
 {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<CFS>;
 private:
 
     struct Entry {

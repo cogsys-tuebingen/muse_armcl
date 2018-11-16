@@ -13,13 +13,13 @@ class EIGEN_ALIGN16 SampleDensityImpl : public SampleDensity
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using allocator_t = Eigen::aligned_allocator<SampleDensityImpl>;
+    using allocator_t           = Eigen::aligned_allocator<SampleDensityImpl>;
 
-    using indexation_t = Indexation;
-    using index_t      = indexation_t::index_t;
-    using position_t   = indexation_t::position_t;
-    using data_t       = ClusterData;
-    using sample_map_t = typename clustering_t::sample_map_t;
+    using indexation_t          = Indexation;
+    using index_t               = indexation_t::index_t;
+    using position_t            = indexation_t::position_t;
+    using data_t                = ClusterData;
+    using sample_map_t          = typename clustering_t::sample_map_t;
 
     using kd_tree_t            = cis::Storage<data_t, index_t, cis::backend::kdtree::KDTreeBuffered>;
     using kd_tree_clustering_t = cis::operations::clustering::Clustering<kd_tree_t>;
@@ -78,7 +78,7 @@ public:
         return kdtree_->size();
     }
 
-    virtual void contacts(std::vector<sample_t> &states) const
+    virtual void contacts(sample_vector_t &states) const override
     {
         const sample_map_t map = clustering_.getSamples();
         for (const auto &entry : map)

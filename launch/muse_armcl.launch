@@ -79,9 +79,9 @@
             <param name="robot_description" value="robot_description"/>
             <param name="chain_root"        value="jaco_link_base"/>
             <param name="chain_tip"         value="jaco_link_hand"/>
-            <param name="finger_1_tip"      value="jaco_finger_1_tip"/>
-            <param name="finger_2_tip"      value="jaco_finger_2_tip"/>
-            <param name="finger_3_tip"      value="jaco_finger_3_tip"/>
+            <param name="finger_1_tip"      value="jaco_link_finger_tip_1"/>
+            <param name="finger_2_tip"      value="jaco_link_finger_tip_2"/>
+            <param name="finger_3_tip"      value="jaco_link_finger_tip_3"/>
             <param name="measurment_noise"  value="0.01"/>
         </group>
 

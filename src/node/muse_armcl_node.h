@@ -26,9 +26,11 @@
 #include <ros/ros.h>
 
 namespace muse_armcl {
-class MuseARMCLNode
+class EIGEN_ALIGN16 MuseARMCLNode
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<MuseARMCLNode>;
     MuseARMCLNode();
     ~MuseARMCLNode();
 

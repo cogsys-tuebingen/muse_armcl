@@ -1,8 +1,12 @@
 #include <muse_armcl/resampling/resampling.hpp>
 
 namespace muse_armcl {
-class SIR : public Resampling
+class EIGEN_ALIGN16 SIR : public Resampling
 {
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<SIR>;
 protected:
     virtual void doSetup(ros::NodeHandle &nh) override
     {

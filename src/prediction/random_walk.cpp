@@ -5,9 +5,11 @@
 #include <cslibs_math/random/random.hpp>
 
 namespace muse_armcl {
-class RandomWalk : public PredictionModel
+class EIGEN_ALIGN16 RandomWalk : public PredictionModel
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<RandomWalk>;
     using data_t = cslibs_plugins_data::Data;
     using time_t = cslibs_time::Time;
     using rng_t  = cslibs_math::random::Uniform<1>;

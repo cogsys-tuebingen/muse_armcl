@@ -2,8 +2,11 @@
 #include <muse_smc/resampling/impl/systematic.hpp>
 
 namespace muse_armcl {
-class Systematic : public Resampling
+class EIGEN_ALIGN16 Systematic : public Resampling
 {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<Systematic>;
 protected:
     virtual void doSetup(ros::NodeHandle &nh) override
     {

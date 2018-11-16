@@ -4,9 +4,11 @@
 #include <muse_armcl/update/joint_state_data.hpp>
 
 namespace muse_armcl {
-class DummyUpdateModel : public UpdateModel
+class EIGEN_ALIGN16 DummyUpdateModel : public UpdateModel
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<DummyUpdateModel>;
     virtual void apply(const typename data_t::ConstPtr          &data,
                        const typename state_space_t::ConstPtr   &ss,
                        typename sample_set_t::weight_iterator_t  set) override
