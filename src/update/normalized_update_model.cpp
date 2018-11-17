@@ -50,7 +50,7 @@ public:
 
         double expo = (diff.transpose()).eval() * info_matrix_.block(0,0,dim,dim) * diff;
         double result = std::exp(-0.5*expo);
-//        ROS_INFO_STREAM("weight of particle: " << result << " exponent: " << expo);
+        ROS_INFO_STREAM("weight of particle: " << result << " exponent: " << expo);
 //        if(result < 0.2){
 //          ROS_INFO_STREAM("small weight");
 //        }
