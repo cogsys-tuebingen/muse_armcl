@@ -55,6 +55,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         return;
 
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
+    using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
     const mesh_map_tree_t* map = ss->as<MeshMap>().data();
     uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
     const ros::Time stamp = ros::Time().fromNSec(nsecs);
@@ -71,12 +72,13 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
 
     /// publish all particles
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
-        const mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
+        const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
         if (p_map) {
-            cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map_.frame_id_);
-            cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map_);
+            cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
+            cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
             pos = T * pos;
-            cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.weight,0,1.0));
+            cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
+//            ROS_INFO_STREAM(p.weight);
             cslibs_math_3d::PointRGB3d point(pos, 0.9f, color);
             part_cloud->insert(point);
 
@@ -88,7 +90,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     }
     sensor_msgs::PointCloud2 cloud;
     cslibs_math_ros::sensor_msgs::conversion_3d::from(part_cloud, cloud);
-    cloud.header.frame_id = map->parent_id_;
+    cloud.header.frame_id = map->front()->frameId();
     cloud.header.stamp = stamp;
     pub_particles_.publish(cloud);
 
@@ -108,9 +110,9 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
         for (const StateSpaceDescription::sample_t& p : states) {
-            const mesh_map_tree_t* p_map = map->getNode(p.state.map_id);
+            const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
-                cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
+                cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map, msg);
                 //msg.scale.x = p.weight; // TODO: test
                 msg.lifetime = ros::Duration(0.0);
                 msg.color.r = 1.0;

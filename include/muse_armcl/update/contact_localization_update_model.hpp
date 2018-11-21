@@ -25,6 +25,8 @@ public:
         using mesh_map_t      = cslibs_mesh_map::MeshMap;
         const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
+
+
         /// cast data to specific type
         const JointStateData &joint_states = data->as<JointStateData>();
         // -> access data via joint_states.position, joint_states.velocity, ...

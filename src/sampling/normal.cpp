@@ -27,7 +27,7 @@ public:
         const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
         /// set up random generator
-        cslibs_math_3d::Vector3d start = state.getPosition(map->getNode(state.map_id)->map_);
+        cslibs_math_3d::Vector3d start = state.getPosition(map->getNode(state.map_id)->map);
         rng_t::Ptr rng(new rng_t(start, covariance));
         if (random_seed_ >= 0)
             rng.reset(new rng_t(start, covariance, random_seed_));
@@ -69,7 +69,7 @@ public:
                 /// do random walk by length
                 state_t p = state;
                 random_walk_.update(p, *map);
-                cslibs_math_3d::Vector3d reached = p.getPosition(map->getNode(p.map_id)->map_);
+                cslibs_math_3d::Vector3d reached = p.getPosition(map->getNode(p.map_id)->map);
 
                 /// check if reached point has about the same likelihood as target
                 const double reached_lk = likelihood(reached);

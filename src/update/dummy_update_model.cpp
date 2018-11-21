@@ -16,7 +16,6 @@ public:
     {
         if (!ss->isType<MeshMap>() || !data->isType<JointStateData>())
             return;
-
         /// cast map to specific type
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_t      = cslibs_mesh_map::MeshMap;

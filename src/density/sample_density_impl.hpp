@@ -63,7 +63,7 @@ public:
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
 
-        const position_t pos = sample.state.getPosition(map->getNode(sample.state.map_id)->map_);
+        const position_t pos = sample.state.getPosition(map->getNode(sample.state.map_id)->map);
         kdtree_->insert(indexation_.create(pos), data_t(sample, pos));
     }
 

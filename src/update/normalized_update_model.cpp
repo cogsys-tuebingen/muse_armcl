@@ -6,25 +6,23 @@
 #include <cslibs_kdl/kdl_conversion.h>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16  NormalizedUpdateModel : public ContactLocalizationUpdateModel
+class NormalizedUpdateModel : public ContactLocalizationUpdateModel
 {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<NormalizedUpdateModel>;
     virtual double calculateWeight(const state_t &state, const JointStateData &joint_state, const cslibs_mesh_map::MeshMapTree *maps) override
     {
-        const cslibs_mesh_map::MeshMapTree* particle_map = maps->getNode(state.map_id);
-        const cslibs_mesh_map::MeshMap& map = particle_map->map_;
+        const cslibs_mesh_map::MeshMapTreeNode* particle_map = maps->getNode(state.map_id);
+        const cslibs_mesh_map::MeshMap& map = particle_map->map;
         std::string frame_id = map.frame_id_;
         cslibs_math_3d::Vector3d pos = state.getPosition(map);
         cslibs_math_3d::Vector3d normal = state.getNormal(map);
         KDL::Vector n(normal(0), normal(1), normal(2));
         KDL::Vector p(pos(0), pos(1), pos(2));
-        KDL::Wrench w(-n,KDL::Vector::Zero());
+        KDL::Wrench w = cslibs_kdl::ExternalForcesSerialChain::createWrench(p, n);
+
 //        ROS_INFO_STREAM("p: " << p.x() << ", " <<p.y() << ", " << p.z());
 //        ROS_INFO_STREAM("n: " << n.x() << ", " <<n.y() << ", " << n.z());
-        KDL::Frame T(KDL::Rotation::Identity(),p);
-        w = T * w;
         Eigen::VectorXd tau_p = model_.getExternalTorques(joint_state.position, frame_id, w);
         std::size_t rows = tau_p.rows();
         std::size_t n_torques = joint_state.effort.size();
@@ -50,10 +48,12 @@ public:
 
         double expo = (diff.transpose()).eval() * info_matrix_.block(0,0,dim,dim) * diff;
         double result = std::exp(-0.5*expo);
-        ROS_INFO_STREAM("weight of particle: " << result << " exponent: " << expo);
+//        ROS_INFO_STREAM("weight of particle: " << result << " exponent: " << expo);
 //        if(result < 0.2){
 //          ROS_INFO_STREAM("small weight");
 //        }
+        state.last_update = result;
+
         return result;
     }
 };

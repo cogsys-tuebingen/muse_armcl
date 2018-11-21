@@ -101,11 +101,11 @@
             <param name="tf_timeout"  value="0.1" />
             <param name="sample_size" value="$(arg maximum_sample_size)" />
             <param name="seed"        value="2" />
-            <param name="jump_probability"     value="0.3" />
+            <param name="jump_probability"     value="0.5" />
             <param name="likelihood_tolerance" value="0.1" />
         </group>
         <group ns="resampling">
-            <param name="class"               value="muse_armcl::KLD" />
+            <param name="class"               value="muse_armcl::WheelOfFortune" />
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.0"/>
             <param name="recovery_alpha_fast" value="0.0"/>
@@ -122,8 +122,9 @@
 
         <!-- scheduling -->
         <group ns="scheduler">
-            <param name="class"      value="muse_armcl::Dummy" />
+            <param name="class"      value="muse_armcl::CFS" />
             <param name="base_class" value="muse_armcl::Scheduler" />
+            <param name="rate"       value="10.0" />
         </group>
 
         <!-- particle filter setup -->

@@ -38,7 +38,7 @@ public:
         frame_ids_   = nh.param<std::vector<std::string>>(param_name("frame_ids"),  std::vector<std::string>());
 
         pub_surface_ = nh.advertise<visualization_msgs::MarkerArray>("surface",1);
-
+        last_update_ = ros::Time::now();
         auto load = [this]() {
             if (!map_) {
                 ROS_INFO_STREAM("[" << name_ << "]: Loading mesh map [" << path_ << "]");
@@ -49,8 +49,8 @@ public:
                 /// load map
                 std::unique_lock<std::mutex> l(map_mutex_);
                 tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
-                mesh_map_tree_t* l1 = tree.getNode(frame_ids_.front());
-                map_.reset(new MeshMap(l1, frame_ids_.front()));
+//                mesh_map_tree_node_t* l1 = tree.getNode(frame_ids_.front());
+                map_.reset(new MeshMap(&tree, frame_ids_.front()));
 
                 /// update transformations
                 first_load_ = true;
@@ -69,6 +69,7 @@ public:
     }
 
 private:
+    using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
     using mesh_map_t      = cslibs_mesh_map::MeshMap;
 
@@ -89,32 +90,33 @@ private:
     ros::Publisher                          pub_surface_;
     mutable visualization_msgs::MarkerArray markers_;
     mutable visualization_msgs::Marker      msg_;
-
     inline void updateTransformations() const
     {
         const ros::Time now = ros::Time(0);
         if (!map_ || (!first_load_ && (now == last_update_)))
             return;
 
+        ROS_INFO_STREAM("update map tranformations: rate "  << 1.0/(now -last_update_).toSec()  );
         last_update_ = now;
         resetMarkers();
 
         /// set current transforms between links
         for (const std::string& frame_id : frame_ids_) {
-            mesh_map_tree_t* m = map_->data()->getNode(frame_id);
+            mesh_map_tree_node_t* m = map_->data()->getNode(frame_id);
             if (!m)
                 throw std::runtime_error("[" + name_ + "]: Mesh for frame " + frame_id + " does not exist!");
 
-            std::string root = m->parent_id_;
-            if (root == "") root = frame_id;
+            std::string root;
+            bool found = m->parentFrameId(root);
+            if (!found) root = frame_id;
 
             cslibs_math_3d::Transform3d transform;
             if (!tf_->lookupTransform(root, frame_id, now, transform, tf_timeout_))
                 std::cerr << "Can't lookup transform: " << root << " <- " << frame_id << std::endl;
             else
-                m->transform_ = transform;
+                m->transform = transform;
 
-            addMarker(m->map_);
+            addMarker(m->map);
         }
 
         publishMarkers();

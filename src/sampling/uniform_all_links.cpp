@@ -25,6 +25,7 @@ public:
             return;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
+        using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
@@ -35,7 +36,7 @@ public:
             rng.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
 
         std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng->get()));
-        const mesh_map_tree_t* link = map->getNode(frame_ids[link_i]);
+        const mesh_map_tree_node_t* link = map->getNode(frame_ids[link_i]);
         if (!link)
             throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
 
@@ -60,6 +61,7 @@ private:
             return false;
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
+        using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
@@ -67,21 +69,21 @@ private:
         /// estimate total edges length
         double total_edges_length = 0.0;
         for (const auto &frame_id : frame_ids) {
-            const mesh_map_tree_t* link = map->getNode(frame_id);
+            const mesh_map_tree_node_t* link = map->getNode(frame_id);
             if (!link)
                 throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
 
-            total_edges_length += link->map_.sumEdgeLength();
+            total_edges_length += link->map.sumEdgeLength();
         }
 
         /// uniform over all links
         for (const auto &frame_id : frame_ids) {
-            const mesh_map_tree_t* link = map->getNode(frame_id);
+            const mesh_map_tree_node_t* link = map->getNode(frame_id);
             if (!link)
                 throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
 
             /// estimate number of particles per link, depends on sum edge length on this link
-            const double ratio = link->map_.sumEdgeLength() / total_edges_length;
+            const double ratio = link->map.sumEdgeLength() / total_edges_length;
             const std::size_t particles_per_frame = static_cast<std::size_t>(
                         std::round(static_cast<double>(sample_size_) * ratio));
 
