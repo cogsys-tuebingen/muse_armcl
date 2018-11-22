@@ -31,17 +31,31 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
 
 void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set)
 {
-    publish(sample_set, true);
+//    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
+//    uint64_t now = ros::Time::now().toNSec();
+//    ROS_INFO_STREAM("pub : tdiff: " << (now - nsecs) * 1e-6 << "ms");
+//    publish(sample_set, true);
+//    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
+
 }
 
 void StatePublisher::publishIntermediate(const sample_set_t::ConstPtr &sample_set)
 {
-    publish(sample_set, false);
+//    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
+//    uint64_t now = ros::Time::now().toNSec();
+//    ROS_INFO_STREAM("int : tdiff: " << (ros::Time::now().toNSec() - nsecs) * 1e-6 << "ms");
+//    publish(sample_set, false);
+//    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
+
 }
 
 void StatePublisher::publishConstant(const sample_set_t::ConstPtr &sample_set)
 {
-    publish(sample_set, false);
+//    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
+//    ROS_INFO_STREAM("con : tdiff: " << (ros::Time::now().toNSec() - nsecs) * 1e-6 << "ms");
+//    uint64_t now = ros::Time::now().toNSec();
+//    publish(sample_set, false);
+//    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
 }
 
 void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const bool &publish_contacts)
@@ -69,7 +83,6 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     markers.markers.push_back(msg);
 
     std::shared_ptr<cslibs_math_3d::PointcloudRGB3d> part_cloud(new cslibs_math_3d::PointcloudRGB3d);
-
     /// publish all particles
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
         const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
@@ -94,10 +107,11 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     cloud.header.stamp = stamp;
     pub_particles_.publish(cloud);
 
+
     if (publish_contacts) {
         markers.markers.clear();
         msg.action = visualization_msgs::Marker::DELETEALL;
-        markers.markers.push_back(msg);
+//        markers.markers.push_back(msg);
 
         /// density estimation
         SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
@@ -109,15 +123,18 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         /// publish all detected contacts
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
+        std::cout << "number of contacts: "<< states.size() << std::endl;
+
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
                 cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map, msg);
                 //msg.scale.x = p.weight; // TODO: test
-                msg.lifetime = ros::Duration(0.0);
-                msg.color.r = 1.0;
+                msg.lifetime = ros::Duration(0.2);
+                msg.color.r = 0.0;
                 msg.color.g = 0.0;
-                msg.color.b = 0.0;
+                msg.color.b = 1.0;
+                msg.color.a = 0.8;
                 markers.markers.push_back(msg);
             }
         }

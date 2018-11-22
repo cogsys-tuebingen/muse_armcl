@@ -7,7 +7,7 @@
 #include <ros/ros.h>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16 StatePublisher : public muse_smc::SMCState<StateSpaceDescription>
+class /*EIGEN_ALIGN16*/ StatePublisher : public muse_smc::SMCState<StateSpaceDescription>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

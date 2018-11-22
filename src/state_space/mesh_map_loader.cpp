@@ -17,7 +17,7 @@ public:
     state_space_t::ConstPtr getStateSpace() const override
     {
         std::unique_lock<std::mutex> l(map_mutex_);
-        updateTransformations();
+//        updateTransformations();
         return map_;
     }
 
@@ -47,9 +47,10 @@ public:
                     throw std::runtime_error("[" + name_ + "]: No frame id found!");
 
                 /// load map
-                std::unique_lock<std::mutex> l(map_mutex_);
                 tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
 //                mesh_map_tree_node_t* l1 = tree.getNode(frame_ids_.front());
+
+                std::unique_lock<std::mutex> l(map_mutex_);
                 map_.reset(new MeshMap(&tree, frame_ids_.front()));
 
                 /// update transformations
@@ -101,17 +102,20 @@ private:
         resetMarkers();
 
         /// set current transforms between links
-        for (const std::string& frame_id : frame_ids_) {
-            mesh_map_tree_node_t* m = map_->data()->getNode(frame_id);
-            if (!m)
-                throw std::runtime_error("[" + name_ + "]: Mesh for frame " + frame_id + " does not exist!");
+//        for (const std::string& frame_id : frame_ids_) {
+        for(mesh_map_tree_node_t::Ptr m : tree){
+
+//            mesh_map_tree_node_t* m = map_->data()->getNode(frame_id);
+//            if (!m)
+//                throw std::runtime_error("[" + name_ + "]: Mesh for frame " + frame_id + " does not exist!");
 
             std::string root;
+            std::string frame_id = m->frameId();
             bool found = m->parentFrameId(root);
             if (!found) root = frame_id;
 
             cslibs_math_3d::Transform3d transform;
-            if (!tf_->lookupTransform(root, frame_id, now, transform, tf_timeout_))
+            if (!tf_->lookupTransform(root, frame_id , now, transform, tf_timeout_))
                 std::cerr << "Can't lookup transform: " << root << " <- " << frame_id << std::endl;
             else
                 m->transform = transform;

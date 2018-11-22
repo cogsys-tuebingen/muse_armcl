@@ -99,7 +99,7 @@ public:
         const time_t time_now = now();
         const time_t stamp    = u->getStamp();
         if (next_update_time_.isZero())
-            next_update_time_ = time_now;
+            next_update_time_ = stamp;
 
         const id_t id = u->getModelId();
         if (id == q_.top().id && stamp >= next_update_time_) {
@@ -111,7 +111,7 @@ public:
             const duration_t dur = (now() - start);
 
             entry.vtime += static_cast<int64_t>(static_cast<double>(dur.nanoseconds()) * nice_values_[id]);
-            next_update_time_ = time_now;
+            next_update_time_ = time_now + dur;
 
             q_.push(entry);
             may_resample_ = true;
