@@ -28,14 +28,14 @@ public:
                        ros::NodeHandle &nh)
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
-        weight_threshold_ = nh.param(param_name("weight_threshold"), 0.1);
+        weight_threshold_percentage_ = nh.param(param_name("weight_threshold"), 0.1);
         const double resolution = nh.param(param_name("resolution"), 0.1);
-        const double clustering_weight_threshold = nh.param(param_name("clustering_weight_threshold"), 0.1);
+        const double clustering_weight_threshold_percentage = nh.param(param_name("clustering_weight_threshold"), 0.1);
         const std::size_t maximum_sample_size = static_cast<std::size_t>(nh.param<int>(param_name("maximum_sample_size"), 0));
 
         /// initialize indexation, kdtree, clustering
         indexation_ = indexation_t(resolution);
-        clustering_ = clustering_t(clustering_weight_threshold);
+        clustering_ = clustering_t(clustering_weight_threshold_percentage);
         kdtree_.reset(new kd_tree_t);
         kdtree_->set<cis::option::tags::node_allocator_chunk_size>(2 * maximum_sample_size + 1);
 
@@ -66,12 +66,18 @@ public:
 
         const position_t pos = sample.state.getPosition(map->getNode(sample.state.map_id)->map);
         kdtree_->insert(indexation_.create(pos), data_t(sample, pos));
+
+        if (sample.weight > max_weight_)
+            max_weight_ = sample.weight;
     }
 
     virtual void estimate()
     {
+        clustering_.setMaxWeight(max_weight_);
         kd_tree_clustering_t clustering(*kdtree_);
         clustering.cluster(clustering_);
+        weight_threshold_ = weight_threshold_percentage_ * max_weight_;
+        max_weight_ = 0.0;
     }
 
     virtual std::size_t histogramSize() const
@@ -89,7 +95,9 @@ public:
 
 private:
     MeshMapProvider::Ptr       map_provider_;
+    double                     weight_threshold_percentage_;
     double                     weight_threshold_;
+    double                     max_weight_;
 
     indexation_t               indexation_;
     clustering_t               clustering_;

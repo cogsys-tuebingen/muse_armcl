@@ -21,8 +21,13 @@ struct EIGEN_ALIGN16 ClusterDominant
     using sample_map_t = std::unordered_map<int, const sample_t*>;
 
     ClusterDominant(double threshold = 0.1) :
-        clustering_weight_threshold(threshold)
+        clustering_weight_threshold_percentage(threshold)
     {
+    }
+
+    inline void setMaxWeight(const double max_weight)
+    {
+        clustering_weight_threshold = clustering_weight_threshold_percentage * max_weight;
     }
 
     inline void clear()
@@ -84,8 +89,10 @@ struct EIGEN_ALIGN16 ClusterDominant
         return dominants;
     }
 
-    int          current_cluster = -1;   /// keep track of the current cluster index
+    int current_cluster = -1;   /// keep track of the current cluster index
     sample_map_t dominants;
+
+    double clustering_weight_threshold_percentage;
     double clustering_weight_threshold;
 };
 }
