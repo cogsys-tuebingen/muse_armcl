@@ -44,7 +44,7 @@ public:
         particle_filter_reset_ = fn;
     }
 
-private:
+protected:
     reset_function_t particle_filter_reset_;
 };
 }
