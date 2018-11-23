@@ -33,6 +33,12 @@ struct EIGEN_ALIGN16 ClusterDistribution
                                                    std::hash<int>,
                                                    std::equal_to<int>,
                                                    Eigen::aligned_allocator<std::pair<const int, distribution_t>>>;
+
+    ClusterDistribution(double threshold = 0.1) :
+        clustering_weight_threshold(threshold)
+    {
+    }
+
     inline void clear()
     {
         current_cluster = -1;
@@ -49,9 +55,12 @@ struct EIGEN_ALIGN16 ClusterDistribution
         current_cluster += 1;
         data.cluster = current_cluster;
 
-        samples[current_cluster].insert(samples[current_cluster].end(), data.samples.begin(), data.samples.end());
-        for (const auto &s : data.samples)
-            distributions[current_cluster] += s.second;
+        for (const auto &sample : data.samples) {
+            if (sample.first->weight >= clustering_weight_threshold) {
+                samples[current_cluster].push_back(sample);
+                distributions[current_cluster] += sample.second;
+            }
+        }
 
         return true;
     }
@@ -64,9 +73,12 @@ struct EIGEN_ALIGN16 ClusterDistribution
 
         data.cluster = current_cluster;
 
-        samples[current_cluster].insert(samples[current_cluster].end(), data.samples.begin(), data.samples.end());
-        for (const auto &s : data.samples)
-            distributions[current_cluster] += s.second;
+        for (const auto &sample : data.samples) {
+            if (sample.first->weight >= clustering_weight_threshold) {
+                samples[current_cluster].push_back(sample);
+                distributions[current_cluster] += sample.second;
+            }
+        }
 
         return true;
     }
@@ -112,6 +124,7 @@ struct EIGEN_ALIGN16 ClusterDistribution
     int current_cluster = -1;   /// keep track of the current cluster index
     sample_vector_map_t samples;
     distribution_map_t  distributions;
+    double clustering_weight_threshold;
 };
 }
 

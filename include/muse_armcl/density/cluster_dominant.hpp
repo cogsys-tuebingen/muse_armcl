@@ -20,6 +20,11 @@ struct EIGEN_ALIGN16 ClusterDominant
     using sample_t     = StateSpaceDescription::sample_t;
     using sample_map_t = std::unordered_map<int, const sample_t*>;
 
+    ClusterDominant(double threshold = 0.1) :
+        clustering_weight_threshold(threshold)
+    {
+    }
+
     inline void clear()
     {
         current_cluster = -1;
@@ -33,11 +38,13 @@ struct EIGEN_ALIGN16 ClusterDominant
             return false;
 
         ++current_cluster;
-        data.cluster = current_cluster;
+        data.cluster = current_cluster;        
 
-        for (auto &s : data.samples)
-            if (!dominants[current_cluster] || s.first->weight > dominants[current_cluster]->weight)
-                dominants[current_cluster] = s.first;
+        for (const auto &sample : data.samples) {
+            if (sample.first->weight >= clustering_weight_threshold &&
+                    (!dominants[current_cluster] || sample.first->weight > dominants[current_cluster]->weight))
+                dominants[current_cluster] = sample.first;
+        }
 
         return true;
     }
@@ -50,9 +57,11 @@ struct EIGEN_ALIGN16 ClusterDominant
 
         data.cluster = current_cluster;
 
-        for (auto &s : data.samples)
-            if (!dominants[current_cluster] || s.first->weight > dominants[current_cluster]->weight)
-                dominants[current_cluster] = s.first;
+        for (const auto &sample : data.samples) {
+            if (sample.first->weight >= clustering_weight_threshold &&
+                    (!dominants[current_cluster] || sample.first->weight > dominants[current_cluster]->weight))
+                dominants[current_cluster] = sample.first;
+        }
 
         return true;
     }
@@ -77,6 +86,7 @@ struct EIGEN_ALIGN16 ClusterDominant
 
     int          current_cluster = -1;   /// keep track of the current cluster index
     sample_map_t dominants;
+    double clustering_weight_threshold;
 };
 }
 
