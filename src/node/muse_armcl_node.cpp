@@ -183,6 +183,14 @@ bool MuseARMCLNode::setup()
                                 prediction_integrals_,
                                 scheduler_,
                                 enable_lag_correction);
+
+        /// prepare reset function to trigger uniform initialization
+        particle_filter_reset_ = [this](const time_t& time) {
+            particle_filter_->requestUniformInitialization(time);
+        };
+        for (auto &model : update_models_) {
+            model.second->setResetFunction(particle_filter_reset_);
+        }
     }
 
     predicition_forwarder_.reset(new prediction_relay_t(particle_filter_));
