@@ -36,7 +36,7 @@ public:
             rng.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
 
         std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng->get()));
-        const mesh_map_tree_node_t* link = map->getNode(frame_ids[link_i]);
+        const mesh_map_tree_node_t* link = map->getNode(link_i);
         if (!link)
             throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
 
@@ -70,10 +70,7 @@ private:
                     std::round(static_cast<double>(sample_size_) / static_cast<double>(frame_ids.size())));
 
         /// uniform per links
-        for (const auto &frame_id : frame_ids) {
-            const mesh_map_tree_node_t* link = map->getNode(frame_id);
-            if (!link)
-                throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
+        for(const mesh_map_tree_node_t::Ptr& link : *map){
 
             /// draw random elements
             using state_t = StateSpaceDescription::state_t;

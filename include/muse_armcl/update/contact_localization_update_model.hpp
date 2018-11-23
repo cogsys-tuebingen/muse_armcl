@@ -8,10 +8,10 @@
 #include <cslibs_kdl/external_forces.h>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16 ContactLocalizationUpdateModel : public muse_armcl::UpdateModel
+class /*EIGEN_ALIGN16*/ ContactLocalizationUpdateModel : public muse_armcl::UpdateModel
 {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<ContactLocalizationUpdateModel>;
     virtual void apply(const typename data_t::ConstPtr          &data,
                        const typename state_space_t::ConstPtr   &ss,
@@ -105,6 +105,9 @@ public:
             }
 
         }
+        double sigma = info_matrix_.determinant();
+        normalizer_ = 1.0 / (2.0 * M_PI * std::sqrt(2.0 * M_PI * sigma));
+
         ROS_INFO_STREAM("Information matrix: \n"<< info_matrix_);
     }
 
@@ -112,6 +115,7 @@ protected:
     cslibs_kdl::ExternalForcesSerialChain model_;
     std::vector<double> info_values_;
     Eigen::MatrixXd info_matrix_;
+    double normalizer_;
 
 };
 }

@@ -21,39 +21,37 @@ public:
         KDL::Vector p(pos(0), pos(1), pos(2));
         KDL::Wrench w = cslibs_kdl::ExternalForcesSerialChain::createWrench(p, n);
 
-//        ROS_INFO_STREAM("p: " << p.x() << ", " <<p.y() << ", " << p.z());
-//        ROS_INFO_STREAM("n: " << n.x() << ", " <<n.y() << ", " << n.z());
-        Eigen::VectorXd tau_p = model_.getExternalTorques(joint_state.position, frame_id, w);
-        std::size_t rows = tau_p.rows();
-        std::size_t n_torques = joint_state.effort.size();
-        std::size_t offset = 0;
-        std::size_t dim = std::min(rows, n_torques);
-        if(rows > n_torques){
-          Eigen ::VectorXd tau_pp = Eigen::VectorXd::Zero(dim);
-          for (std::size_t i = 0; i < dim; ++i){
-            tau_pp(i) = tau_p(i);
-          }
-          tau_p = tau_pp;
-        } else {
-          offset = n_torques - rows;
-        }
-//        std::cout <<" rows " << rows << " | offset " << offset << " | dim " << dim << " | nt " << n_torques << std::endl;
-        Eigen::VectorXd tau_f;
-        cslibs_kdl::convert(joint_state.effort, tau_f, offset);
-//        ROS_INFO_STREAM("particle torque: " << tau_p << " sensed torque: " << tau_f);
-        tau_p.normalize();
-        tau_f.normalize();
-        Eigen::VectorXd diff = tau_f - tau_p;
-//        ROS_INFO_STREAM("difference: "<< diff);
+        Eigen::VectorXd tau_particle_local = model_.getExternalTorques(joint_state.position, frame_id, w);
+        std::size_t rows = tau_particle_local.rows();
+        int n_torques = joint_state.effort.size();
+        std::size_t dim =  model_.getNrJoints();
+        std::size_t offset = static_cast<std::size_t>(std::max(0, n_torques - static_cast<int>(dim)));
 
-        double expo = (diff.transpose()).eval() * info_matrix_.block(0,0,dim,dim) * diff;
+        std::size_t max_dim = std::min(rows, dim);
+        Eigen ::VectorXd tau_particle(Eigen::VectorXd::Zero(dim));
+        for(std::size_t i= 0; i < max_dim ; ++i){
+            tau_particle(i) = tau_particle_local(i);
+        }
+        Eigen::VectorXd tau_sensed;
+        cslibs_kdl::convert(joint_state.effort, tau_sensed, offset);
+        if(tau_sensed.norm() > 1e-5){
+            tau_sensed.normalize();
+        }
+        if(tau_particle.norm() > 1e-5){
+            tau_particle.normalize();
+        }
+//        std::cout << "torque part: \n"<< tau_particle << std::endl;
+        Eigen::VectorXd diff = tau_sensed - tau_particle;
+
+        double expo = (diff.transpose()).eval() * info_matrix_ * diff;
+//        double result = normalizer_ * std::exp(-0.5*expo);
         double result = std::exp(-0.5*expo);
-//        ROS_INFO_STREAM("weight of particle: " << result << " exponent: " << expo);
+
+//        std::cout << "weight of particle: " << result << " exponent: " << expo << std::endl;
 //        if(result < 0.2){
 //          ROS_INFO_STREAM("small weight");
 //        }
         state.last_update = result;
-
         return result;
     }
 };

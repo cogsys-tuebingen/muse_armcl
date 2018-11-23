@@ -3,7 +3,7 @@
     <param name="/use_sim_time" value="false" />
     <arg name="mesh_path"           value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
     <arg name="joint_state_topic"   value="/estimated_ext_torque"/>
-    <arg name="minimum_sample_size" value="100"/>
+    <arg name="minimum_sample_size" value="1000"/>
     <arg name="maximum_sample_size" value="5000"/>
 
     <group ns="muse_armcl">
@@ -65,8 +65,8 @@
             <param name="base_class"       value="muse_armcl::PredictionModel"/>
             <param name="data_provider"    value="joint_states" />
             <param name="seed"             value="0" />
-            <param name="min_distance"     value="0.0" />
-            <param name="max_distance"     value="0.1" />
+            <param name="min_distance"     value="0.1" />
+            <param name="max_distance"     value="0.2" />
             <param name="jump_probability" value="0.5" />
         </group>
 
@@ -86,13 +86,13 @@
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
             <rosparam param="information_matrix">
-                [0.5, 0.5, 0.5, 0.5, 0.5 ,0.5]
+                [2.44, 4.83, 13.50, 13.50, 10, 6.25]
             </rosparam>
         </group>
 
         <!-- sampling algorithms -->
         <group ns="uniform_sampler">
-            <param name="class"       value="muse_armcl::UniformAllLinks" />
+            <param name="class"       value="muse_armcl::UniformPerLink" />
             <param name="base_class"  value="muse_armcl::UniformSampling" />
             <param name="seed"        value="1" />
             <param name="timeout"     value="10.0" />
@@ -106,30 +106,30 @@
             <param name="tf_timeout"  value="0.1" />
             <param name="sample_size" value="$(arg maximum_sample_size)" />
             <param name="seed"        value="2" />
-            <param name="jump_probability"     value="0.5" />
+            <param name="jump_probability"     value="0.9" />
             <param name="likelihood_tolerance" value="0.1" />
         </group>
         <group ns="resampling">
-            <param name="class"               value="muse_armcl::WheelOfFortune" />
+            <param name="class"               value="muse_armcl::Residual" />
             <param name="base_class"          value="muse_armcl::Resampling" />
-            <param name="recovery_alpha_slow" value="0.0"/>
-            <param name="recovery_alpha_fast" value="0.0"/>
+            <param name="recovery_alpha_slow" value="0.5"/>
+            <param name="recovery_alpha_fast" value="0.001"/>
         </group>
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"               value="muse_armcl::Dominants" />
+            <param name="class"               value="muse_armcl::WeightedMeans" />
             <param name="base_class"          value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
-            <param name="resolution"          value="0.1" />
-            <param name="weight_threshold"    value="0.1"/>
+            <param name="resolution"          value="0.05" />
+            <param name="weight_threshold"    value="0.0001"/>
         </group>
 
         <!-- scheduling -->
         <group ns="scheduler">
             <param name="class"      value="muse_armcl::CFS" />
             <param name="base_class" value="muse_armcl::Scheduler" />
-            <param name="rate"       value="15.0" />
+            <param name="rate"       value="5.0" />
         </group>
 
         <!-- particle filter setup -->

@@ -34,7 +34,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set)
 //    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
 //    uint64_t now = ros::Time::now().toNSec();
 //    ROS_INFO_STREAM("pub : tdiff: " << (now - nsecs) * 1e-6 << "ms");
-//    publish(sample_set, true);
+    publish(sample_set, true);
 //    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
 
 }
@@ -44,7 +44,7 @@ void StatePublisher::publishIntermediate(const sample_set_t::ConstPtr &sample_se
 //    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
 //    uint64_t now = ros::Time::now().toNSec();
 //    ROS_INFO_STREAM("int : tdiff: " << (ros::Time::now().toNSec() - nsecs) * 1e-6 << "ms");
-//    publish(sample_set, false);
+    publish(sample_set, false);
 //    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
 
 }
@@ -54,7 +54,7 @@ void StatePublisher::publishConstant(const sample_set_t::ConstPtr &sample_set)
 //    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
 //    ROS_INFO_STREAM("con : tdiff: " << (ros::Time::now().toNSec() - nsecs) * 1e-6 << "ms");
 //    uint64_t now = ros::Time::now().toNSec();
-//    publish(sample_set, false);
+    publish(sample_set, false);
 //    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
 }
 
@@ -94,7 +94,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
 //            ROS_INFO_STREAM(p.weight);
             cslibs_math_3d::PointRGB3d point(pos, 0.9f, color);
             part_cloud->insert(point);
-
+//            std::cout <<"weight " << p.weight << std::endl;
 //            cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
             //msg.scale.x = p.weight; // TODO: test
 //            msg.lifetime = ros::Duration(0.0);
@@ -123,7 +123,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         /// publish all detected contacts
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
-        std::cout << "number of contacts: "<< states.size() << std::endl;
+//        std::cout << "number of contacts: "<< states.size() << std::endl;
 
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);

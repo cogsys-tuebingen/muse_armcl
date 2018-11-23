@@ -101,6 +101,7 @@ protected:
             const double recovery_probability = rng_recovery.get();
             if (recovery_probability < recovery_random_pose_probability_) {
                 uniform_pose_sampler_->apply(sample);
+                sample.weight = recovery_probability;
                 i_p_t.insert(sample);
             } else {
                 const double u = rng.get();

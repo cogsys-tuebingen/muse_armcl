@@ -68,19 +68,13 @@ private:
 
         /// estimate total edges length
         double total_edges_length = 0.0;
-        for (const auto &frame_id : frame_ids) {
-            const mesh_map_tree_node_t* link = map->getNode(frame_id);
-            if (!link)
-                throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
+        for(const mesh_map_tree_node_t::Ptr& link : *map){
 
             total_edges_length += link->map.sumEdgeLength();
         }
 
         /// uniform over all links
-        for (const auto &frame_id : frame_ids) {
-            const mesh_map_tree_node_t* link = map->getNode(frame_id);
-            if (!link)
-                throw std::runtime_error("[UniformSampler]: Link " + frame_id + " not found!");
+        for(const mesh_map_tree_node_t::Ptr& link : *map){
 
             /// estimate number of particles per link, depends on sum edge length on this link
             const double ratio = link->map.sumEdgeLength() / total_edges_length;

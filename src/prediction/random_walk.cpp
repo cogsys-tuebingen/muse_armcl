@@ -12,6 +12,7 @@ public:
     using allocator_t = Eigen::aligned_allocator<RandomWalk>;
     using data_t      = cslibs_plugins_data::Data;
     using time_t      = cslibs_time::Time;
+    using duration_t  = cslibs_time::Duration;
     using rng_t       = cslibs_math::random::Uniform<1>;
 
     virtual void setup(ros::NodeHandle &nh) override
@@ -21,6 +22,9 @@ public:
         min_distance_     = nh.param(param_name("min_distance"), 0.0);
         max_distance_     = nh.param(param_name("max_distance"), 0.1);
         jump_probability_ = nh.param(param_name("jump_probability"), 0.3);
+
+        double rate = nh.param<double>(param_name("rate"), 15.0);
+        random_walk_period_ = duration_t(rate > 0.0 ? 1.0 / rate : 0.0);
     }
 
     virtual Result::Ptr apply(const data_t::ConstPtr         &data,
@@ -39,21 +43,30 @@ public:
         if (!state_space->isType<MeshMap>())
             return false;
 
-        using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-        const mesh_map_tree_t* map = state_space->as<MeshMap>().data();
+        const time_t time_now(ros::Time::now().toNSec());
+        if (random_walk_time_.isZero())
+            random_walk_time_ = time_now;
 
-        if (!rng_) {
-            rng_.reset(random_seed_ >= 0 ?
-                           new rng_t(min_distance_, max_distance_, random_seed_) :
-                           new rng_t(min_distance_, max_distance_));
-        } else
-            rng_->set(min_distance_, max_distance_);
+        if (random_walk_time_ <= time_now) {
+            random_walk_time_ = time_now + random_walk_period_;
 
-        /// execute random walk for all particles
-        /// use random step width between given min_distance and max_distance
-        random_walk_.jump_probability_ = jump_probability_;
-        for (sample_t &sample : states)
-            random_walk_.update(sample, *map, rng_->get());
+            using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
+            const mesh_map_tree_t* map = state_space->as<MeshMap>().data();
+
+            if (!rng_) {
+                rng_.reset(random_seed_ >= 0 ?
+                               new rng_t(min_distance_, max_distance_, random_seed_) :
+                               new rng_t(min_distance_, max_distance_));
+            } else
+                rng_->set(min_distance_, max_distance_);
+
+            /// execute random walk for all particles
+            /// use random step width between given min_distance and max_distance
+            random_walk_.jump_probability_ = jump_probability_;
+            for (sample_t &sample : states)
+                random_walk_.update(sample, *map, rng_->get());
+        }
+
         return Result::Ptr(new Result(data));
     }
 
@@ -62,6 +75,8 @@ private:
     double                      min_distance_;
     double                      max_distance_;
     double                      jump_probability_;
+    duration_t                  random_walk_period_;
+    time_t                      random_walk_time_;
 
     rng_t::Ptr                  rng_;
     cslibs_mesh_map::RandomWalk random_walk_;
