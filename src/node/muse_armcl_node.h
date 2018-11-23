@@ -22,6 +22,7 @@
 #include <cslibs_plugins_data/data_provider.hpp>
 
 #include <cslibs_math_ros/tf/tf_listener.hpp>
+#include <cslibs_utility/common/delegate.hpp>
 
 #include <ros/ros.h>
 
@@ -54,6 +55,7 @@ private:
     using prediction_integrals_t = muse_smc::PredictionIntegrals<StateSpaceDescription, data_t>;
 
     using update_model_mapping_t = update_relay_t::map_t;
+    using reset_function_t       = cslibs_utility::common::delegate<void(const time_t&)>;
 
     ros::NodeHandle             nh_private_;
     ros::NodeHandle             nh_public_;
@@ -68,6 +70,7 @@ private:
     smc_t::Ptr                  particle_filter_;
     prediction_integrals_t::Ptr prediction_integrals_;
     sample_set_t::Ptr           sample_set_;
+    reset_function_t            particle_filter_reset_;
 
     /// prediction & update
     update_model_map_t          update_models_;

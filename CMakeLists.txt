@@ -9,13 +9,15 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_mesh_map
   cslibs_indexed_storage
   cslibs_kdl
+  cslibs_utility
 )
 
 find_package(orocos_kdl REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS   include
-  CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data cslibs_mesh_map cslibs_indexed_storage cslibs_kdl
+  CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data
+                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_utility
   DEPENDS orocos_kdl
 )
 

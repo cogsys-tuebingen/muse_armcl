@@ -6,7 +6,10 @@
 
 #include <cslibs_plugins/plugin.hpp>
 #include <cslibs_plugins_data/data.hpp>
+#include <cslibs_utility/common/delegate.hpp>
+
 #include <ros/ros.h>
+
 namespace muse_armcl {
 class EIGEN_ALIGN16 UpdateModel : public muse_smc::UpdateModel<StateSpaceDescription, cslibs_plugins_data::Data>,
                     public cslibs_plugins::Plugin
@@ -34,6 +37,15 @@ public:
     }
 
     virtual void setup(ros::NodeHandle &nh) = 0;
+
+    using reset_function_t = cslibs_utility::common::delegate<void(const time_t&)>;
+    void setResetFunction(const reset_function_t& fn)
+    {
+        particle_filter_reset_ = fn;
+    }
+
+private:
+    reset_function_t particle_filter_reset_;
 };
 }
 
