@@ -20,7 +20,7 @@ public:
     {
         if (!ss->isType<MeshMap>() || !data->isType<JointStateData>())
             return;
-
+        ros::Time start = ros::Time::now();
         /// cast map to specific type
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
@@ -64,7 +64,7 @@ public:
             /// apply estimated weight on particle
             *it *= calculateWeight(state, joint_states, map, jacobians, transforms);
         }
-        std::cout << "update done \n";
+        std::cout << "update done; took: " << (ros::Time::now() - start).toNSec() * 1e-6 << "ms\n";
     }
 
     virtual double calculateWeight(const state_t& state,
