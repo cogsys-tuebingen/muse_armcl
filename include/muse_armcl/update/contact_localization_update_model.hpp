@@ -13,6 +13,7 @@ class /*EIGEN_ALIGN16*/ ContactLocalizationUpdateModel : public muse_armcl::Upda
 public:
 //    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<ContactLocalizationUpdateModel>;
+
     virtual void apply(const typename data_t::ConstPtr          &data,
                        const typename state_space_t::ConstPtr   &ss,
                        typename sample_set_t::weight_iterator_t  set) override
@@ -31,7 +32,9 @@ public:
 //        ROS_INFO_STREAM("update: now - recived " <<  (ros::Time::now().toNSec() - joint_states.stampReceived().nanoseconds()) *1e-6 << "ms");
         // -> access data via joint_states.position, joint_states.velocity, ...
 
-        // update transformations in the map
+        // update transformations in the map and derive jacobians
+        std::map<std::size_t, Eigen::MatrixXd> jacobians;
+        std::map<std::size_t, KDL::Frame> transforms;
         for(const mesh_map_tree_node_t::Ptr& partial_map : *map){
             std::string frame_id = partial_map->frameId();
             std::string parent;
@@ -45,6 +48,11 @@ public:
             cslibs_math_3d::Quaternion q(x,y,z,w);
             cslibs_math_3d::Transform3d transform(trans,q);
             partial_map->update(transform);
+            Eigen::MatrixXd jac;
+            model_.getGeometricJacobianTransposed(joint_states.position, frame_id, jac);
+            std::size_t map_id = partial_map->mapId();
+            jacobians[map_id] = jac;
+            transforms[map_id] = p_T_li;
         }
 
 
@@ -54,13 +62,16 @@ public:
             const state_t& state = it.state();
 
             /// apply estimated weight on particle
-            *it *= calculateWeight(state, joint_states, map);
+            *it *= calculateWeight(state, joint_states, map, jacobians, transforms);
         }
+        std::cout << "update done \n";
     }
 
     virtual double calculateWeight(const state_t& state,
                                    const JointStateData& joint_state,
-                                   const cslibs_mesh_map::MeshMapTree* map) = 0;
+                                   const cslibs_mesh_map::MeshMapTree* map,
+                                   const std::map<std::size_t, Eigen::MatrixXd>& jacobianans,
+                                   const std::map<std::size_t, KDL::Frame>& transforms) = 0;
 
     virtual void setup(ros::NodeHandle &nh) override
     {
@@ -81,22 +92,22 @@ public:
                         chain_tip_f2,
                         chain_tip_f3);
         model_.initialize();
-        std::size_t nj = model_.getNrJoints();
+        n_joints_ = model_.getNrJoints();
 
-        std::vector<double> info_default(nj, 0.5);
+        std::vector<double> info_default(n_joints_, 0.5);
         info_values_ = nh.param<std::vector<double>>(param_name("information_matrix"), info_default);
 
 
-        info_matrix_.setZero(nj, nj);
-        if(info_values_.size() >= nj*nj){
-             for(std::size_t i = 0; i < nj; ++i){
-                  for(std::size_t j = 0; j < nj; ++j){
-                      std::size_t index = i*nj+j;
+        info_matrix_.setZero(n_joints_, n_joints_);
+        if(info_values_.size() >= n_joints_*n_joints_){
+             for(std::size_t i = 0; i < n_joints_; ++i){
+                  for(std::size_t j = 0; j < n_joints_; ++j){
+                      std::size_t index = i * n_joints_ + j;
                       info_matrix_(i,j) = info_values_[index];
                   }
              }
         } else{
-            for(std::size_t i = 0; i < nj; ++i){
+            for(std::size_t i = 0; i < n_joints_; ++i){
                 if(i <info_values_.size()){
                     info_matrix_(i,i) = info_values_[i];
                 } else {
@@ -116,6 +127,7 @@ protected:
     std::vector<double> info_values_;
     Eigen::MatrixXd info_matrix_;
     double normalizer_;
+    std::size_t n_joints_;
 
 };
 }

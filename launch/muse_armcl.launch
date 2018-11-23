@@ -3,7 +3,7 @@
     <param name="/use_sim_time" value="false" />
     <arg name="mesh_path"           value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
     <arg name="joint_state_topic"   value="/estimated_ext_torque"/>
-    <arg name="minimum_sample_size" value="1000"/>
+    <arg name="minimum_sample_size" value="1500"/>
     <arg name="maximum_sample_size" value="5000"/>
 
     <group ns="muse_armcl">
@@ -110,7 +110,7 @@
             <param name="likelihood_tolerance" value="0.1" />
         </group>
         <group ns="resampling">
-            <param name="class"               value="muse_armcl::Residual" />
+            <param name="class"               value="muse_armcl::KLD" /><!-- KLD, Residual, SIR, Stratified, Systematic, WheelOfFortune, -->
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.5"/>
             <param name="recovery_alpha_fast" value="0.001"/>
@@ -122,7 +122,7 @@
             <param name="base_class"          value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
             <param name="resolution"          value="0.05" />
-            <param name="weight_threshold"    value="0.0001"/>
+            <param name="weight_threshold"    value="0.0002"/>
         </group>
 
         <!-- scheduling -->
