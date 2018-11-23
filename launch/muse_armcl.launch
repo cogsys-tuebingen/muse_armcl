@@ -86,8 +86,8 @@
             less than update_threshold -->
             <param name="update_threshold"          value="0.1"/>
             <!-- Absoulute value of cos(alpha) where alpha is the angle between the last iteration's
-            estimated ext. torque and the current ext. torque -->
-            <param name="reset_particles_threshold" value="0.3"/>
+            estimated ext. torque and the current ext. torque. If thereshold is 0 the particle set is never resetted -->
+            <param name="reset_particles_threshold" value="2"/>
             <!-- information matrix of "update likelyhood": insert values column wise.
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
@@ -129,6 +129,7 @@
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
             <param name="resolution"          value="0.05" />
             <param name="weight_threshold"    value="0.0002"/>
+            <param name="clustering_weight_threshold" value="0.0005"/>
         </group>
 
         <!-- scheduling -->

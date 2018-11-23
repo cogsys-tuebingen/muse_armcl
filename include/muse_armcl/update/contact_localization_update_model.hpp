@@ -25,7 +25,7 @@ public:
         if (!ss->isType<MeshMap>() || !data->isType<JointStateData>())
             return;
 
-        ros::Time start = ros::Time::now();
+//        ros::Time start = ros::Time::now();
         /// cast map to specific type
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
@@ -41,13 +41,19 @@ public:
         double tau_s_norm = tau_sensed.norm();
         if(tau_s_norm < update_threshold_){
             particle_filter_reset_(time_frame);
+            std::cout << "reset and return\n";
             return;
         }
 
         if(!first_iteration_){
-            double cos = std::fbs(tau_sensed.dot(last_ext_torques_) /( tau_s_norm * last_ext_torques_norm_));
-            if(cos > reset_particles_threshold_){
+//            double cos = std::fabs(tau_sensed.dot(last_ext_torques_) /( tau_s_norm * last_ext_torques_norm_));
+            double diff = (tau_sensed - last_ext_torques_).norm();
+//            if(cos < reset_particles_threshold_){
+            if( diff > reset_particles_threshold_){
                 particle_filter_reset_(time_frame);
+                std::cout << "reset: " << diff << " | " << reset_particles_threshold_<< std::endl;
+                std::cout << tau_sensed << "\n ----\n" << last_ext_torques_ << "\n #######\n" ;
+
             }
         }
         if(first_iteration_){
@@ -88,7 +94,7 @@ public:
             /// apply estimated weight on particle
             *it *= calculateWeight(state, tau_sensed, map, jacobians, transforms);
         }
-        std::cout << "update done; took: " << (ros::Time::now() - start).toNSec() * 1e-6 << "ms\n";
+//        std::cout << "update done; took: " << (ros::Time::now() - start).toNSec() * 1e-6 << "ms\n";
     }
 
     virtual double calculateWeight(const state_t& state,
@@ -101,7 +107,7 @@ public:
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
         update_threshold_ = nh.param<double>(param_name("update_threshold"), 0.0);
-        reset_particles_threshold_ = nh.param<double>(param_name("reset_particles_threshold"), 1.0);
+        reset_particles_threshold_ = nh.param<double>(param_name("reset_particles_threshold"), 0.0);
 
         std::string robot_model = nh.param<std::string>(param_name("robot_description"), "robot_description");
         std::string chain_root = nh.param<std::string>(param_name("chain_root"), "jaco_link_base");
