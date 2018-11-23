@@ -30,11 +30,12 @@ public:
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
         weight_threshold_ = nh.param(param_name("weight_threshold"), 0.1);
         const double resolution = nh.param(param_name("resolution"), 0.1);
+        const double clustering_weight_threshold = nh.param(param_name("clustering_weight_threshold"), 0.1);
         const std::size_t maximum_sample_size = static_cast<std::size_t>(nh.param<int>(param_name("maximum_sample_size"), 0));
 
         /// initialize indexation, kdtree, clustering
         indexation_ = indexation_t(resolution);
-        clustering_ = clustering_t();
+        clustering_ = clustering_t(clustering_weight_threshold);
         kdtree_.reset(new kd_tree_t);
         kdtree_->set<cis::option::tags::node_allocator_chunk_size>(2 * maximum_sample_size + 1);
 
