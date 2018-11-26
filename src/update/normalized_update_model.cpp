@@ -11,7 +11,7 @@ class NormalizedUpdateModel : public ContactLocalizationUpdateModel
 public:
     using allocator_t = Eigen::aligned_allocator<NormalizedUpdateModel>;
     virtual double calculateWeight(const state_t&state,
-                                   const JointStateData &joint_state,
+                                   const Eigen::VectorXd &tau_ext_sensed,
                                    const cslibs_mesh_map::MeshMapTree *maps,
                                    const std::map<std::size_t, Eigen::MatrixXd>& jacobian,
                                    const std::map<std::size_t, KDL::Frame>& transforms) override
@@ -33,16 +33,14 @@ public:
         Eigen::VectorXd tau_particle_local  = jacobian.at(state.map_id) * F;
 
         std::size_t rows = tau_particle_local.rows();
-        int n_torques = joint_state.effort.size();
-        std::size_t offset = static_cast<std::size_t>(std::max(0, n_torques - static_cast<int>(n_joints_)));
+
         std::size_t max_dim = std::min(rows, n_joints_);
 
         Eigen ::VectorXd tau_particle(Eigen::VectorXd::Zero(n_joints_));
         for(std::size_t i= 0; i < max_dim ; ++i){
             tau_particle(i) = tau_particle_local(i);
         }
-        Eigen::VectorXd tau_sensed;
-        cslibs_kdl::convert(joint_state.effort, tau_sensed, offset);
+        Eigen ::VectorXd tau_sensed = tau_ext_sensed;
         if(tau_sensed.norm() > 1e-5){
             tau_sensed.normalize();
         }

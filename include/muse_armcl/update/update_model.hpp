@@ -20,6 +20,7 @@ public:
     using Ptr = std::shared_ptr<UpdateModel>;
     using data_t  = cslibs_plugins_data::Data;
     using state_t = StateSpaceDescription::state_t;
+    using time_t = cslibs_time::Time;
 
     inline const static std::string Type()
     {

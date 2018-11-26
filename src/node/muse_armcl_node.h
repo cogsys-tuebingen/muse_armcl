@@ -39,6 +39,7 @@ public:
     inline void start();
 
 private:
+    using time_t                 = cslibs_time::Time;
     using data_t                 = cslibs_plugins_data::Data;
     using data_provider_t        = cslibs_plugins_data::DataProvider;
     using tf_listener_t          = cslibs_math_ros::tf::TFListener;
