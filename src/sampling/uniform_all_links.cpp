@@ -9,6 +9,7 @@ class EIGEN_ALIGN16 UniformAllLinks : public UniformSampling
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<UniformAllLinks>;
+    using rng_t  = cslibs_math::random::Uniform<1>;
 
     virtual bool update(const std::string &frame) override
     {
@@ -17,8 +18,6 @@ public:
 
     virtual void apply(sample_t &sample) override
     {
-        using rng_t  = cslibs_math::random::Uniform<1>;
-
         /// get map
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
         if (!ss->isType<MeshMap>())
@@ -30,12 +29,16 @@ public:
         std::vector<std::string> frame_ids;
         map->getFrameIds(frame_ids);
 
-        /// random link
-        rng_t::Ptr rng(new rng_t(0.0, frame_ids.size()));
-        if (random_seed_ >= 0)
-            rng.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
+        /// initialize random link generator
+        if (!rng_link_) {
+            if (random_seed_ >= 0)
+                rng_link_.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
+            else
+                rng_link_.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
+        }
 
-        std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng->get()));
+        /// random link
+        std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng_link_->get()));
         const mesh_map_tree_node_t* link = map->getNode(frame_ids[link_i]);
         if (!link)
             throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
@@ -50,6 +53,7 @@ private:
     int                         random_seed_;
     MeshMapProvider::Ptr        map_provider_;
     cslibs_mesh_map::RandomWalk random_walk_;
+    rng_t::Ptr                  rng_link_;
 
     virtual bool apply(sample_set_t &sample_set) override
     {
