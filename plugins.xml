@@ -19,6 +19,9 @@
    <class type="muse_armcl::KLD" base_class_type="muse_armcl::Resampling">
      <description>Implements KLD resampling.</description>
    </class>
+   <class type="muse_armcl::KLDRandom" base_class_type="muse_armcl::Resampling">
+     <description>Implements KLD resampling plus uniform sampling.</description>
+   </class>
    <class type="muse_armcl::SIR" base_class_type="muse_armcl::Resampling">
      <description>Implements SIR resampling.</description>
    </class>

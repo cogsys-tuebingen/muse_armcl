@@ -37,6 +37,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/resampling/stratified.cpp
   src/resampling/systematic.cpp
   src/resampling/wheel.cpp
+  src/resampling/kld_random.cpp
   src/sampling/normal.cpp
   src/sampling/uniform_all_links.cpp
   src/sampling/uniform_per_link.cpp
