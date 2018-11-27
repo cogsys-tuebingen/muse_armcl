@@ -5,6 +5,10 @@
     <arg name="joint_state_topic"   value="/estimated_ext_torque"/>
     <arg name="minimum_sample_size" value="1500"/>
     <arg name="maximum_sample_size" value="5000"/>
+    <arg name="contact_marker_r"    value="0.0"/>
+    <arg name="contact_marker_g"    value="1.0"/>
+    <arg name="contact_marker_b"    value="0.0"/>
+
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
@@ -65,8 +69,8 @@
             <param name="base_class"       value="muse_armcl::PredictionModel"/>
             <param name="data_provider"    value="joint_states" />
             <param name="seed"             value="0" />
-            <param name="min_distance"     value="0.1" />
-            <param name="max_distance"     value="0.2" />
+            <param name="min_distance"     value="0.01" />
+            <param name="max_distance"     value="0.1" />
             <param name="jump_probability" value="0.5" />
         </group>
 
@@ -85,9 +89,8 @@
             <!--No update is performed and set is initialized if external torque vector norm is
             less than update_threshold -->
             <param name="update_threshold"          value="0.1"/>
-            <!-- Absoulute value of cos(alpha) where alpha is the angle between the last iteration's
-            estimated ext. torque and the current ext. torque. If thereshold is 0 the particle set is never resetted -->
-            <param name="reset_particles_threshold" value="2"/>
+            <!--  -->
+            <param name="reset_particles_threshold" value="1.1"/>
             <!-- information matrix of "update likelyhood": insert values column wise.
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
@@ -116,10 +119,12 @@
             <param name="likelihood_tolerance" value="0.1" />
         </group>
         <group ns="resampling">
-            <param name="class"               value="muse_armcl::KLD" /><!-- KLD, Residual, SIR, Stratified, Systematic, WheelOfFortune, -->
+            <param name="class"               value="muse_armcl::KLDRandom" /><!-- KLD, Residual, SIR, Stratified, Systematic, WheelOfFortune, -->
             <param name="base_class"          value="muse_armcl::Resampling" />
-            <param name="recovery_alpha_slow" value="0.5"/>
-            <param name="recovery_alpha_fast" value="0.001"/>
+            <param name="recovery_alpha_slow" value="0.0"/>
+            <param name="recovery_alpha_fast" value="0.0"/>
+            <param name="uniform_percent"     value="0.4" />
+            <param name="min_weight_ratio"    value="0.5" />
         </group>
 
         <!-- density estimation -->
@@ -128,8 +133,8 @@
             <param name="base_class"          value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
             <param name="resolution"          value="0.05" />
-            <param name="weight_threshold"    value="0.0002"/>
-            <param name="clustering_weight_threshold" value="0.0005"/>
+            <param name="weight_threshold"    value="0.002"/>
+            <param name="clustering_weight_threshold" value="0.2"/>
         </group>
 
         <!-- scheduling -->

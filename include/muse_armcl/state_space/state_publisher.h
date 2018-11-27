@@ -31,6 +31,9 @@ private:
     ros::Publisher pub_contacts_;
 
     void publish(const typename sample_set_t::ConstPtr &sample_set, const bool &publish_contacts);
+    double contact_marker_r_;
+    double contact_marker_g_;
+    double contact_marker_b_;
 
 
 

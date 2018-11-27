@@ -5,6 +5,7 @@
 #include <cslibs_mesh_map/cslibs_mesh_map_visualization.h>
 #include <cslibs_math_3d/linear/pointcloud.hpp>
 #include <cslibs_math_ros/sensor_msgs/conversion_3d.hpp>
+#include <cslibs_math_ros/geometry_msgs/conversion_3d.hpp>
 
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -23,6 +24,9 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
 
     const std::string topic_particles = nh.param<std::string>("topic_particles", "particles");
     const std::string topic_contacts  = nh.param<std::string>("topic_contacts", "contacts");
+    contact_marker_r_ = nh.param<double>("contact_marker_r", 0.0);
+    contact_marker_g_ = nh.param<double>("contact_marker_g", 0.0);
+    contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
 //    pub_particles_ = nh.advertise<visualization_msgs::MarkerArray>(topic_particles, 1);
     pub_particles_ = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
@@ -129,12 +133,22 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
                 cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map, msg);
-                //msg.scale.x = p.weight; // TODO: test
+                cslibs_math_3d::Vector3d point = p.state.getPosition(p_map->map);
+                cslibs_math_3d::Vector3d normal = p.state.getNormal(p_map->map);
+                msg.header.frame_id = p_map->map.frame_id_;
                 msg.lifetime = ros::Duration(0.2);
-                msg.color.r = 0.0;
-                msg.color.g = 0.0;
-                msg.color.b = 1.0;
                 msg.color.a = 0.8;
+                msg.color.r = contact_marker_r_;
+                msg.color.g = contact_marker_g_;
+                msg.color.b = contact_marker_b_;
+                msg.scale.x = 0.3;
+                msg.scale.y = 0.01;
+                msg.scale.z = 0.01;
+                msg.ns = "contact";
+                msg.points.resize(2);
+                cslibs_math_3d::Vector3d p0 = point + normal * 0.2;
+                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(p0);
+                msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
                 markers.markers.push_back(msg);
             }
         }

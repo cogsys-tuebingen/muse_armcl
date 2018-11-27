@@ -26,22 +26,21 @@ public:
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
         const mesh_map_tree_t* map = ss->as<MeshMap>().data();
-        std::vector<std::string> frame_ids;
-        map->getFrameIds(frame_ids);
+        std::size_t n_nodes = map->getNumberOfNodes();
 
         /// initialize random link generator
         if (!rng_link_) {
             if (random_seed_ >= 0)
-                rng_link_.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
+                rng_link_.reset(new rng_t(0.0, n_nodes, random_seed_));
             else
-                rng_link_.reset(new rng_t(0.0, frame_ids.size(), random_seed_));
+                rng_link_.reset(new rng_t(0.0, n_nodes, random_seed_));
         }
 
         /// random link
-        std::size_t link_i = std::min(frame_ids.size()-1, static_cast<std::size_t>(rng_link_->get()));
+        std::size_t link_i = std::min(n_nodes-1, static_cast<std::size_t>(rng_link_->get()));
         const mesh_map_tree_node_t* link = map->getNode(link_i);
         if (!link)
-            throw std::runtime_error("[UniformSampler]: Link " + frame_ids[link_i] + " not found!");
+            throw std::runtime_error("[UniformSampler]: Link " + std::to_string(link_i) + " not found!");
 
         /// draw random element
         using state_t = StateSpaceDescription::state_t;
@@ -67,11 +66,9 @@ private:
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
         const mesh_map_tree_t* map = ss->as<MeshMap>().data();
-        std::vector<std::string> frame_ids;
-        map->getFrameIds(frame_ids);
 
         const std::size_t particles_per_frame = static_cast<std::size_t>(
-                    std::round(static_cast<double>(sample_size_) / static_cast<double>(frame_ids.size())));
+                    std::round(static_cast<double>(sample_size_) / static_cast<double>(map->getNumberOfNodes())));
 
         /// uniform per links
         for(const mesh_map_tree_node_t::Ptr& link : *map){

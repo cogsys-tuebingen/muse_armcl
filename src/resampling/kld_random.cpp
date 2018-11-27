@@ -12,13 +12,15 @@ protected:
     double kld_error_;
     double kld_z_;
     double uniform_percent_;
+    double min_weight_ratio_;
 
     virtual void doSetup(ros::NodeHandle &nh) override
     {
-        auto param_name  = [this](const std::string &name){return name_ + "/" + name;};
-        kld_error_       = nh.param(param_name("kld_error"), 0.01);
-        kld_z_           = nh.param(param_name("kld_z"), 0.99);
-        uniform_percent_ = nh.param(param_name("uniform_percent"), 1.0);
+        auto param_name   = [this](const std::string &name){return name_ + "/" + name;};
+        kld_error_        = nh.param(param_name("kld_error"), 0.01);
+        kld_z_            = nh.param(param_name("kld_z"), 0.99);
+        uniform_percent_  = nh.param(param_name("uniform_percent"), 1.0);
+        min_weight_ratio_ = nh.param(param_name("min_weight_ratio"), 1.0);
     }
 
     void doApply(sample_set_t &sample_set)
@@ -72,7 +74,7 @@ protected:
         StateSpaceDescription::sample_t sample;
         for (std::size_t i = 0; i < left_to_insert; ++i) {
             uniform_pose_sampler_->apply(sample);
-            sample.weight = min_weight;
+            sample.weight = min_weight_ratio_ * min_weight;
             if (i_p_t.canInsert())
                 i_p_t.insert(sample);
         }
@@ -137,7 +139,7 @@ protected:
         const std::size_t left_to_insert = static_cast<std::size_t>(static_cast<double>(sample_size_maximum - i_p_t.getData().size()) * uniform_percent_);
         for (std::size_t i = 0; i < left_to_insert; ++i) {
             uniform_pose_sampler_->apply(sample);
-            sample.weight = min_weight;
+            sample.weight = min_weight_ratio_ * min_weight;
             if (i_p_t.canInsert())
                 i_p_t.insert(sample);
         }
