@@ -72,6 +72,16 @@ target_link_libraries(${PROJECT_NAME}_node
   ${NLOPT_LIBRARIES}
 )
 
+add_executable(${PROJECT_NAME}_offline_node
+  src/node/muse_armcl_node.cpp
+  src/state_space/state_publisher.cpp
+)
+target_link_libraries(${PROJECT_NAME}_offline_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
+  ${NLOPT_LIBRARIES}
+)
 
 install(FILES plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
