@@ -24,6 +24,9 @@
 #include <cslibs_math_ros/tf/tf_listener.hpp>
 #include <cslibs_utility/common/delegate.hpp>
 
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+
 #include <ros/ros.h>
 
 namespace muse_armcl {
@@ -88,6 +91,10 @@ private:
     /// density & publishing
     SampleDensity::Ptr          sample_density_;
     StatePublisher::Ptr         state_publisher_;
+
+    /// rosbag
+    std::shared_ptr<rosbag::Bag>  bag_;
+    std::shared_ptr<rosbag::View> view_;
 
     bool getPredictionDataProvider(data_provider_t::Ptr &prediction_provider);
     bool getPredictionMapProvider(MeshMapProvider::Ptr &map_provider);

@@ -210,6 +210,12 @@ bool MuseARMCLOfflineNode::setup()
     }
     update_forwarder_->relay(update_mapping);
 
+    /// set up bagfile
+    std::string bag_filename;
+    nh_private_.getParam("bag_filename", bag_filename);
+    bag_.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
+    view_.reset(new rosbag::View(*bag_, ros::TIME_MIN, ros::TIME_MAX));
+
     return true;
 }
 

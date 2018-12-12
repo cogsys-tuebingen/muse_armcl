@@ -20,6 +20,7 @@
   <depend>cslibs_indexed_storage</depend>
   <depend>cslibs_kdl</depend>
   <depend>cslibs_utility</depend>
+  <depend>rosbag</depend>
 
   <export>
     <muse_armcl plugin="${prefix}/plugins.xml" />
