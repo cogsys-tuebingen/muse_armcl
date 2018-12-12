@@ -134,6 +134,17 @@ bool MuseARMCLOfflineNode::setup()
         ROS_INFO_STREAM("[" << scheduler_->getName() << "]");
     }
 
+    /// load bagfile
+    std::string bag_filename;
+    nh_private_.getParam("bag_filename", bag_filename);
+    try {
+        bag_.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
+        view_.reset(new rosbag::View(*bag_, ros::TIME_MIN, ros::TIME_MAX));
+    } catch (std::exception &e) {
+        ROS_ERROR_STREAM("Could not load bagfile " + bag_filename + "!");
+        return false;
+    }
+
     /// set up the particle filter
     {
         auto param_name = [](const std::string &param){return "particle_filter/" + param;};
@@ -162,7 +173,7 @@ bool MuseARMCLOfflineNode::setup()
             return false;
         }
 
-        ros::Time::waitForValid();
+//        ros::Time::waitForValid();
 
         sample_set_.reset(new sample_set_t(world_frame,
                                            cslibs_time::Time(ros::Time::now().toNSec()),
@@ -209,12 +220,6 @@ bool MuseARMCLOfflineNode::setup()
         return false;
     }
     update_forwarder_->relay(update_mapping);
-
-    /// set up bagfile
-    std::string bag_filename;
-    nh_private_.getParam("bag_filename", bag_filename);
-    bag_.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
-    view_.reset(new rosbag::View(*bag_, ros::TIME_MIN, ros::TIME_MAX));
 
     return true;
 }
