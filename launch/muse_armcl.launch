@@ -86,6 +86,9 @@
             <param name="finger_1_tip"              value="jaco_link_finger_tip_1"/>
             <param name="finger_2_tip"              value="jaco_link_finger_tip_2"/>
             <param name="finger_3_tip"              value="jaco_link_finger_tip_3"/>
+            <param name="theta_max"                 value="0.5"/>
+            <param name="xtol_rel"                  value="0.001"/>
+            <param name="max_time"                  value="0.000013333"/>
             <!--No update is performed and set is initialized if external torque vector norm is
             less than update_threshold -->
             <param name="update_threshold"          value="0.1"/>

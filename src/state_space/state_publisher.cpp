@@ -9,6 +9,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <cslibs_kdl_msgs/ContactMessageArray.h>
 
 namespace muse_armcl {
 void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_providers)
@@ -22,15 +23,18 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
 
     map_provider_ = map_providers.at(map_provider_id);
 
-    const std::string topic_particles = nh.param<std::string>("topic_particles", "particles");
-    const std::string topic_contacts  = nh.param<std::string>("topic_contacts", "contacts");
+    const std::string topic_particles     = nh.param<std::string>("topic_particles", "particles");
+    const std::string topic_contacts      = nh.param<std::string>("topic_contacts", "contacts");
+    const std::string topic_contacts_vis  = nh.param<std::string>("topic_contacts_visualization", "contacts_visualization");
+
     contact_marker_r_ = nh.param<double>("contact_marker_r", 0.0);
     contact_marker_g_ = nh.param<double>("contact_marker_g", 0.0);
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
 //    pub_particles_ = nh.advertise<visualization_msgs::MarkerArray>(topic_particles, 1);
-    pub_particles_ = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
-    pub_contacts_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts, 1);
+    pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
+    pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 1);
+    pub_contacts_vis_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts_vis, 1);
 }
 
 void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set)
@@ -95,14 +99,8 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
             cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
             pos = T * pos;
             cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
-//            ROS_INFO_STREAM(p.weight);
             cslibs_math_3d::PointRGB3d point(pos, 0.9f, color);
             part_cloud->insert(point);
-//            std::cout <<"weight " << p.weight << std::endl;
-//            cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map_, msg);
-            //msg.scale.x = p.weight; // TODO: test
-//            msg.lifetime = ros::Duration(0.0);
-//            markers.markers.push_back(msg);
         }
     }
     sensor_msgs::PointCloud2 cloud;
@@ -129,30 +127,45 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         density->contacts(states);
 //        std::cout << "number of contacts: "<< states.size() << std::endl;
 
+        msg.lifetime = ros::Duration(0.2);
+        msg.color.a = 0.8;
+        msg.color.r = contact_marker_r_;
+        msg.color.g = contact_marker_g_;
+        msg.color.b = contact_marker_b_;
+        msg.scale.x = 0.005;
+        msg.scale.y = 0.01;
+        msg.scale.z = 0.01;
+        msg.ns = "contact";
+        msg.type = visualization_msgs::Marker::ARROW;
+        msg.action = visualization_msgs::Marker::MODIFY;
+        msg.points.resize(2);
+        cslibs_kdl_msgs::ContactMessageArray contact_msg;
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
-                cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map, msg);
+//                cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map, msg);
+                cslibs_kdl_msgs::ContactMessage contact;
+                contact.header.frame_id = p_map->frameId();
+                contact.header.stamp = stamp;
                 cslibs_math_3d::Vector3d point = p.state.getPosition(p_map->map);
-                cslibs_math_3d::Vector3d normal = p.state.getNormal(p_map->map);
+//                cslibs_math_3d::Vector3d normal = p.state.getNormal(p_map->map);
+                cslibs_math_3d::Vector3d direction = p.state.getDirection(p_map->map);
+                contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(point);
+                contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(direction);
+                contact.force = p.state.force;
+//                cslibs_math_3d::Vector3d p0 = point + normal * 0.2;
+//                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(p0);
+//                msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
                 msg.header.frame_id = p_map->map.frame_id_;
-                msg.lifetime = ros::Duration(0.2);
-                msg.color.a = 0.8;
-                msg.color.r = contact_marker_r_;
-                msg.color.g = contact_marker_g_;
-                msg.color.b = contact_marker_b_;
-                msg.scale.x = 0.3;
-                msg.scale.y = 0.01;
-                msg.scale.z = 0.01;
-                msg.ns = "contact";
-                msg.points.resize(2);
-                cslibs_math_3d::Vector3d p0 = point + normal * 0.2;
-                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(p0);
+                ++msg.id;
+                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2);
                 msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
                 markers.markers.push_back(msg);
+                contact_msg.contacts.push_back(contact);
             }
         }
-        pub_contacts_.publish(markers);
+        pub_contacts_.publish(contact_msg);
+        pub_contacts_vis_.publish(markers);
     }
 }
 }

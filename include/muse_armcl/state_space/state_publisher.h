@@ -7,7 +7,7 @@
 #include <ros/ros.h>
 
 namespace muse_armcl {
-class /*EIGEN_ALIGN16*/ StatePublisher : public muse_smc::SMCState<StateSpaceDescription>
+class EIGEN_ALIGN16 StatePublisher : public muse_smc::SMCState<StateSpaceDescription>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -29,6 +29,7 @@ private:
 
     ros::Publisher pub_particles_;
     ros::Publisher pub_contacts_;
+    ros::Publisher pub_contacts_vis_;
 
     void publish(const typename sample_set_t::ConstPtr &sample_set, const bool &publish_contacts);
     double contact_marker_r_;

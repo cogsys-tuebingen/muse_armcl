@@ -6,9 +6,10 @@
 #include <cslibs_kdl/kdl_conversion.h>
 
 namespace muse_armcl {
-class NormalizedUpdateModel : public ContactLocalizationUpdateModel
+class EIGEN_ALIGN16 NormalizedUpdateModel : public ContactLocalizationUpdateModel
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<NormalizedUpdateModel>;
     virtual double calculateWeight(const state_t&state,
                                    const Eigen::VectorXd &tau_ext_sensed,
@@ -41,10 +42,14 @@ public:
             tau_particle(i) = tau_particle_local(i);
         }
         Eigen ::VectorXd tau_sensed = tau_ext_sensed;
-        if(tau_sensed.norm() > 1e-5){
+        double tsn = tau_sensed.norm();
+        double tpn = tau_particle.norm();
+        state.force = 0;
+        if(tsn > 1e-5){
             tau_sensed.normalize();
         }
-        if(tau_particle.norm() > 1e-5){
+        if(tpn > 1e-5){
+            state.force = tsn / tpn;
             tau_particle.normalize();
         }
 //        std::cout << "torque part: \n"<< tau_particle << std::endl;

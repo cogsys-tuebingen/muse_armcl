@@ -8,10 +8,10 @@
 #include <cslibs_kdl/external_forces.h>
 #include <cslibs_kdl/kdl_conversion.h>
 namespace muse_armcl {
-class /*EIGEN_ALIGN16*/ ContactLocalizationUpdateModel : public muse_armcl::UpdateModel
+class EIGEN_ALIGN16 ContactLocalizationUpdateModel : public muse_armcl::UpdateModel
 {
 public:
-    //    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<ContactLocalizationUpdateModel>;
 
     ContactLocalizationUpdateModel():

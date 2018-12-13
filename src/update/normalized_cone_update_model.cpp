@@ -7,13 +7,15 @@
 #include <nlopt.hpp>
 
 namespace muse_armcl {
-class NormalizedConeUpdateModel : public ContactLocalizationUpdateModel
+class EIGEN_ALIGN16 NormalizedConeUpdateModel : public ContactLocalizationUpdateModel
 {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<NormalizedConeUpdateModel>;
 
     NormalizedConeUpdateModel():
-        ContactLocalizationUpdateModel()
+        ContactLocalizationUpdateModel(),
+        opt_(nlopt::LD_SLSQP, 2)
     {
         lower_bound_.resize(2,0);
         upper_bound_ = {M_PI, 2*M_PI};
@@ -30,9 +32,8 @@ public:
         opt_.set_upper_bounds(upper_bound_);
         opt_.set_min_objective(minfunc, this);
 
-
-        double xtol_rel = nh.param<double>(param_name("xtol_rel"), 1e-5);
-        double max_time = nh.param<double>(param_name("max_time"),1.0/15);
+        double xtol_rel = nh.param<double>(param_name("xtol_rel"), 1e-3);
+        double max_time = nh.param<double>(param_name("max_time"),1.0/20.0);
         opt_.set_xtol_rel(xtol_rel);
         opt_.set_maxtime(max_time);
 
@@ -69,11 +70,19 @@ public:
         if(tau_sensed_.norm() > 1e-5){
             tau_sensed_.normalize();
         }
-
+        iterations_ = 0;
 
         double minf;
-        std::vector<double> x = {0,0};
-        /*nlopt::result res =*/ opt_.optimize(x, minf);
+        std::vector<double> x = {state.theta, state.phi};
+//        std::vector<double> x = {0.1, 0.1};
+        try{
+            /*nlopt::result res =*/ opt_.optimize(x, minf);
+        } catch(const std::runtime_error& ex){
+            std::cout << ex.what() << std::endl;
+        }
+//        std::cout << "iterations: " << iterations_ << " | " << x[0] << "; " << x[1]<< std::endl;
+        state.theta = x[0];
+        state.phi = x[1];
         double result = std::exp(-0.5*minf);
 
         state.last_update = result;
@@ -85,46 +94,78 @@ public:
 
         const double& theta = x[0];
         const double& phi = x[1];
-        KDL::Vector force_dir(std::sin(theta)*std::cos(phi),
-                              std::sin(theta)*std::sin(phi),
-                              std::cos(theta));
-        KDL::Wrench w(force_dir, KDL::Vector::Zero());
-        w = tranform_ * w;
+        const Eigen::MatrixXd& jac = *jacobian_;
 
-        Eigen::VectorXd F = cslibs_kdl::convert2Eigen(w);
-        Eigen::VectorXd tau_particle_local  = (*jacobian_)* F;
+        auto func = [this](const double theta,
+                          const double phi,
+                          const Eigen::MatrixXd& jac,
+                          double& tau_particle_norm,
+                          Eigen::VectorXd& tau_particle,
+                          Eigen::VectorXd& diff,
+                          Eigen::VectorXd& tmp){
+            KDL::Vector force_dir(std::sin(theta)*std::cos(phi),
+                                  std::sin(theta)*std::sin(phi),
+                                  std::cos(theta));
 
+            KDL::Wrench w(-force_dir, KDL::Vector::Zero());
+            w = tranform_ * w;
 
-        Eigen ::VectorXd tau_particle(Eigen::VectorXd::Zero(max_dim_));
-        for(std::size_t i= 0; i < max_dim_ ; ++i){
-            tau_particle(i) = tau_particle_local(i);
-        }
-        double tau_particle_norm = tau_particle.norm();
-        if(tau_particle_norm > 1e-5){
-            tau_particle.normalize();
-        }
+            Eigen::VectorXd F = cslibs_kdl::convert2Eigen(w);
+            Eigen::VectorXd tau_particle_local  = jac * F;
 
-        Eigen::VectorXd diff = tau_sensed_ - tau_particle;
-        Eigen::VectorXd tmp = (diff.transpose()).eval() * info_matrix_;
+            tau_particle = Eigen::VectorXd::Zero(max_dim_);
+            for(std::size_t i= 0; i < max_dim_ ; ++i){
+                tau_particle(i) = tau_particle_local(i);
+            }
+            tau_particle_norm = tau_particle.norm();
+            if(tau_particle_norm > 1e-5){
+                tau_particle.normalize();
+            }
 
-        double result = tmp.dot(diff);
+            diff = tau_sensed_ - tau_particle;
+            tmp = (diff.transpose()).eval() * info_matrix_;
+            double result = tmp.dot(diff);
+            return result;
+        };
+
+        Eigen::VectorXd tau_particle(Eigen::VectorXd::Zero(max_dim_));
+        Eigen::MatrixXd eye = Eigen::MatrixXd::Identity(max_dim_, max_dim_);
+        double tau_particle_norm;
+        Eigen::VectorXd diff, tmp;
+        double result = func(theta, phi, jac, tau_particle_norm, tau_particle, diff, tmp);
+
         if(!grad.empty()){
             grad.resize(2);
-            KDL::Vector dfdtheta(  std::cos(theta)*std::cos(phi),
-                                   std::cos(theta)*std::sin(phi),
-                                   -std::cos(theta));
-            KDL::Wrench wtheta (dfdtheta, KDL::Vector::Zero());
+            KDL::Vector dfdtheta( std::cos(theta)*std::cos(phi),
+                                  std::cos(theta)*std::sin(phi),
+                                 -std::cos(theta));
+            KDL::Wrench wtheta (-dfdtheta, KDL::Vector::Zero());
+            wtheta = tranform_ * wtheta;
 
-            KDL::Vector dfdphi( -std::sin(theta)*std::sin(phi),
+            KDL::Vector dfdphi(-std::sin(theta)*std::sin(phi),
                                 std::sin(theta)*std::cos(phi),
                                 0);
-            KDL::Wrench wphi (dfdphi, KDL::Vector::Zero());
+            KDL::Wrench wphi (-dfdphi, KDL::Vector::Zero());
+            wphi = tranform_ * wphi;
 
-            double fac = (-tau_particle.transpose().eval() * tau_particle + 1.0)/tau_particle_norm;
-            grad[0] = 2.0 * tmp.dot(fac * (*jacobian_) * cslibs_kdl::convert2Eigen(tranform_ * wtheta));
-            grad[1] = 2.0 * tmp.dot(fac * (*jacobian_) * cslibs_kdl::convert2Eigen(tranform_ * wphi));
+            Eigen::MatrixXd fac = (eye - tau_particle * tau_particle.transpose().eval())/tau_particle_norm;
+            Eigen::VectorXd dtheta = -fac * jac * cslibs_kdl::convert2Eigen(wtheta);
+            Eigen::VectorXd dphi   = -fac * jac * cslibs_kdl::convert2Eigen(wphi);
+            grad[0] = dtheta.dot(info_matrix_ * diff) + diff.dot(info_matrix_ * dtheta);
+            grad[1] = dphi.dot(info_matrix_ * diff) + diff.dot(info_matrix_ * dphi);
+
+            //Debug
+            //            double delta = 1e-3;
+            //            double grad0 = (func(theta + delta, phi, jac, tau_particle_norm, tau_particle, diff, tmp) -
+            //                            func(theta - delta, phi, jac, tau_particle_norm, tau_particle, diff, tmp))/(2*delta);
+            //            double grad1 = (func(theta, phi + delta, jac, tau_particle_norm, tau_particle, diff, tmp) -
+            //                            func(theta, phi - delta, jac, tau_particle_norm, tau_particle, diff, tmp))/(2*delta);
+            //            std::cout <<"[analytic grad]: " << grad[0] << " , " << grad[1] << std::endl;
+            //            std::cout <<"[numeric grad]:  " << grad0 << " , " << grad1 << std::endl;
+            //            std::cout << "-------------------------" << std::endl;
 
         }
+        ++iterations_;
         return result;
     }
 
@@ -144,6 +185,7 @@ private:
     std::vector<double> lower_bound_;
     std::vector<double> upper_bound_;
     Eigen::VectorXd tau_sensed_;
+    std::size_t iterations_;
 
 
 };

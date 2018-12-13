@@ -77,4 +77,7 @@
    <class type="muse_armcl::NormalizedUpdateModel" base_class_type="muse_armcl::UpdateModel">
      <description>Minimizes the orientation between the nD residual vector.</description>
    </class>
+   <class type="muse_armcl::NormalizedConeUpdateModel" base_class_type="muse_armcl::UpdateModel">
+     <description>Minimizes the orientation between the nD residual vector using also foces differing from mesh normals.</description>
+   </class>
 </library>
