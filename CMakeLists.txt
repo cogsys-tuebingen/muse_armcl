@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_kdl
   cslibs_kdl_msgs
   cslibs_utility
+  rosbag
 )
 
 find_package(orocos_kdl REQUIRED)
@@ -18,7 +19,7 @@ find_package(NLOPT REQUIRED)
 catkin_package(
   INCLUDE_DIRS   include
   CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data
-                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_kdl_msgs cslibs_utility
+                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_utility rosbag cslibs_kdl_msgs
   DEPENDS orocos_kdl NLOPT
 )
 
@@ -73,6 +74,16 @@ target_link_libraries(${PROJECT_NAME}_node
   ${NLOPT_LIBRARIES}
 )
 
+add_executable(${PROJECT_NAME}_offline_node
+  src/node/muse_armcl_offline_node.cpp
+  src/state_space/state_publisher.cpp
+)
+target_link_libraries(${PROJECT_NAME}_offline_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
+  ${NLOPT_LIBRARIES}
+)
 
 install(FILES plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
