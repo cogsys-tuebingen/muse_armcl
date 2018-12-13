@@ -2,6 +2,8 @@
 
 #include <muse_armcl/prediction/prediction_integral.hpp>
 
+#include <muse_armcl/update/joint_state_provider.h>
+
 namespace muse_armcl {
 MuseARMCLOfflineNode::MuseARMCLOfflineNode() :
     nh_private_("~"),
@@ -136,10 +138,11 @@ bool MuseARMCLOfflineNode::setup()
 
     /// load bagfile
     std::string bag_filename;
-    nh_private_.getParam("bag_filename", bag_filename);
+    nh_private_.getParam("bag_filename",          bag_filename);
+    nh_private_.getParam("bag_joint_state_topic", bag_joint_state_topic_);
+    nh_private_.getParam("bag_tf_topic_",         bag_tf_topic_);
     try {
         bag_.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
-        view_.reset(new rosbag::View(*bag_, ros::TIME_MIN, ros::TIME_MAX));
     } catch (std::exception &e) {
         ROS_ERROR_STREAM("Could not load bagfile " + bag_filename + "!");
         return false;
@@ -174,7 +177,7 @@ bool MuseARMCLOfflineNode::setup()
         }
 
         sample_set_.reset(new sample_set_t(world_frame,
-                                           time_t(view_->getBeginTime().toNSec()),
+                                           cslibs_time::Time(ros::Time::now().toNSec()),
                                            minimum_sample_size,
                                            maximum_sample_size,
                                            sample_density_,
@@ -228,13 +231,35 @@ void MuseARMCLOfflineNode::start()
         d.second->enable();
     }
 
+    /// time conversion ...
+    std::vector<std::string> topics = {{bag_joint_state_topic_, bag_tf_topic_}};
+    rosbag::View view(*bag_, rosbag::TopicQuery(topics));
+
     /// trigger uniform initialization
-    particle_filter_->requestUniformInitialization(time_t(view_->getBeginTime().toNSec()));
+//    view_.reset(new rosbag::View(*bag_, ros::TIME_MIN, ros::TIME_MAX));
+    particle_filter_->requestUniformInitialization(time_t(view.getBeginTime().toNSec()));
 
     if (!particle_filter_->start()) {
         ROS_ERROR_STREAM("Couldn't start the filter!");
         return;
     }
+
+
+
+
+    /// THIS HAS TO BE EXCHANGED FOR OFFLINE PLAYING
+
+    for(auto &d : data_providers_) {
+        if(d.second->isType<JointStateProvider>()) {
+            JointStateProvider &j = d.second->as<JointStateProvider>();
+
+            /// here we fill plugins
+            /// and tf and and and ...
+
+        }
+    }
+
+
 
     double node_rate = nh_private_.param<double>("node_rate", 60.0);
     if (node_rate == 0.0) {
