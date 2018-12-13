@@ -173,10 +173,8 @@ bool MuseARMCLOfflineNode::setup()
             return false;
         }
 
-//        ros::Time::waitForValid();
-
         sample_set_.reset(new sample_set_t(world_frame,
-                                           cslibs_time::Time(ros::Time::now().toNSec()),
+                                           time_t(view_->getBeginTime().toNSec()),
                                            minimum_sample_size,
                                            maximum_sample_size,
                                            sample_density_,
@@ -231,8 +229,7 @@ void MuseARMCLOfflineNode::start()
     }
 
     /// trigger uniform initialization
-    ros::Time::waitForValid();
-    particle_filter_->requestUniformInitialization(time_t(ros::Time::now().toNSec()));
+    particle_filter_->requestUniformInitialization(time_t(view_->getBeginTime().toNSec()));
 
     if (!particle_filter_->start()) {
         ROS_ERROR_STREAM("Couldn't start the filter!");
