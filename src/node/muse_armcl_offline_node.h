@@ -15,7 +15,7 @@
 #include <muse_armcl/scheduling/scheduler.hpp>
 
 #include <muse_armcl/density/sample_density.hpp>
-#include <muse_armcl/state_space/state_publisher.h>
+#include <muse_armcl/state_space/state_publisher_offline.hpp>
 
 #include <cslibs_plugins/plugin_loader.hpp>
 #include <cslibs_plugins/plugin_factory.hpp>
@@ -63,6 +63,8 @@ private:
 
     ros::NodeHandle             nh_private_;
     ros::NodeHandle             nh_public_;
+    std::mutex                  filter_time_mutex_;
+    ros::Time                   filter_time_;
 
     /// map providers & data providers
     tf_listener_t::Ptr          tf_provider_frontend_;  /// for data providers and data conversion
@@ -90,7 +92,7 @@ private:
 
     /// density & publishing
     SampleDensity::Ptr          sample_density_;
-    StatePublisher::Ptr         state_publisher_;
+    StatePublisherOffline::Ptr  state_publisher_;
 
     /// rosbag
     std::shared_ptr<rosbag::Bag>  bag_;
@@ -100,6 +102,9 @@ private:
     bool getPredictionDataProvider(data_provider_t::Ptr &prediction_provider);
     bool getPredictionMapProvider(MeshMapProvider::Ptr &map_provider);
     bool getUpdateModelProviderMapping(update_model_mapping_t &update_mapping);
+
+    void setFilterTime(const cslibs_time::Time &t);
+
 };
 }
 

@@ -4,6 +4,10 @@
 
 #include <muse_armcl/update/joint_state_provider.h>
 
+#include <tf/transform_broadcaster.h>
+#include <jaco2_contact_msgs/Jaco2CollisionSequence.h>
+#include <jaco2_msgs/Jaco2JointState.h>
+
 namespace muse_armcl {
 MuseARMCLOfflineNode::MuseARMCLOfflineNode() :
     nh_private_("~"),
@@ -183,8 +187,11 @@ bool MuseARMCLOfflineNode::setup()
                                            sample_density_,
                                            reset_weights_after_insertion,
                                            reset_weights_to_one));
-        state_publisher_.reset(new StatePublisher);
-        state_publisher_->setup(nh_private_, map_providers_);
+        state_publisher_.reset(new StatePublisherOffline);
+        StatePublisherOffline::time_callback_t time_callback =  StatePublisherOffline::time_callback_t::from<MuseARMCLOfflineNode, &MuseARMCLOfflineNode::setFilterTime>(this);
+        state_publisher_->setup(nh_private_,
+                                map_providers_,
+                                time_callback);
 
         particle_filter_.reset(new smc_t);
         particle_filter_->setup(sample_set_,
@@ -236,43 +243,70 @@ void MuseARMCLOfflineNode::start()
     rosbag::View view(*bag_, rosbag::TopicQuery(topics));
 
     /// trigger uniform initialization
-//    view_.reset(new rosbag::View(*bag_, ros::TIME_MIN, ros::TIME_MAX));
-    particle_filter_->requestUniformInitialization(time_t(view.getBeginTime().toNSec()));
-
     if (!particle_filter_->start()) {
         ROS_ERROR_STREAM("Couldn't start the filter!");
         return;
     }
 
+    tf::tfMessage::Ptr                                   tf;
+    tf::TransformBroadcaster                             tf_broadcaster;
+    jaco2_contact_msgs::Jaco2CollisionSequence::Ptr      sequence;
 
-
-
-    /// THIS HAS TO BE EXCHANGED FOR OFFLINE PLAYING
-
-    for(auto &d : data_providers_) {
-        if(d.second->isType<JointStateProvider>()) {
-            JointStateProvider &j = d.second->as<JointStateProvider>();
-
-            /// here we fill plugins
-            /// and tf and and and ...
-
+    auto send_transform = [&tf, &tf_broadcaster](const ros::Time &time)
+    {
+        for(geometry_msgs::TransformStamped &t : tf->transforms)
+        {
+            t.header.stamp = time;
         }
-    }
+        tf_broadcaster.sendTransform(tf->transforms);
+    };
+
+    for(const rosbag::MessageInstance &m : view) {
+        if(m.getTopic() == bag_tf_topic_)
+            tf = m.instantiate<tf::tfMessage>();
+        if(m.getTopic() == bag_joint_state_topic_)
+            sequence = m.instantiate<jaco2_contact_msgs::Jaco2CollisionSequence>();
 
 
-
-    double node_rate = nh_private_.param<double>("node_rate", 60.0);
-    if (node_rate == 0.0) {
-        /// unlimited speed
-        ROS_INFO_STREAM("Spinning without rate!");
-        ros::spin();
-    } else {
-        /// limited speed
-        ros::WallRate r(node_rate);
-        ROS_INFO_STREAM("Spinning with " << node_rate << " Hz!");
-        while (ros::ok()) {
+        if(tf && sequence) {
+            /// initialize filter and send first transformations
+            ros::Time now = ros::Time::now();
+            send_transform(now);
             ros::spinOnce();
-            r.sleep();
+            particle_filter_->requestUniformInitialization(time_t(now.toNSec()));
+
+
+            /// itearte the sequence to test and tick the tf broadcaster
+            for(jaco2_contact_msgs::Jaco2CollisionSample &s : sequence->data) {
+                now = ros::Time::now();
+                send_transform(now);
+                s.header.stamp = now;
+                for(auto &d : data_providers_) {
+                    if(d.second->isType<JointStateProvider>()) {
+                        JointStateProvider &j = d.second->as<JointStateProvider>();
+                        sensor_msgs::JointState::Ptr js(new sensor_msgs::JointState);
+                        js->header   = s.state.header;
+                        js->name     = s.state.name;
+                        js->position = s.state.position;
+                        js->velocity = s.state.velocity;
+                        js->effort   = s.state.effort;
+                        j.callback(js);
+                    }
+                }
+            }
+
+            ros::Time expected = now;
+            while(ros::ok()) {
+                {
+                    std::unique_lock<std::mutex> l(filter_time_mutex_);
+                    if(expected == filter_time_)
+                        break;
+                }
+                send_transform(expected);
+            }
+
+            tf.reset();
+            sequence.reset();
         }
     }
 }
@@ -338,6 +372,13 @@ bool MuseARMCLOfflineNode::getUpdateModelProviderMapping(update_model_mapping_t 
         update_mapping[update_model] = std::make_pair(data_provider, map_provider);
     }
     return true;
+}
+
+void MuseARMCLOfflineNode::setFilterTime(const cslibs_time::Time &t)
+{
+    std::unique_lock<std::mutex> l(filter_time_mutex_);
+    uint64_t nsecs = static_cast<uint64_t>(t.nanoseconds());
+    filter_time_ = ros::Time().fromNSec(nsecs);
 }
 }
 

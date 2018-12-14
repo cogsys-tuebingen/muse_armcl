@@ -74,6 +74,16 @@ target_link_libraries(${PROJECT_NAME}_node
   ${NLOPT_LIBRARIES}
 )
 
+add_executable(${PROJECT_NAME}_test_bag_node
+  src/node/muse_armcl_test_bag_node.cpp
+)
+target_link_libraries(${PROJECT_NAME}_test_bag_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
+  ${NLOPT_LIBRARIES}
+)
+
 add_executable(${PROJECT_NAME}_offline_node
   src/node/muse_armcl_offline_node.cpp
   src/state_space/state_publisher.cpp

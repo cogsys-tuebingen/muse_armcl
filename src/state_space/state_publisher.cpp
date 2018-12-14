@@ -31,7 +31,6 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
     contact_marker_g_ = nh.param<double>("contact_marker_g", 0.0);
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
-//    pub_particles_ = nh.advertise<visualization_msgs::MarkerArray>(topic_particles, 1);
     pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
     pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 1);
     pub_contacts_vis_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts_vis, 1);
@@ -39,31 +38,17 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
 
 void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set)
 {
-//    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
-//    uint64_t now = ros::Time::now().toNSec();
-//    ROS_INFO_STREAM("pub : tdiff: " << (now - nsecs) * 1e-6 << "ms");
     publish(sample_set, true);
-//    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
-
 }
 
 void StatePublisher::publishIntermediate(const sample_set_t::ConstPtr &sample_set)
 {
-//    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
-//    uint64_t now = ros::Time::now().toNSec();
-//    ROS_INFO_STREAM("int : tdiff: " << (ros::Time::now().toNSec() - nsecs) * 1e-6 << "ms");
     publish(sample_set, false);
-//    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
-
 }
 
 void StatePublisher::publishConstant(const sample_set_t::ConstPtr &sample_set)
 {
-//    uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
-//    ROS_INFO_STREAM("con : tdiff: " << (ros::Time::now().toNSec() - nsecs) * 1e-6 << "ms");
-//    uint64_t now = ros::Time::now().toNSec();
     publish(sample_set, false);
-//    ROS_INFO_STREAM("pub : " << (now - nsecs) * 1e-6 << "ms");
 }
 
 void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const bool &publish_contacts)
@@ -113,7 +98,6 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     if (publish_contacts) {
         markers.markers.clear();
         msg.action = visualization_msgs::Marker::DELETEALL;
-//        markers.markers.push_back(msg);
 
         /// density estimation
         SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
@@ -125,7 +109,6 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         /// publish all detected contacts
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
-//        std::cout << "number of contacts: "<< states.size() << std::endl;
 
         msg.lifetime = ros::Duration(0.2);
         msg.color.a = 0.8;
@@ -143,19 +126,15 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             if (p_map) {
-//                cslibs_mesh_map::visualization::visualizeEdgeParticle(p.state, p_map->map, msg);
                 cslibs_kdl_msgs::ContactMessage contact;
                 contact.header.frame_id = p_map->frameId();
                 contact.header.stamp = stamp;
                 cslibs_math_3d::Vector3d point = p.state.getPosition(p_map->map);
-//                cslibs_math_3d::Vector3d normal = p.state.getNormal(p_map->map);
                 cslibs_math_3d::Vector3d direction = p.state.getDirection(p_map->map);
                 contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(point);
                 contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(direction);
                 contact.force = p.state.force;
-//                cslibs_math_3d::Vector3d p0 = point + normal * 0.2;
-//                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(p0);
-//                msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
+
                 msg.header.frame_id = p_map->map.frame_id_;
                 ++msg.id;
                 msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2);
