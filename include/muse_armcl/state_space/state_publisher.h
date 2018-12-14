@@ -22,7 +22,7 @@ public:
     virtual void publishIntermediate(const typename sample_set_t::ConstPtr &sample_set) override;
     virtual void publishConstant(const typename sample_set_t::ConstPtr &sample_set) override;
 
-private:
+protected:
     MeshMapProvider::Ptr map_provider_;
 
     bool           publish_cloud_;
@@ -35,6 +35,7 @@ private:
     double contact_marker_r_;
     double contact_marker_g_;
     double contact_marker_b_;
+    double no_contact_force_threshold_;
 
 
 

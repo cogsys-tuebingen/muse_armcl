@@ -275,6 +275,7 @@ void MuseARMCLOfflineNode::start()
             ros::spinOnce();
             particle_filter_->requestUniformInitialization(time_t(now.toNSec()));
 
+            state_publisher_->setData(*sequence);
 
             /// itearte the sequence to test and tick the tf broadcaster
             for(jaco2_contact_msgs::Jaco2CollisionSample &s : sequence->data) {
@@ -296,6 +297,7 @@ void MuseARMCLOfflineNode::start()
             }
 
             ros::Time expected = now;
+            double node_rate = nh_private_.param<double>("node_rate", 60.0);
             while(ros::ok()) {
                 {
                     std::unique_lock<std::mutex> l(filter_time_mutex_);
@@ -303,6 +305,10 @@ void MuseARMCLOfflineNode::start()
                         break;
                 }
                 send_transform(expected);
+                ros::spinOnce();
+                if(node_rate > 0.0) {
+                    ros::WallRate(node_rate).sleep();
+                }
             }
 
             tf.reset();

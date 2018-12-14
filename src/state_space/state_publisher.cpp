@@ -31,6 +31,8 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
     contact_marker_g_ = nh.param<double>("contact_marker_g", 0.0);
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
+    no_contact_force_threshold_ = nh.param<double>("no_contact_force_threshold", 0.1);
+
     pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
     pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 1);
     pub_contacts_vis_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts_vis, 1);
@@ -125,7 +127,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         cslibs_kdl_msgs::ContactMessageArray contact_msg;
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            if (p_map) {
+            if (p_map && std::fabs(p.state.force) > no_contact_force_threshold_) {
                 cslibs_kdl_msgs::ContactMessage contact;
                 contact.header.frame_id = p_map->frameId();
                 contact.header.stamp = stamp;
@@ -134,11 +136,11 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
                 contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(point);
                 contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(direction);
                 contact.force = p.state.force;
-
                 msg.header.frame_id = p_map->map.frame_id_;
                 ++msg.id;
                 msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2);
                 msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
+
                 markers.markers.push_back(msg);
                 contact_msg.contacts.push_back(contact);
             }
