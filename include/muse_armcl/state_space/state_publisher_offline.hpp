@@ -118,6 +118,7 @@ public:
 
     void setData(const jaco2_contact_msgs::Jaco2CollisionSequence& data)
     {
+        data_.clear();
         for(const jaco2_contact_msgs::Jaco2CollisionSample& s : data.data){
             data_[s.header.stamp.toNSec()] = s;
         }
