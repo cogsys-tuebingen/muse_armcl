@@ -98,7 +98,8 @@ private:
     std::shared_ptr<rosbag::Bag>  bag_;
     std::string                   bag_joint_state_topic_;
     std::string                   bag_tf_topic_;
-
+    /// results
+    std::string                   results_file_base_name_;
     bool getPredictionDataProvider(data_provider_t::Ptr &prediction_provider);
     bool getPredictionMapProvider(MeshMapProvider::Ptr &map_provider);
     bool getUpdateModelProviderMapping(update_model_mapping_t &update_mapping);

@@ -8,7 +8,6 @@
 #include <jaco2_contact_msgs/Jaco2CollisionSequence.h>
 #include <jaco2_contact_msgs/Jaco2CollisionSample.h>
 #include <cslibs_kdl/yaml_to_kdl_tranform.h>
-#include <eigen_conversions/eigen_kdl.h>
 
 namespace muse_armcl {
 class /*EIGEN_ALIGN16*/ StatePublisherOffline : public StatePublisher
@@ -126,8 +125,7 @@ public:
 
     int getClosetPoint(const std::string& frame_id, const cslibs_math_3d::Vector3d& estimated) const
     {
-        KDL::Vector pos;
-        tf::vectorEigenToKDL(estimated.data(),pos);
+        KDL::Vector pos (estimated(0), estimated(1), estimated(2));
         std::pair<int,double> min;
         min.first = -1;
         min.second = std::numeric_limits<double>::infinity();
@@ -153,13 +151,25 @@ public:
         for(const cslibs_kdl::KDLTransformation t : labeled_contact_points_)
         {
             if(point_name == t.parent){
-                tf::vectorKDLToEigen(t.frame.p, position.data());
+                position(0) = t.frame.p.x();
+                position(1) = t.frame.p.y();
+                position(2) = t.frame.p.z();
                 KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
-                tf::vectorKDLToEigen(dir, direction);
+                direction(0) = dir.x();
+                direction(1) = dir.y();
+                direction(2) = dir.z();
                 return t.parent;
             }
         }
         throw std::runtime_error("Cannot find point with label " + std::to_string(label));
+    }
+
+    void exportResults(const std::string& path)
+    {
+        std::string file_cm = path + "confusion_matrix.csv";
+        std::string file_ds = path + "detection_results.csv";
+        confusion_matrix_.exportCsv(file_cm);
+        save(results_, file_ds);
     }
 
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <fstream>
 
 class ConfusionMatrix
 {
@@ -35,6 +36,31 @@ public:
         for (auto c : classes) {
             resetClass(c);
         }
+    }
+
+    void exportCsv(const std::string& file)
+    {
+
+        std::ofstream of(file);
+
+        // row = prediction, col = actual
+        std::sort(classes.begin(), classes.end());
+
+        of << "classes";
+        for (int cl : classes) {
+            of << ',' << cl;
+        }
+        of << '\n';
+
+        for (int prediction : classes) {
+            of << prediction;
+            for (int actual : classes) {
+                of << ',' << histogram.at(std::make_pair(actual, prediction));
+            }
+            of << '\n';
+        }
+
+        of.close();
     }
 
 public:

@@ -152,6 +152,9 @@ bool MuseARMCLOfflineNode::setup()
         return false;
     }
 
+    /// results file
+    results_file_base_name_ = nh_private_.param<std::string>("results_base_file","/tmp/armcl_res_");
+
     /// set up the particle filter
     {
         auto param_name = [](const std::string &param){return "particle_filter/" + param;};
@@ -315,6 +318,7 @@ void MuseARMCLOfflineNode::start()
             sequence.reset();
         }
     }
+    state_publisher_->exportResults(results_file_base_name_);
 }
 
 bool MuseARMCLOfflineNode::getPredictionDataProvider(data_provider_t::Ptr &prediction_provider)
