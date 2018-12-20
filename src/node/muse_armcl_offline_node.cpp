@@ -293,11 +293,6 @@ void MuseARMCLOfflineNode::start()
                     JointStateProvider &j = d.second->as<JointStateProvider>();
                     sensor_msgs::JointState::Ptr js(new sensor_msgs::JointState);
                     cslibs_kdl::JointStateStampedConversion::data2ros(s.state, *js);
-                    //                        js->header   = s.state.header;
-                    //                        js->name     = s.state.name;
-                    //                        js->position = s.state.position;
-                    //                        js->velocity = s.state.velocity;
-                    //                        js->effort   = s.state.effort;
                     j.callback(js);
                 }
             }
