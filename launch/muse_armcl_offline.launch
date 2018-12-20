@@ -1,23 +1,27 @@
 <?xml version="1.0" ?>
 <launch>
     <param name="/use_sim_time" value="true" />
-    <arg name="mesh_path"           value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
-    <arg name="joint_state_topic"   value="/joint_states"/>
-    <arg name="minimum_sample_size" value="1500"/>
-    <arg name="maximum_sample_size" value="5000"/>
-    <arg name="contact_marker_r"    value="0.0"/>
-    <arg name="contact_marker_g"    value="1.0"/>
-    <arg name="contact_marker_b"    value="0.0"/>
-    <arg name="bag"                 value="/localhome/panda/ws_muse/data/jaco_sim_test_bag_2018-11-09-17-03-01.bag"/>
+    <arg name="mesh_path"             value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+    <arg name="joint_state_topic"     value="/joint_states"/>
+    <arg name="minimum_sample_size"   value="1500"/>
+    <arg name="maximum_sample_size"   value="5000"/>
+    <arg name="contact_marker_r"      value="0.0"/>
+    <arg name="contact_marker_g"      value="1.0"/>
+    <arg name="contact_marker_b"      value="0.0"/>
+    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>
+    <arg name="bag_joint_state_topic" value="/contact_data"/>
+    <arg name="bag_tf_topic"          value="/first_tf"/>
 
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
-        <param name="map"             value="mesh_map" />
-        <param name="topic_particles" value="particles"/>
-        <param name="topic_contacts"  value="contacts"/>
-        <param name="node_rate"       value="0.0" />
-        <param name="bag_filename"    value="$(arg bag)"/>
+        <param name="map"                   value="mesh_map" />
+        <param name="topic_particles"       value="particles"/>
+        <param name="topic_contacts"        value="contacts"/>
+        <param name="node_rate"             value="0.0" />
+        <param name="bag_filename"          value="$(arg bag)"/>
+        <param name="bag_joint_state_topic" value="$(arg bag_joint_state_topic)"/>
+        <param name="bag_tf_topic"          value="$(arg bag_tf_topic)"/>
 
         <!-- data providers -->
         <group ns="joint_states">
@@ -141,7 +145,7 @@
 
         <!-- scheduling -->
         <group ns="scheduler">
-            <param name="class"      value="muse_armcl::CFS" />
+            <param name="class"      value="muse_armcl::Dummy" />
             <param name="base_class" value="muse_armcl::Scheduler" />
             <param name="rate"       value="5.0" />
         </group>
@@ -160,9 +164,8 @@
     </group>
 
     <!-- MuSe ARMCL node -->
-    <node type="muse_armcl_offline_node" 
+    <node type="muse_armcl_offline_node"
           name="muse_armcl" 
           pkg="muse_armcl" 
-          output="screen"  
-          clear_params="true"/>
+          output="screen"/>
 </launch>

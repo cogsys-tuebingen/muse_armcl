@@ -1,8 +1,10 @@
 #pragma once
 // ARMCL
 #include <muse_armcl/state_space/state_publisher.h>
-#include <muse_armcl/state_space/confusion_matrix.hpp>
-#include <muse_armcl/state_space/detection_result.hpp>
+#include <muse_armcl/evaluation/confusion_matrix.hpp>
+#include <muse_armcl/evaluation/detection_result.hpp>
+#include <muse_armcl/evaluation/contact_evaluation_data.hpp>
+
 #include <muse_armcl/density/sample_density.hpp>
 
 #include <jaco2_contact_msgs/Jaco2CollisionSequence.h>
@@ -10,7 +12,7 @@
 #include <cslibs_kdl/yaml_to_kdl_tranform.h>
 
 namespace muse_armcl {
-class /*EIGEN_ALIGN16*/ StatePublisherOffline : public StatePublisher
+class EIGEN_ALIGN16 StatePublisherOffline : public StatePublisher
 {
 public:
 //    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -45,6 +47,8 @@ public:
 
         if (!map_provider_)
             return;
+        if(!data_)
+            return;
 
         /// get the map
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
@@ -60,20 +64,29 @@ public:
 
         // ground truth data
         uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
-        const jaco2_contact_msgs::Jaco2CollisionSample& gt = data_[nsecs];
+        const ContactSample& gt = data_->at(nsecs);
+
+        if(gt.state.torque.empty()) {
+            std::cout << nsecs << std::endl;
+            throw std::runtime_error("Empty data recieved");
+        }
+
+        double tau_norm =  gt.state.norm(cslibs_kdl_data::JointStateData::DataType::JOINT_TORQUE);
+        std::cout << tau_norm << std::endl;
         cslibs_math_3d::Vector3d actual_pos;
         cslibs_math_3d::Vector3d actual_dir;
-        std::string actual_frame = getGroundTruthContact(gt.label, actual_pos, actual_dir);
 
-        cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
-        actual_pos = baseTactual * actual_pos;
-        actual_dir = baseTactual * actual_dir;
+        if(gt.label != no_collision_label_ && gt.label > 0){
+            std::string actual_frame = getGroundTruthContact(gt.label, actual_pos, actual_dir);
+            cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
+            actual_pos = baseTactual * actual_pos;
+            actual_dir = baseTactual * actual_dir;
+        }
 
-        tf::Vector3 force;
-        tf::vector3MsgToTF(gt.contact_force.vector, force);
+
         DetectionResult event;
         event.true_point = gt.label;
-        event.contact_force_true = force.length();
+        event.contact_force_true = gt.contact_force.norm();
         event.error_dist = std::numeric_limits<double>::infinity();
         event.error_ori = std::numeric_limits<double>::infinity();
         event.contact_force = 0;
@@ -84,7 +97,7 @@ public:
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
-            if (p_map && p.state.force > no_contact_force_threshold_) {
+            if (p_map && (p.state.force > no_contact_force_threshold_)) {
                 std::string link = p_map->frameId();
                 cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
                 cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
@@ -93,6 +106,7 @@ public:
                 double tmp = direction.dot(actual_dir) /direction.length() / actual_dir.length();
                 double angle = std::acos(tmp);
                 if(dist_error < event.error_dist){
+                    event.contact_force = p.state.force;
                     event.closest_point = prediction;
                     event.error_dist = dist_error;
                     event.error_ori = angle;
@@ -116,15 +130,17 @@ public:
         set_time_(sample_set->getStamp());
     }
 
-    void setData(const jaco2_contact_msgs::Jaco2CollisionSequence& data)
+    void setData(const ContactSequence& data)
     {
-        data_.clear();
-        for(const jaco2_contact_msgs::Jaco2CollisionSample& s : data.data){
-            data_[s.header.stamp.toNSec()] = s;
-        }
+        data_ = &data;
     }
 
-    int getClosetPoint(const std::string& frame_id, const cslibs_math_3d::Vector3d& estimated) const
+    void reset()
+    {
+        data_ = nullptr;
+    }
+
+      int getClosetPoint(const std::string& frame_id, const cslibs_math_3d::Vector3d& estimated) const
     {
         KDL::Vector pos (estimated(0), estimated(1), estimated(2));
         std::pair<int,double> min;
@@ -143,6 +159,7 @@ public:
                 }
             }
         }
+        std::cout << "get point" << std::endl;
         return min.first;
     }
 
@@ -176,7 +193,7 @@ public:
 
 private:
     time_callback_t     set_time_;
-    std::map<uint64_t, jaco2_contact_msgs::Jaco2CollisionSample> data_;
+    const ContactSequence* data_;
     std::vector<cslibs_kdl::KDLTransformation> labeled_contact_points_;
     ConfusionMatrix confusion_matrix_;
     int no_collision_label_;

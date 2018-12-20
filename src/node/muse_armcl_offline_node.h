@@ -6,6 +6,7 @@
 #include <muse_smc/prediction/prediction_relay.hpp>
 
 #include <muse_armcl/state_space/mesh_map_provider.hpp>
+#include <muse_armcl/evaluation/contact_evaluation_data.hpp>
 #include <muse_armcl/prediction/prediction_model.hpp>
 #include <muse_armcl/update/update_model.hpp>
 
@@ -28,6 +29,7 @@
 #include <rosbag/view.h>
 
 #include <ros/ros.h>
+
 
 namespace muse_armcl {
 class EIGEN_ALIGN16 MuseARMCLOfflineNode
@@ -95,7 +97,8 @@ private:
     StatePublisherOffline::Ptr  state_publisher_;
 
     /// rosbag
-    std::shared_ptr<rosbag::Bag>  bag_;
+//    std::shared_ptr<rosbag::Bag>  bag_;
+    std::shared_ptr<DataSet>      data_set_;
     std::string                   bag_joint_state_topic_;
     std::string                   bag_tf_topic_;
     /// results

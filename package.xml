@@ -20,6 +20,8 @@
   <depend>cslibs_indexed_storage</depend>
   <depend>cslibs_kdl</depend>
   <depend>cslibs_kdl_msgs</depend>
+  <depend>cslibs_kdl_data</depend>
+  <depend>cslibs_kdl_conversion</depend>
   <depend>cslibs_utility</depend>
   <depend>rosbag</depend>
 

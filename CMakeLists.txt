@@ -9,7 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_mesh_map
   cslibs_indexed_storage
   cslibs_kdl
+  cslibs_kdl_data
   cslibs_kdl_msgs
+  cslibs_kdl_conversion
   cslibs_utility
   rosbag
 )
@@ -19,7 +21,7 @@ find_package(NLOPT REQUIRED)
 catkin_package(
   INCLUDE_DIRS   include
   CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data
-                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_utility rosbag cslibs_kdl_msgs
+                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_utility rosbag cslibs_kdl_msgs cslibs_kdl_data cslibs_kdl_conversion
   DEPENDS orocos_kdl NLOPT
 )
 
@@ -47,6 +49,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/scheduling/cfs.cpp
   src/scheduling/rate.cpp
   src/scheduling/dummy.cpp
+  src/scheduling/integrate_all.cpp
   src/density/dominants.cpp
   src/density/means.cpp
   src/density/weighted_means.cpp

@@ -29,7 +29,7 @@ public:
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
         weight_threshold_percentage_ = nh.param(param_name("weight_threshold"), 0.1);
-        std::cout << "weight_threshold: "<< weight_threshold_ << std::endl;
+        std::cout << "weight_threshold: "<< weight_threshold_percentage_ << std::endl;
         const double resolution = nh.param(param_name("resolution"), 0.1);
         const double clustering_weight_threshold_percentage = nh.param(param_name("clustering_weight_threshold"), 0.1);
          std::cout << "clustering_weight_threshold: "<< clustering_weight_threshold_percentage << std::endl;
