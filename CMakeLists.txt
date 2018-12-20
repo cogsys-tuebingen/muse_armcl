@@ -54,7 +54,6 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/density/means.cpp
   src/density/weighted_means.cpp
   src/prediction/random_walk.cpp
-  src/update/dummy_update_model.cpp
   src/update/joint_state_provider.cpp
   src/update/normalized_update_model.cpp
   src/update/normalized_cone_update_model.cpp
