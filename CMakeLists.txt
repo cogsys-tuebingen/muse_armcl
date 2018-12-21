@@ -36,6 +36,7 @@ include_directories(
 add_library(${PROJECT_NAME}_lib SHARED
   # contains all plugins...
   src/state_space/mesh_map_loader.cpp
+  src/state_space/mesh_map_loader_offline.cpp
   src/resampling/kld.cpp
   src/resampling/sir.cpp
   src/resampling/residual.cpp

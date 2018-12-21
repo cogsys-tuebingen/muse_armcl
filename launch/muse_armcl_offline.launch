@@ -1,6 +1,5 @@
 <?xml version="1.0" ?>
 <launch>
-    <param name="/use_sim_time" value="true" />
     <arg name="mesh_path"             value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
     <arg name="joint_state_topic"     value="/joint_states"/>
     <arg name="minimum_sample_size"   value="1500"/>
@@ -8,9 +7,13 @@
     <arg name="contact_marker_r"      value="0.0"/>
     <arg name="contact_marker_g"      value="1.0"/>
     <arg name="contact_marker_b"      value="0.0"/>
-    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>
+<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>-->
+    <arg name="bag"                   value="/tmp/test_bag.bag"/>
     <arg name="bag_joint_state_topic" value="/contact_data"/>
     <arg name="bag_tf_topic"          value="/first_tf"/>
+<!--    <arg name="contact_points_file"   value="$(find jaco2_contact_detection_evaluation)/configs/collision_points.yaml"/>-->
+    <arg name="contact_points_file"   value="/home/zwiener/contact_evo/configs/collision_points.yaml"/>
+    <arg name="results_base_file"     value="/home/zwiener/armcl_sim_nd_no_l1"/>
 
 
     <group ns="muse_armcl">
@@ -22,6 +25,8 @@
         <param name="bag_filename"          value="$(arg bag)"/>
         <param name="bag_joint_state_topic" value="$(arg bag_joint_state_topic)"/>
         <param name="bag_tf_topic"          value="$(arg bag_tf_topic)"/>
+        <param name="contact_points_file"   value="$(arg contact_points_file)"/>
+        <param name="results_base_file"     value="$(arg results_base_file)"/>
 
         <!-- data providers -->
         <group ns="joint_states">
@@ -34,9 +39,10 @@
 
         <!-- map providers -->
         <group ns="mesh_map">
-            <param name="class"      value="muse_armcl::MeshMapLoader" />
+            <param name="class"      value="muse_armcl::MeshMapLoaderOffline" />
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
+            <param name="tf_timeout" value="5.0" />
             <rosparam param="meshes">
                 ["jaco2_link_2.obj", 
                  "jaco2_link_3.obj", 
@@ -145,7 +151,7 @@
 
         <!-- scheduling -->
         <group ns="scheduler">
-            <param name="class"      value="muse_armcl::Dummy" />
+            <param name="class"      value="muse_armcl::IntegrateAll" />
             <param name="base_class" value="muse_armcl::Scheduler" />
             <param name="rate"       value="5.0" />
         </group>

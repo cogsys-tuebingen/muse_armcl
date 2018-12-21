@@ -40,15 +40,23 @@ public:
 
     virtual void publish(const typename sample_set_t::ConstPtr &sample_set) override
     {
+        std::cout << "after resampling" << "\n";
+
         StatePublisher::publish(sample_set);
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
 
-        if (!map_provider_)
+        if (!map_provider_) {
+            std::cerr << "[StatePublisherOffline]: I have no map."  << std::endl;
             return;
-        if(!data_)
+        }
+        if(!data_) {
+            std::cerr << "[StatePublisherOffline]: I have no data." << std::endl;
             return;
+        }
+
+        std::cout << "evaluate" << std::endl;
 
         /// get the map
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
@@ -121,11 +129,13 @@ public:
     }
     virtual void publishIntermediate(const typename sample_set_t::ConstPtr &sample_set) override
     {
+        std::cout << "intermediate" << "\n";
         StatePublisher::publishIntermediate(sample_set);
         set_time_(sample_set->getStamp());
     }
     virtual void publishConstant(const typename sample_set_t::ConstPtr &sample_set) override
     {
+        std::cout << "constant" << "\n";
         StatePublisher::publishConstant(sample_set);
         set_time_(sample_set->getStamp());
     }

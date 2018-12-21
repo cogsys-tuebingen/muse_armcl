@@ -30,6 +30,28 @@ bool MuseARMCLOfflineNode::setup()
     /// load all muse_armcl plugins
     cslibs_plugins::PluginLoader loader("muse_armcl", nh_private_);
 
+    /// load dataset from bagfile
+    std::string bag_filename;
+    nh_private_.getParam("bag_filename",          bag_filename);
+    nh_private_.getParam("bag_joint_state_topic", bag_joint_state_topic_);
+    nh_private_.getParam("bag_tf_topic",          bag_tf_topic_);
+    std::shared_ptr<rosbag::Bag> bag;
+    try {
+        //        bag_.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
+        bag.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
+    } catch (std::exception &e) {
+        ROS_ERROR_STREAM("Could not load bagfile " + bag_filename + "!");
+        return false;
+    }
+    data_set_.reset(new muse_armcl::DataSet);
+    if(!muse_armcl::DataSetLoader::loadFromBag(*bag, bag_tf_topic_, bag_joint_state_topic_, *data_set_)){
+        ROS_ERROR_STREAM("Could not load data from bagfile " + bag_filename + "!");
+        return false;
+    }
+    bag->close();
+    ROS_INFO_STREAM("Data successfully loaded!");
+
+
     {   /// Update Models
         loader.load<UpdateModel, /*tf_provider_t::Ptr, */ros::NodeHandle&>(
                     update_models_, /*tf_provider_backend_, */nh_private_);
@@ -142,27 +164,6 @@ bool MuseARMCLOfflineNode::setup()
         ROS_INFO_STREAM("[" << scheduler_->getName() << "]");
     }
 
-    /// load dataset from bagfile
-    std::string bag_filename;
-    nh_private_.getParam("bag_filename",          bag_filename);
-    nh_private_.getParam("bag_joint_state_topic", bag_joint_state_topic_);
-    nh_private_.getParam("bag_tf_topic",          bag_tf_topic_);
-    std::shared_ptr<rosbag::Bag> bag;
-    try {
-        //        bag_.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
-        bag.reset(new rosbag::Bag(bag_filename, rosbag::bagmode::Read));
-    } catch (std::exception &e) {
-        ROS_ERROR_STREAM("Could not load bagfile " + bag_filename + "!");
-        return false;
-    }
-    data_set_.reset(new muse_armcl::DataSet);
-    if(!muse_armcl::DataSetLoader::loadFromBag(*bag, bag_tf_topic_, bag_joint_state_topic_, *data_set_)){
-        ROS_ERROR_STREAM("Could not load data from bagfile " + bag_filename + "!");
-        return false;
-    }
-    bag->close();
-    ROS_INFO_STREAM("Data successfully loaded!");
-
 
     /// results file
     results_file_base_name_ = nh_private_.param<std::string>("results_base_file","/tmp/armcl_res_");
@@ -249,14 +250,9 @@ bool MuseARMCLOfflineNode::setup()
 
 void MuseARMCLOfflineNode::start()
 {
+
     for (auto &d : data_providers_) {
         d.second->enable();
-    }
-
-    /// trigger uniform initialization
-    if (!particle_filter_->start()) {
-        ROS_ERROR_STREAM("Couldn't start the filter!");
-        return;
     }
 
     std::shared_ptr<std::vector<tf::StampedTransform>>   tf_transforms;
@@ -279,8 +275,12 @@ void MuseARMCLOfflineNode::start()
         tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
         send_transform(now);
         ros::spinOnce();
-        particle_filter_->requestUniformInitialization(time_t(now.toNSec()));
 
+        if (!particle_filter_->start()) {
+            ROS_ERROR_STREAM("Couldn't start the filter!");
+            return;
+        }
+        particle_filter_->requestUniformInitialization(time_t(now.toNSec()));
         state_publisher_->setData(seq.data);
 
         /// itearte the sequence to test and tick the tf broadcaster
@@ -303,8 +303,10 @@ void MuseARMCLOfflineNode::start()
         while(ros::ok()) {
             {
                 std::unique_lock<std::mutex> l(filter_time_mutex_);
-                if(expected == filter_time_)
+                if(expected == filter_time_) {
+                    ROS_INFO_STREAM("Filter time reached.");
                     break;
+                }
             }
             send_transform(expected);
             ros::spinOnce();
@@ -313,10 +315,11 @@ void MuseARMCLOfflineNode::start()
             }
         }
 
-        tf_transforms.reset();
-        state_publisher_.reset();
+//        state_publisher_->reset();
         state_publisher_->exportResults(results_file_base_name_);
         ROS_INFO_STREAM("processed: " << ++count << " of " << nv << " messages.");
+
+        particle_filter_->end();
     }
 }
 

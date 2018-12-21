@@ -3,6 +3,9 @@
    <class type="muse_armcl::MeshMapLoader" base_class_type="muse_armcl::MeshMapProvider">
      <description>Provides mesh map, looks up transformations between links at each step.</description>
    </class>
+   <class type="muse_armcl::MeshMapLoaderOffline" base_class_type="muse_armcl::MeshMapProvider">
+     <description>Provides mesh map, looks up transformations between links at each step.</description>
+   </class>
 
    <!-- Sampling -->
    <class type="muse_armcl::Normal" base_class_type="muse_armcl::NormalSampling">

@@ -31,7 +31,7 @@ public:
         return cslibs_plugins::Plugin::getName();
     }
 
-    virtual void setup(const tf_provider_t::Ptr &tf,
+    void setup(const tf_provider_t::Ptr &tf,
                        ros::NodeHandle &nh)
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};

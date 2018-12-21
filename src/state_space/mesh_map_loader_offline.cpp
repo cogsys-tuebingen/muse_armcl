@@ -9,13 +9,28 @@
 #include <ros/ros.h>
 
 namespace muse_armcl {
-class EIGEN_ALIGN16 MeshMapLoader : public MeshMapProvider
+class EIGEN_ALIGN16 MeshMapLoaderOffline : public MeshMapProvider
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    using allocator_t = Eigen::aligned_allocator<MeshMapLoader>;
+    using allocator_t = Eigen::aligned_allocator<MeshMapLoaderOffline>;
+
+    MeshMapLoaderOffline():
+        stop_waiting_you_son_of_a_bitch_(false)
+    {
+    }
+
+    virtual ~MeshMapLoaderOffline()
+    {
+        stop_waiting_you_son_of_a_bitch_ = true;
+        if(worker_.joinable())
+            worker_.join();
+    }
+
     state_space_t::ConstPtr getStateSpace() const override
     {
+        waitForStateSpace();
+
         std::unique_lock<std::mutex> l(map_mutex_);
         return map_;
     }
@@ -36,7 +51,6 @@ public:
         parent_ids_  = nh.param<std::vector<std::string>>(param_name("parent_ids"), std::vector<std::string>());
         frame_ids_   = nh.param<std::vector<std::string>>(param_name("frame_ids"),  std::vector<std::string>());
 
-        pub_surface_ = nh.advertise<visualization_msgs::MarkerArray>("surface",1);
         last_update_ = ros::Time::now();
         auto load = [this]() {
             if (!map_) {
@@ -47,7 +61,6 @@ public:
 
                 /// load map
                 tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
-//                mesh_map_tree_node_t* l1 = tree.getNode(frame_ids_.front());
 
                 std::unique_lock<std::mutex> l(map_mutex_);
                 map_.reset(new MeshMap(&tree, frame_ids_.front()));
@@ -87,68 +100,36 @@ private:
     std::vector<std::string>                parent_ids_;
     std::vector<std::string>                frame_ids_;
 
-    ros::Publisher                          pub_surface_;
-    mutable visualization_msgs::MarkerArray markers_;
-    mutable visualization_msgs::Marker      msg_;
+    std::atomic_bool                        stop_waiting_you_son_of_a_bitch_;
+
     inline void updateTransformations() const
     {
-        const ros::Time now = ros::Time(0);
+        const ros::Time now = ros::Time::now();
         if (!map_ || (!first_load_ && (now == last_update_)))
             return;
 
-        ROS_INFO_STREAM("update map tranformations: rate "  << 1.0/(now -last_update_).toSec()  );
         last_update_ = now;
-        resetMarkers();
 
-        /// set current transforms between links
-//        for (const std::string& frame_id : frame_ids_) {
+        std::cout << tf_timeout_ << std::endl;
+
         for(mesh_map_tree_node_t::Ptr m : tree){
-
-//            mesh_map_tree_node_t* m = map_->data()->getNode(frame_id);
-//            if (!m)
-//                throw std::runtime_error("[" + name_ + "]: Mesh for frame " + frame_id + " does not exist!");
-
             std::string root;
             std::string frame_id = m->frameId();
             bool found = m->parentFrameId(root);
             if (!found) root = frame_id;
-
             cslibs_math_3d::Transform3d transform;
-            if (!tf_->lookupTransform(root, frame_id , now, transform, tf_timeout_))
-                std::cerr << "Can't lookup transform: " << root << " <- " << frame_id << std::endl;
-            else
-                m->transform = transform;
 
-            addMarker(m->map);
+            while(!tf_->lookupTransform(root, frame_id , now, transform, tf_timeout_)) {
+                std::cout << "[MeshMapLoaderOffline]: I am waiting another round! \n";
+                if(stop_waiting_you_son_of_a_bitch_)
+                    break;
+            }
+            m->transform = transform;
+
         }
-
-        publishMarkers();
-    }
-
-    inline void resetMarkers() const
-    {
-        markers_.markers.clear();
-        msg_.action = visualization_msgs::Marker::MODIFY;
-        msg_.lifetime = ros::Duration(0.2);
-        msg_.id = 0;
-    }
-
-    inline void addMarker(mesh_map_t& link) const
-    {
-        cslibs_mesh_map::visualization::visualizeVertices(link, msg_);
-        markers_.markers.push_back(msg_);
-        cslibs_mesh_map::visualization::visualizeBoundry(link, markers_);
-    }
-
-    inline void publishMarkers() const
-    {
-        const ros::Time now = ros::Time::now();
-        for (auto &m : markers_.markers)
-            m.header.stamp = now;
-        pub_surface_.publish(markers_);
     }
 };
 }
 
 #include <class_loader/class_loader_register_macro.h>
-CLASS_LOADER_REGISTER_CLASS(muse_armcl::MeshMapLoader, muse_armcl::MeshMapProvider)
+CLASS_LOADER_REGISTER_CLASS(muse_armcl::MeshMapLoaderOffline, muse_armcl::MeshMapProvider)
