@@ -7,8 +7,8 @@
     <arg name="contact_marker_r"      value="0.0"/>
     <arg name="contact_marker_g"      value="1.0"/>
     <arg name="contact_marker_b"      value="0.0"/>
-<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>-->
-    <arg name="bag"                   value="/tmp/test_bag.bag"/>
+    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>
+<!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
     <arg name="bag_joint_state_topic" value="/contact_data"/>
     <arg name="bag_tf_topic"          value="/first_tf"/>
 <!--    <arg name="contact_points_file"   value="$(find jaco2_contact_detection_evaluation)/configs/collision_points.yaml"/>-->
@@ -42,7 +42,7 @@
             <param name="class"      value="muse_armcl::MeshMapLoaderOffline" />
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
-            <param name="tf_timeout" value="5.0" />
+            <param name="tf_timeout" value="0.5" />
             <rosparam param="meshes">
                 ["jaco2_link_2.obj", 
                  "jaco2_link_3.obj", 

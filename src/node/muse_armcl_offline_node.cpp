@@ -49,7 +49,7 @@ bool MuseARMCLOfflineNode::setup()
         return false;
     }
     bag->close();
-    ROS_INFO_STREAM("Data successfully loaded!");
+    ROS_INFO_STREAM("Data successfully loaded! " << data_set_->size() << " sequences.");
 
 
     {   /// Update Models
