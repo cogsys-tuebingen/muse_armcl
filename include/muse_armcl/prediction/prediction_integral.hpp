@@ -20,14 +20,9 @@ public:
     {
     }
 
-    virtual bool updateThresholdExceeded() const override
+    virtual bool thresholdExceeded() const override
     {
         return true; // always allow updating
-    }
-
-    virtual bool resamplingThresholdExceeded() const override
-    {
-        return true; // always allow resampling
     }
 
     virtual bool isZero() const override
