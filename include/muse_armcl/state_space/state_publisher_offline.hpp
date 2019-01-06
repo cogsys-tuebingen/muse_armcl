@@ -105,7 +105,7 @@ public:
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
-            if (p_map && (tau_norm > no_contact_force_threshold_)) {
+            if (p_map && (tau_norm > no_contact_torque_threshold_)) {
                 std::string link = p_map->frameId();
                 cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
                 cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);

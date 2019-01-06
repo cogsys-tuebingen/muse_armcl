@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   cslibs_kdl_conversion
   cslibs_utility
   rosbag
+  jaco2_contact_msgs
 )
 
 find_package(orocos_kdl REQUIRED)
@@ -21,7 +22,7 @@ find_package(NLOPT REQUIRED)
 catkin_package(
   INCLUDE_DIRS   include
   CATKIN_DEPENDS muse_smc cslibs_plugins cslibs_plugins_data
-                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_utility rosbag cslibs_kdl_msgs cslibs_kdl_data cslibs_kdl_conversion
+                 cslibs_mesh_map cslibs_indexed_storage cslibs_kdl cslibs_utility rosbag cslibs_kdl_msgs cslibs_kdl_data cslibs_kdl_conversion jaco2_contact_msgs
   DEPENDS orocos_kdl NLOPT
 )
 
