@@ -35,7 +35,7 @@ protected:
     double contact_marker_r_;
     double contact_marker_g_;
     double contact_marker_b_;
-    double no_contact_force_threshold_;
+    double no_contact_torque_threshold_;
 
 
 

@@ -24,6 +24,7 @@
   <depend>cslibs_kdl_conversion</depend>
   <depend>cslibs_utility</depend>
   <depend>rosbag</depend>
+  <depend>jaco2_contact_msgs</depend>
 
   <export>
     <muse_armcl plugin="${prefix}/plugins.xml" />

@@ -31,7 +31,7 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
     contact_marker_g_ = nh.param<double>("contact_marker_g", 0.0);
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
-    no_contact_force_threshold_ = nh.param<double>("no_contact_force_threshold", 0.1);
+    no_contact_torque_threshold_ = nh.param<double>("update_threshold", 0.1);
 
     pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
     pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 1);
@@ -127,7 +127,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         cslibs_kdl_msgs::ContactMessageArray contact_msg;
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            if (p_map && std::fabs(p.state.force) > no_contact_force_threshold_) {
+            if (p_map && std::fabs(p.state.force) > no_contact_torque_threshold_) {
                 cslibs_kdl_msgs::ContactMessage contact;
                 contact.header.frame_id = p_map->frameId();
                 contact.header.stamp = stamp;
