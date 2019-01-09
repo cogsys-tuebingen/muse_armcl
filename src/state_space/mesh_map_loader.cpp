@@ -4,7 +4,7 @@
 #include <condition_variable>
 
 #include <muse_armcl/state_space/mesh_map_provider.hpp>
-
+#include <cslibs_math_ros/tf/conversion_3d.hpp>
 #include <cslibs_mesh_map/cslibs_mesh_map_visualization.h>
 #include <ros/ros.h>
 
@@ -46,11 +46,11 @@ public:
                     throw std::runtime_error("[" + name_ + "]: No frame id found!");
 
                 /// load map
-                tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
+                tree_.loadFromFile(path_, parent_ids_, frame_ids_, files_);
 //                mesh_map_tree_node_t* l1 = tree.getNode(frame_ids_.front());
 
                 std::unique_lock<std::mutex> l(map_mutex_);
-                map_.reset(new MeshMap(&tree, frame_ids_.front()));
+                map_.reset(new MeshMap(&tree_, frame_ids_.front()));
 
                 /// update transformations
                 first_load_ = true;
@@ -68,6 +68,11 @@ public:
         worker_ = std::thread(load);
     }
 
+    bool initializeTF(const std::vector<tf::StampedTransform>& transforms)
+    {
+        return true;
+    }
+
 private:
     using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
@@ -77,7 +82,7 @@ private:
     std::thread                             worker_;
     mutable std::condition_variable         notify_;
 
-    mesh_map_tree_t                         tree;
+    mesh_map_tree_t                         tree_;
     mutable MeshMap::Ptr                    map_;
     bool                                    first_load_;
     mutable ros::Time                       last_update_;
@@ -102,7 +107,7 @@ private:
 
         /// set current transforms between links
 //        for (const std::string& frame_id : frame_ids_) {
-        for(mesh_map_tree_node_t::Ptr m : tree){
+        for(mesh_map_tree_node_t::Ptr m : tree_){
 
 //            mesh_map_tree_node_t* m = map_->data()->getNode(frame_id);
 //            if (!m)

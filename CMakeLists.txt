@@ -33,7 +33,6 @@ include_directories(
   ${NLOPT_INCLUDE_DIRS}
 )
 
-
 add_library(${PROJECT_NAME}_lib SHARED
   # contains all plugins...
   src/state_space/mesh_map_loader.cpp
@@ -59,6 +58,7 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/update/joint_state_provider.cpp
   src/update/normalized_update_model.cpp
   src/update/normalized_cone_update_model.cpp
+  src/state_space/transform_graph.cpp
 )
 target_link_libraries(${PROJECT_NAME}_lib
   ${catkin_LIBRARIES}
@@ -82,6 +82,16 @@ add_executable(${PROJECT_NAME}_test_bag_node
   src/node/muse_armcl_test_bag_node.cpp
 )
 target_link_libraries(${PROJECT_NAME}_test_bag_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
+  ${NLOPT_LIBRARIES}
+)
+
+add_executable(${PROJECT_NAME}_test_tfg_node
+  src/node/muse_armcl_test_tfg_node
+)
+target_link_libraries(${PROJECT_NAME}_test_tfg_node
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}_lib
   ${orocos_kdl_LIBRARIES}

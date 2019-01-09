@@ -40,7 +40,7 @@ public:
 
     virtual void publish(const typename sample_set_t::ConstPtr &sample_set) override
     {
-        std::cout << "after resampling" << "\n";
+        std::cout << "after resampling" << std::endl;
 
         StatePublisher::publish(sample_set);
 
@@ -56,7 +56,7 @@ public:
             return;
         }
 
-        std::cout << "evaluate" << std::endl;
+//        std::cout << "evaluate" << std::endl;
 
         /// get the map
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
@@ -73,14 +73,13 @@ public:
         // ground truth data
         uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
         const ContactSample& gt = data_->at(nsecs);
-
+        std::size_t sample_id = data_->getID(nsecs);
         if(gt.state.torque.empty()) {
             std::cout << nsecs << std::endl;
             throw std::runtime_error("Empty data recieved");
         }
 
         double tau_norm =  gt.state.norm(cslibs_kdl_data::JointStateData::DataType::JOINT_TORQUE);
-        std::cout << "torque res: " <<tau_norm << " gt label: "<< gt.label << std::endl;
         cslibs_math_3d::Vector3d actual_pos;
         cslibs_math_3d::Vector3d actual_dir;
 
@@ -121,21 +120,23 @@ public:
                 }
             }
         }
-        confusion_matrix_.reportClassification(gt.label, event.closest_point);
-        results_.push_back(event);
+        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
+                  << " detected: " << event.closest_point << std::endl;
+//        confusion_matrix_.reportClassification(gt.label, event.closest_point);
+//        results_.push_back(event);
 
         set_time_(sample_set->getStamp());
 
     }
     virtual void publishIntermediate(const typename sample_set_t::ConstPtr &sample_set) override
     {
-        std::cout << "intermediate" << "\n";
+//        std::cout << "intermediate" << "\n";
         StatePublisher::publishIntermediate(sample_set);
         set_time_(sample_set->getStamp());
     }
     virtual void publishConstant(const typename sample_set_t::ConstPtr &sample_set) override
     {
-        std::cout << "constant" << "\n";
+//        std::cout << "constant" << "\n";
         StatePublisher::publishConstant(sample_set);
         set_time_(sample_set->getStamp());
     }
@@ -169,7 +170,7 @@ public:
                 }
             }
         }
-        std::cout << "get point" << std::endl;
+//        std::cout << "get point" << std::endl;
         return min.first;
     }
 
@@ -178,7 +179,7 @@ public:
         std::string point_name = "p" + std::to_string(label);
         for(const cslibs_kdl::KDLTransformation t : labeled_contact_points_)
         {
-            if(point_name == t.parent){
+            if(point_name == t.name){
                 position(0) = t.frame.p.x();
                 position(1) = t.frame.p.y();
                 position(2) = t.frame.p.z();

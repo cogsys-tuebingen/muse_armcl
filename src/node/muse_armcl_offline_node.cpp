@@ -240,7 +240,7 @@ bool MuseARMCLOfflineNode::setup()
     }
     predicition_forwarder_->relay(prediction_model_, prediction_provider, map_provider);
 
-    update_forwarder_.reset(new update_relay_t(particle_filter_));
+    update_forwarder_.reset(new update_relay_t(particle_filter_/*, true*/));
     update_model_mapping_t update_mapping;
     if (!getUpdateModelProviderMapping(update_mapping)) {
         ROS_ERROR_STREAM("Setup is incomplete and is aborted!");
@@ -273,11 +273,22 @@ void MuseARMCLOfflineNode::start()
     std::size_t nv = data_set_->size();
     std::size_t count = 0;
 
+
     for(ContactEvaluationSample& seq : *data_set_){
         ros::Time now = ros::Time::now();
         tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
         send_transform(now);
+
         ros::spinOnce();
+
+        /// init map provider ...
+        ROS_INFO_STREAM("Setting tf!");
+        for(auto map : map_providers_){
+            if(!map.second->initializeTF(*tf_transforms)){
+                ROS_ERROR_STREAM("Couldn't set initial tf transfroms!");
+                return;
+            }
+        }
 
         if (!particle_filter_->start()) {
             ROS_ERROR_STREAM("Couldn't start the filter!");
@@ -287,6 +298,7 @@ void MuseARMCLOfflineNode::start()
         state_publisher_->setData(seq.data);
 
         /// itearte the sequence to test and tick the tf broadcaster
+        std::size_t foo = 0;
         for(ContactSample &s : seq.data) {
             now = ros::Time::now();
             send_transform(now);
@@ -297,9 +309,11 @@ void MuseARMCLOfflineNode::start()
                     sensor_msgs::JointState::Ptr js(new sensor_msgs::JointState);
                     cslibs_kdl::JointStateStampedConversion::data2ros(s.state, *js);
                     j.callback(js);
+//                    ROS_INFO_STREAM("sample " <<++foo << " of " << seq.data.size());
                 }
             }
         }
+        ROS_INFO_STREAM("Send " << seq.data.size() << " messages");
 
         ros::Time expected = now;
         double node_rate = nh_private_.param<double>("node_rate", 60.0);
@@ -310,6 +324,7 @@ void MuseARMCLOfflineNode::start()
                     ROS_INFO_STREAM("Filter time reached.");
                     break;
                 }
+//                ROS_INFO_STREAM(expected << " vs. " << filter_time_);
             }
             send_transform(expected);
             ros::spinOnce();
@@ -318,11 +333,12 @@ void MuseARMCLOfflineNode::start()
             }
         }
 
-//        state_publisher_->reset();
+        state_publisher_->reset();
         state_publisher_->exportResults(results_file_base_name_);
         ROS_INFO_STREAM("processed: " << ++count << " of " << nv << " messages.");
 
         particle_filter_->end();
+        exit(0);
     }
 }
 

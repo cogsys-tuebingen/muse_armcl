@@ -33,6 +33,11 @@ public:
         return data_.at(id);
     }
 
+    std::size_t getID(const uint64_t& time) const
+    {
+        return time_map_.at(time);
+    }
+
     bool emplace_back(const uint64_t& time, const T& d)
     {
         auto it = time_map_.find(time);

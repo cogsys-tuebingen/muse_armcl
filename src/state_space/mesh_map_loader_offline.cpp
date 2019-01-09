@@ -3,11 +3,12 @@
 #include <atomic>
 #include <condition_variable>
 
+#include <muse_armcl/state_space/transform_graph.h>
 #include <muse_armcl/state_space/mesh_map_provider.hpp>
-
+#include <cslibs_math_ros/tf/conversion_3d.hpp>
 #include <cslibs_mesh_map/cslibs_mesh_map_visualization.h>
 #include <ros/ros.h>
-
+#include <tf/tf.h>
 namespace muse_armcl {
 class EIGEN_ALIGN16 MeshMapLoaderOffline : public MeshMapProvider
 {
@@ -16,7 +17,8 @@ public:
     using allocator_t = Eigen::aligned_allocator<MeshMapLoaderOffline>;
 
     MeshMapLoaderOffline():
-        stop_waiting_you_son_of_a_bitch_(false)
+        stop_waiting_you_son_of_a_bitch_(false),
+        set_tf_(false)
     {
     }
 
@@ -60,18 +62,17 @@ public:
                     throw std::runtime_error("[" + name_ + "]: No frame id found!");
 
                 /// load map
-                tree.loadFromFile(path_, parent_ids_, frame_ids_, files_);
+                tree_.loadFromFile(path_, parent_ids_, frame_ids_, files_);
 
                 std::unique_lock<std::mutex> l(map_mutex_);
-                map_.reset(new MeshMap(&tree, frame_ids_.front()));
+                map_.reset(new MeshMap(&tree_, frame_ids_.front()));
+                l.unlock();
 
                 /// update transformations
                 first_load_ = true;
                 updateTransformations();
                 first_load_ = false;
 
-                /// finish load by unlocking mutex
-                l.unlock();
                 ROS_INFO_STREAM("[" << name_ << "]: Loaded map.");
 
                 notify_.notify_all();
@@ -79,6 +80,41 @@ public:
         };
 
         worker_ = std::thread(load);
+    }
+
+    bool initializeTF(const std::vector<tf::StampedTransform>& transforms)
+    {
+        ros::Rate r(20);
+
+        TransformGraph tfg;
+        if(!tfg.setup(transforms)){
+            return false;
+        }
+
+        while(tree_.size() != frame_ids_.size()){
+            r.sleep();
+            ROS_INFO_STREAM(tree_.size() << " vs. " << frame_ids_.size());
+        }
+
+        bool set_all = true;
+        for(mesh_map_tree_node_t::Ptr m : tree_){
+            std::string frame_id = m->frameId();
+            std::string parent = "";
+            bool has_parent = m->parentFrameId(parent);
+            ROS_INFO_STREAM("[" << name_ << "]: " << parent << ", " << frame_id);
+            if(has_parent){
+                std::unique_lock<std::mutex> l(map_mutex_);
+                bool found =  tfg.query(parent, frame_id, m->transform);
+                set_all &= found;
+            }
+        }
+        if(set_all){
+            ROS_INFO_STREAM("[" << name_ << "]: map transforms successfully set");
+        } else{
+            ROS_ERROR_STREAM("[" << name_ << "]: setting map transforms failed!");
+        }
+        set_tf_ = set_all;
+        return set_all;
     }
 
 private:
@@ -90,7 +126,7 @@ private:
     std::thread                             worker_;
     mutable std::condition_variable         notify_;
 
-    mesh_map_tree_t                         tree;
+    mesh_map_tree_t                         tree_;
     mutable MeshMap::Ptr                    map_;
     bool                                    first_load_;
     mutable ros::Time                       last_update_;
@@ -101,6 +137,7 @@ private:
     std::vector<std::string>                frame_ids_;
 
     std::atomic_bool                        stop_waiting_you_son_of_a_bitch_;
+    std::atomic_bool                        set_tf_;
 
     inline void updateTransformations() const
     {
@@ -112,7 +149,7 @@ private:
 
         std::cout << tf_timeout_ << std::endl;
 
-        for(mesh_map_tree_node_t::Ptr m : tree){
+        for(mesh_map_tree_node_t::Ptr m : tree_){
             std::string root;
             std::string frame_id = m->frameId();
             bool found = m->parentFrameId(root);
@@ -120,11 +157,16 @@ private:
             cslibs_math_3d::Transform3d transform;
 
             while(!tf_->lookupTransform(root, frame_id , now, transform, tf_timeout_)) {
+                if(set_tf_){
+                    return;
+                }
                 std::cout << "[MeshMapLoaderOffline]: I am waiting another round! \n";
                 if(stop_waiting_you_son_of_a_bitch_)
                     break;
             }
+            std::unique_lock<std::mutex> l(map_mutex_);
             m->transform = transform;
+            l.unlock();
 
         }
     }

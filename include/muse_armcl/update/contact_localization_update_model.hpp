@@ -95,6 +95,7 @@ public:
             *it *= calculateWeight(state, tau_sensed, map, jacobians, transforms);
         }
 //        std::cout << "update done; took: " << (ros::Time::now() - start).toNSec() * 1e-6 << "ms\n";
+        std::cout << "updtate done" << std::endl;
     }
 
     virtual double calculateWeight(const state_t& state,

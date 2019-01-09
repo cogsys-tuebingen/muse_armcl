@@ -7,6 +7,7 @@
 #include <cslibs_plugins/plugin.hpp>
 #include <cslibs_math_ros/tf/tf_provider.hpp>
 #include <ros/ros.h>
+#include <tf/tf.h>
 
 namespace muse_armcl {
 class EIGEN_ALIGN16 MeshMapProvider : public muse_smc::StateSpaceProvider<StateSpaceDescription>,
@@ -41,6 +42,8 @@ public:
 
         doSetup(nh);
     }
+
+    virtual bool initializeTF(const std::vector<tf::StampedTransform>& transforms) = 0;
 
 protected:
     ros::Duration      tf_timeout_;
