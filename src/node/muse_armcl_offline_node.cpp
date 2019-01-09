@@ -264,25 +264,12 @@ void MuseARMCLOfflineNode::start()
     std::shared_ptr<std::vector<tf::StampedTransform>>   tf_transforms;
     tf::TransformBroadcaster                             tf_broadcaster;
 
-    auto send_transform = [&tf_broadcaster, &tf_transforms](const ros::Time &time)
-    {
-        for(auto t : *tf_transforms)
-        {
-            t.stamp_ = time;
-        }
-        tf_broadcaster.sendTransform(*tf_transforms);
-    };
-
     std::size_t nv = data_set_->size();
     std::size_t count = 0;
 
-
     for(ContactEvaluationSample& seq : *data_set_){
-        ros::Time now = ros::Time::now();
-        tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
-        send_transform(now);
 
-        ros::spinOnce();
+        tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
 
         /// init map provider ...
         ROS_INFO_STREAM("Setting tf!");
@@ -293,32 +280,38 @@ void MuseARMCLOfflineNode::start()
             }
         }
 
+        /// seq data
+        if(seq.data.size() == 0) {
+            ROS_ERROR_STREAM("Cannot work with an empty sequence!");
+            continue;
+        }
+
+        state_publisher_->setData(seq.data);
+
         if (!particle_filter_->start()) {
             ROS_ERROR_STREAM("Couldn't start the filter!");
             return;
         }
-        particle_filter_->requestUniformInitialization(time_t(now.toNSec()));
-        state_publisher_->setData(seq.data);
+
+        particle_filter_->requestUniformInitialization(time_t(seq.data.getMinTime()));
 
         /// itearte the sequence to test and tick the tf broadcaster
         std::size_t foo = 0;
         for(ContactSample &s : seq.data) {
-            now = ros::Time::now();
-            send_transform(now);
-            s.header.stamp.fromNSec(now.toNSec());
             for(auto &d : data_providers_) {
                 if(d.second->isType<JointStateProvider>()) {
                     JointStateProvider &j = d.second->as<JointStateProvider>();
                     sensor_msgs::JointState::Ptr js(new sensor_msgs::JointState);
                     cslibs_kdl::JointStateStampedConversion::data2ros(s.state, *js);
                     j.callback(js);
-//                    ROS_INFO_STREAM("sample " <<++foo << " of " << seq.data.size());
+                    ROS_INFO_STREAM("sample " <<++foo << " of " << seq.data.size());
                 }
             }
         }
         ROS_INFO_STREAM("Send " << seq.data.size() << " messages");
 
-        ros::Time expected = now;
+        ros::Time expected;
+        expected.fromNSec(seq.data.getMaxTime());
         double node_rate = nh_private_.param<double>("node_rate", 60.0);
         while(ros::ok()) {
             {
@@ -327,9 +320,8 @@ void MuseARMCLOfflineNode::start()
                     ROS_INFO_STREAM("Filter time reached.");
                     break;
                 }
-//                ROS_INFO_STREAM(expected << " vs. " << filter_time_);
+                ROS_INFO_STREAM(expected << " vs. " << filter_time_);
             }
-            send_transform(expected);
             ros::spinOnce();
             if(node_rate > 0.0) {
                 ros::WallRate(node_rate).sleep();

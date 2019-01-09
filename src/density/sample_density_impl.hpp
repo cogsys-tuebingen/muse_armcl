@@ -3,9 +3,29 @@
 #include <muse_armcl/density/cluster_data.hpp>
 
 #include <cslibs_indexed_storage/storage.hpp>
+#include <cslibs_indexed_storage/backend/simple/unordered_component_map.hpp>
 #include <cslibs_indexed_storage/backend/kdtree/kdtree_buffered.hpp>
 #include <cslibs_indexed_storage/operations/clustering.hpp>
 namespace cis = cslibs_indexed_storage;
+
+namespace std
+{
+//! needed for simple::UnorderedMap
+template<>
+struct hash<std::array<int, 3>>
+{
+    typedef std::array<int, 3> argument_type;
+    typedef std::size_t result_type;
+    result_type operator()(argument_type const& s) const
+    {
+        result_type const h1 ( std::hash<int>{}(s[0]) );
+        result_type const h2 ( std::hash<int>{}(s[1]) );
+        result_type const h3 ( std::hash<int>{}(s[2]) );
+
+        return (h1 ^ (h2 << 1)) | h3;
+    }
+};
+}
 
 namespace muse_armcl {
 template <typename clustering_t>
@@ -21,7 +41,8 @@ public:
     using data_t                = ClusterData;
     using sample_map_t          = typename clustering_t::sample_map_t;
 
-    using kd_tree_t            = cis::Storage<data_t, index_t, cis::backend::kdtree::KDTreeBuffered>;
+//    using kd_tree_t            = cis::Storage<data_t, index_t, cis::backend::kdtree::KDTreeBuffered>;
+    using kd_tree_t            = cis::Storage<data_t, index_t, cis::backend::simple::UnorderedComponentMap>;
     using kd_tree_clustering_t = cis::operations::clustering::Clustering<kd_tree_t>;
 
     virtual void setup(const map_provider_map_t &map_providers,

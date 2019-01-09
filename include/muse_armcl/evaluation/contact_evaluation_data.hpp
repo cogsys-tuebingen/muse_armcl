@@ -13,10 +13,16 @@ template <typename T>
 class TimedData
 {
 public:
-    TimedData() {}
+    TimedData() :
+        min_time_(std::numeric_limits<uint64_t>::max()),
+        max_time_(std::numeric_limits<uint64_t>::min())
+    {}
 
     T& operator[](uint64_t& time)
     {
+        if(time < min_time_)
+            min_time_ = time;
+
         std::size_t id = time_map_[time];
         return data_[id];
     }
@@ -45,6 +51,9 @@ public:
             std::size_t id = data_.size();
             data_.emplace_back(d);
             time_map_[time] = id;
+            if(time < min_time_)
+                min_time_ = time;
+
             return true;
         }
         return false;
@@ -57,6 +66,9 @@ public:
             std::size_t id = data_.size();
             data_.emplace_back(d);
             time_map_[time] = id;
+            if(time < min_time_)
+                min_time_ = time;
+
             return true;
         }
         return false;
@@ -87,11 +99,21 @@ public:
         return data_.end();
     }
 
+    uint64_t getMinTime() const
+    {
+        return min_time_;
+    }
 
+    uint64_t getMaxTime() const
+    {
+        return max_time_;
+    }
 
 protected:
-    std::map<uint64_t,std::size_t> time_map_;
-    std::vector<T> data_;
+    uint64_t                        min_time_;
+    uint64_t                        max_time_;
+    std::map<uint64_t,std::size_t>  time_map_;
+    std::vector<T>                  data_;
 };
 
 class ContactSequence : public TimedData<ContactSample>
@@ -103,11 +125,19 @@ public:
     {
         time_map_.clear();
         data_.clear();
+        min_time_ = std::numeric_limits<uint64_t>::max();
+        max_time_ = std::numeric_limits<uint64_t>::min();
 
         for(const jaco2_contact_msgs::Jaco2CollisionSample& s : data.data){
-            uint64_t nsecs = s.state.header.stamp.toNSec();
+            uint64_t time = s.state.header.stamp.toNSec();
             std::size_t id = data_.size();
-            time_map_[nsecs] = id;
+            time_map_[time] = id;
+
+            if(time < min_time_)
+                min_time_ = time;
+            if(time > max_time_)
+                max_time_ = time;
+
             ContactSample tmp;
             convert(s, tmp);
             data_.emplace_back(tmp);
@@ -141,6 +171,12 @@ public:
             s.transforms = tf_vec;
             data_.emplace_back(s);
             time_map_[time] = id;
+
+            if(time < min_time_)
+                min_time_ = time;
+            if(time > max_time_)
+                max_time_ = time;
+
         } else {
             data_[it->second].transforms = tf_vec;
         }
@@ -157,6 +193,12 @@ public:
             s.data = seq;
             data_.emplace_back(s);
             time_map_[time] = id;
+
+            if(time < min_time_)
+                min_time_ = time;
+            if(time > max_time_)
+                max_time_ = time;
+
         } else {
             data_[it->second].data = seq;
         }

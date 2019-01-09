@@ -69,6 +69,7 @@ public:
         for(const mesh_map_tree_node_t::Ptr& partial_map : *map){
             std::string frame_id = partial_map->frameId();
             std::string parent;
+
             if(!partial_map->parentFrameId(parent)){
                 parent = frame_id;
             }

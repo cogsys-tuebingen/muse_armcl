@@ -64,7 +64,6 @@ public:
             return;
         const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
-
         /// density estimation
         SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;

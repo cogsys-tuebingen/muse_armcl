@@ -27,7 +27,7 @@
         <param name="map"                   value="mesh_map" />
         <param name="topic_particles"       value="particles"/>
         <param name="topic_contacts"        value="contacts"/>
-        <param name="node_rate"             value="0.0" />
+        <param name="node_rate"             value="5.0" />
         <param name="bag_filename"          value="$(arg bag)"/>
         <param name="bag_joint_state_topic" value="$(arg bag_joint_state_topic)"/>
         <param name="bag_tf_topic"          value="$(arg bag_tf_topic)"/>
@@ -176,9 +176,11 @@
         </group>
     </group>
 
+    <!--
+    launch-prefix="gdb -ex run" -->
     <!-- MuSe ARMCL node -->
     <node type="muse_armcl_offline_node"
           name="muse_armcl" 
-          pkg="muse_armcl" 
+          pkg="muse_armcl"
           output="screen"/>
 </launch>
