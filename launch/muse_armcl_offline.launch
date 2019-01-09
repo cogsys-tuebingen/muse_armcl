@@ -3,6 +3,7 @@
     <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find jaco2_description)/robots/standalone_arm.urdf.xacro'" />
     <param name="robot_description" command="$(arg urdf_file)" />
 
+
     <param name="/use_sim_time" value="false" />
     <arg name="mesh_path"             value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
     <arg name="joint_state_topic"     value="/joint_states"/>
@@ -12,12 +13,12 @@
     <arg name="contact_marker_g"      value="1.0"/>
     <arg name="contact_marker_b"      value="0.0"/>
 <!--    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>-->
-    <arg name="bag"                   value="/tmp/test_bag.bag"/>
+    <arg name="bag"                   value="/home/hanten/Workspace/localization/muse_armcl/data/test_bag.bag"/>
+<!--    <arg name="bag"                   value="/tmp/test_bag.bag"/> -->
     <arg name="bag_joint_state_topic" value="/contact_data"/>
     <arg name="bag_tf_topic"          value="/first_tf"/>
-<!--    <arg name="contact_points_file"   value="$(find jaco2_contact_detection_evaluation)/configs/collision_points.yaml"/>-->
-    <arg name="contact_points_file"   value="/home/zwiener/contact_evo/configs/collision_points.yaml"/>
-    <arg name="results_base_file"     value="/home/zwiener/armcl_sim_nd_no_l1"/>
+    <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
+    <arg name="results_base_file"     value="/tmp/armcl_sim_nd_no_l1"/>
     <arg name="no_contact_threshold"   value="0.24495"/>
 
 

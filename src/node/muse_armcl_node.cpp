@@ -175,6 +175,7 @@ bool MuseARMCLNode::setup()
         state_publisher_->setup(nh_private_, map_providers_);
 
         const bool reset_all_model_accumulators_on_update = false;
+        const bool reset_all_model_accumulators_on_resampling = false;
 
         particle_filter_.reset(new smc_t);
         particle_filter_->setup(sample_set_,
@@ -185,6 +186,7 @@ bool MuseARMCLNode::setup()
                                 prediction_integrals_,
                                 scheduler_,
                                 reset_all_model_accumulators_on_update,
+                                reset_all_model_accumulators_on_resampling,
                                 enable_lag_correction);
 
         /// prepare reset function to trigger uniform initialization
