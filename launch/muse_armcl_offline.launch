@@ -1,5 +1,8 @@
 <?xml version="1.0" ?>
 <launch>
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find jaco2_description)/robots/standalone_arm.urdf.xacro'" />
+    <param name="robot_description" command="$(arg urdf_file)" />
+
     <param name="/use_sim_time" value="false" />
     <arg name="mesh_path"             value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
     <arg name="joint_state_topic"     value="/joint_states"/>
