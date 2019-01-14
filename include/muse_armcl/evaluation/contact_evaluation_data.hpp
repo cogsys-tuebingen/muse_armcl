@@ -115,6 +115,11 @@ public:
         return index_to_time_.at(index);
     }
 
+    bool contains(const uint64_t time) const
+    {
+        return time_to_index_.find(time) != time_to_index_.end();
+    }
+
 protected:
     uint64_t                        min_time_;
     uint64_t                        max_time_;

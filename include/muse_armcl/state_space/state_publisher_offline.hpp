@@ -71,6 +71,9 @@ public:
 
         // ground truth data
         uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
+        if(!data_->contains(nsecs)){
+            return;
+        }
         const ContactSample& gt = data_->at(nsecs);
         std::size_t sample_id = data_->getID(nsecs);
         if(gt.state.torque.empty()) {
