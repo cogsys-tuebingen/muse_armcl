@@ -41,7 +41,7 @@ public:
         double tau_s_norm = tau_sensed.norm();
         if(tau_s_norm < update_threshold_){
             particle_filter_reset_(time_frame);
-            std::cout << "reset and return\n";
+//            std::cout << "reset and return\n";
             return;
         }
 
@@ -51,8 +51,8 @@ public:
 //            if(cos < reset_particles_threshold_){
             if( diff > reset_particles_threshold_){
                 particle_filter_reset_(time_frame);
-                std::cout << "reset: " << diff << " | " << reset_particles_threshold_<< std::endl;
-                std::cout << tau_sensed << "\n ----\n" << last_ext_torques_ << "\n #######\n" ;
+//                std::cout << "reset: " << diff << " | " << reset_particles_threshold_<< std::endl;
+//                std::cout << tau_sensed << "\n ----\n" << last_ext_torques_ << "\n #######\n" ;
 
             }
         }
@@ -96,7 +96,6 @@ public:
             *it *= calculateWeight(state, tau_sensed, map, jacobians, transforms);
         }
 //        std::cout << "update done; took: " << (ros::Time::now() - start).toNSec() * 1e-6 << "ms\n";
-        std::cout << "updtate done" << std::endl;
     }
 
     virtual double calculateWeight(const state_t& state,

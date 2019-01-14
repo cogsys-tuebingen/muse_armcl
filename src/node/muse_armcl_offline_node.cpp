@@ -185,7 +185,7 @@ bool MuseARMCLOfflineNode::setup()
         const std::size_t maximum_sample_size           = sample_size == 0 ? nh_private_.param<int>(param_name("maximum_sample_size"), 0) : sample_size;
         const bool        reset_weights_after_insertion = nh_private_.param<bool>(param_name("reset_weights_after_insertion"), false);
         const bool        reset_weights_to_one          = nh_private_.param<bool>(param_name("reset_weights_to_one"), false);
-        const bool        enable_lag_correction         = nh_private_.param<bool>(param_name("enable_lag_correction"), true);
+        const bool        enable_lag_correction         = nh_private_.param<bool>(param_name("enable_lag_correction"), false);
 
         if (minimum_sample_size == 0) {
             ROS_ERROR_STREAM("Minimum sample size cannot be zero!");
@@ -223,7 +223,7 @@ bool MuseARMCLOfflineNode::setup()
                                 scheduler_,
                                 reset_all_model_accumulators_on_update,
                                 reset_all_model_accumulators_on_resampling,
-                                enable_lag_correction);
+                                enable_lag_correction && update_models_.size() > 1);
 
         /// prepare reset function to trigger uniform initialization
         particle_filter_reset_ = [this](const time_t& time) {
@@ -262,10 +262,9 @@ void MuseARMCLOfflineNode::start()
     }
 
     std::shared_ptr<std::vector<tf::StampedTransform>>   tf_transforms;
-    tf::TransformBroadcaster                             tf_broadcaster;
-
     std::size_t nv = data_set_->size();
     std::size_t count = 0;
+
 
     for(ContactEvaluationSample& seq : *data_set_){
 
@@ -296,22 +295,27 @@ void MuseARMCLOfflineNode::start()
         particle_filter_->requestUniformInitialization(time_t(seq.data.getMinTime()));
 
         /// itearte the sequence to test and tick the tf broadcaster
-        std::size_t foo = 0;
+        std::size_t index = 0;
         for(ContactSample &s : seq.data) {
             for(auto &d : data_providers_) {
                 if(d.second->isType<JointStateProvider>()) {
                     JointStateProvider &j = d.second->as<JointStateProvider>();
                     sensor_msgs::JointState::Ptr js(new sensor_msgs::JointState);
                     cslibs_kdl::JointStateStampedConversion::data2ros(s.state, *js);
+                    /// use time stamp from map here
+                    js->header.stamp.fromNSec(seq.data.getTimeFromIndex(index));
                     j.callback(js);
-                    ROS_INFO_STREAM("sample " <<++foo << " of " << seq.data.size());
-                }
+                 }
             }
+            ++index;
         }
         ROS_INFO_STREAM("Send " << seq.data.size() << " messages");
-
         ros::Time expected;
         expected.fromNSec(seq.data.getMaxTime());
+        ros::Time start;
+        start.fromNSec(seq.data.getMinTime());
+        ROS_INFO_STREAM(start << " to " << expected);
+
         double node_rate = nh_private_.param<double>("node_rate", 60.0);
         while(ros::ok()) {
             {
@@ -320,7 +324,6 @@ void MuseARMCLOfflineNode::start()
                     ROS_INFO_STREAM("Filter time reached.");
                     break;
                 }
-                ROS_INFO_STREAM(expected << " vs. " << filter_time_);
             }
             ros::spinOnce();
             if(node_rate > 0.0) {
@@ -333,7 +336,6 @@ void MuseARMCLOfflineNode::start()
         ROS_INFO_STREAM("processed: " << ++count << " of " << nv << " messages.");
 
         particle_filter_->end();
-        exit(0);
     }
 }
 

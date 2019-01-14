@@ -8,6 +8,8 @@
 #include <muse_armcl/evaluation/contact_sample.hpp>
 #include <muse_armcl/evaluation/msgs_conversion.hpp>
 
+#include <cslibs_time/time.hpp>
+
 namespace muse_armcl {
 template <typename T>
 class TimedData
@@ -18,41 +20,36 @@ public:
         max_time_(std::numeric_limits<uint64_t>::min())
     {}
 
-    T& operator[](uint64_t& time)
-    {
-        if(time < min_time_)
-            min_time_ = time;
-
-        std::size_t id = time_map_[time];
-        return data_[id];
-    }
-
     T& at(const uint64_t& time)
     {
-        std::size_t id = time_map_.at(time);
+        std::size_t id = time_to_index_.at(time);
         return data_.at(id);
     }
 
     const T& at(const uint64_t& time) const
     {
-        std::size_t id = time_map_.at(time);
+        std::size_t id = time_to_index_.at(time);
         return data_.at(id);
     }
 
-    std::size_t getID(const uint64_t& time) const
+    std::size_t getID(const uint64_t time) const
     {
-        return time_map_.at(time);
+        return time_to_index_.at(time);
     }
 
-    bool emplace_back(const uint64_t& time, const T& d)
+    bool emplace_back(const uint64_t time, const T& d)
     {
-        auto it = time_map_.find(time);
-        if(it == time_map_.end()){
+        auto it = time_to_index_.find(time);
+        if(it == time_to_index_.end()){
             std::size_t id = data_.size();
             data_.emplace_back(d);
-            time_map_[time] = id;
+            time_to_index_[time] = id;
+            index_to_time_[id] = time;
+
             if(time < min_time_)
                 min_time_ = time;
+            if(time > max_time_)
+                max_time_ = time;
 
             return true;
         }
@@ -61,13 +58,17 @@ public:
 
     bool push_back(const uint64_t& time, const T& d)
     {
-        auto it = time_map_.find(time);
-        if(it == time_map_.end()){
+        auto it = time_to_index_.find(time);
+        if(it == time_to_index_.end()){
             std::size_t id = data_.size();
             data_.emplace_back(d);
-            time_map_[time] = id;
+            time_to_index_[time] = id;
+            index_to_time_[id] = time;
+
             if(time < min_time_)
                 min_time_ = time;
+            if(time > max_time_)
+                max_time_ = time;
 
             return true;
         }
@@ -109,10 +110,16 @@ public:
         return max_time_;
     }
 
+    uint64_t getTimeFromIndex(const std::size_t index) const
+    {
+        return index_to_time_.at(index);
+    }
+
 protected:
     uint64_t                        min_time_;
     uint64_t                        max_time_;
-    std::map<uint64_t,std::size_t>  time_map_;
+    std::map<uint64_t,std::size_t>  time_to_index_;
+    std::map<std::size_t, uint64_t> index_to_time_;
     std::vector<T>                  data_;
 };
 
@@ -121,17 +128,28 @@ class ContactSequence : public TimedData<ContactSample>
 public:
     ContactSequence() {}
 
-    void setData(const jaco2_contact_msgs::Jaco2CollisionSequence& data)
+    void setData(const uint64_t bag_time, const jaco2_contact_msgs::Jaco2CollisionSequence& data)
     {
-        time_map_.clear();
+        time_to_index_.clear();
         data_.clear();
         min_time_ = std::numeric_limits<uint64_t>::max();
         max_time_ = std::numeric_limits<uint64_t>::min();
 
+        uint64_t start_time = static_cast<uint64_t>(cslibs_time::Time::now().nanoseconds());
         for(const jaco2_contact_msgs::Jaco2CollisionSample& s : data.data){
             uint64_t time = s.state.header.stamp.toNSec();
+
+            if(time == 0) {
+                time = static_cast<uint64_t>(cslibs_time::Time::now().nanoseconds());
+
+                if(bag_time != 0) {
+                    time = bag_time + (time - start_time);
+                }
+            }
+
             std::size_t id = data_.size();
-            time_map_[time] = id;
+            time_to_index_[time] = id;
+            index_to_time_[id] = time;
 
             if(time < min_time_)
                 min_time_ = time;
@@ -164,13 +182,13 @@ public:
             tf_vec.emplace_back(tmp);
         }
 
-        auto it = time_map_.find(time);
-        if(it == time_map_.end()){
+        auto it = time_to_index_.find(time);
+        if(it == time_to_index_.end()){
             std::size_t id = data_.size();
             ContactEvaluationSample s;
             s.transforms = tf_vec;
             data_.emplace_back(s);
-            time_map_[time] = id;
+            time_to_index_[time] = id;
 
             if(time < min_time_)
                 min_time_ = time;
@@ -185,14 +203,15 @@ public:
     void setContactData(uint64_t time, const jaco2_contact_msgs::Jaco2CollisionSequence& data)
     {
         ContactSequence seq;
-        seq.setData(data);
-        auto it = time_map_.find(time);
-        if(it == time_map_.end()){
+        seq.setData(time, data);
+
+        auto it = time_to_index_.find(time);
+        if(it == time_to_index_.end()){
             std::size_t id = data_.size();
             ContactEvaluationSample s;
             s.data = seq;
             data_.emplace_back(s);
-            time_map_[time] = id;
+            time_to_index_[time] = id;
 
             if(time < min_time_)
                 min_time_ = time;
