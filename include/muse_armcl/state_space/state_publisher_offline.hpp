@@ -130,14 +130,16 @@ public:
     virtual void publishIntermediate(const typename sample_set_t::ConstPtr &sample_set) override
     {
 //        std::cout << "intermediate" << "\n";
-        StatePublisher::publishIntermediate(sample_set);
-        set_time_(sample_set->getStamp());
+//        StatePublisher::publishIntermediate(sample_set);
+        publish(sample_set);
+//        set_time_(sample_set->getStamp());
     }
     virtual void publishConstant(const typename sample_set_t::ConstPtr &sample_set) override
     {
 //        std::cout << "constant" << "\n";
-        StatePublisher::publishConstant(sample_set);
-        set_time_(sample_set->getStamp());
+//        StatePublisher::publishConstant(sample_set);
+        publish(sample_set);
+//        set_time_(sample_set->getStamp());
     }
 
     void setData(const ContactSequence& data)

@@ -264,7 +264,7 @@ void MuseARMCLOfflineNode::start()
     std::shared_ptr<std::vector<tf::StampedTransform>>   tf_transforms;
     std::size_t nv = data_set_->size();
     std::size_t count = 0;
-
+    std::size_t n_samples = 0;
 
     for(ContactEvaluationSample& seq : *data_set_){
 
@@ -309,6 +309,7 @@ void MuseARMCLOfflineNode::start()
             }
             ++index;
         }
+        n_samples += seq.data.size();
         ROS_INFO_STREAM("Send " << seq.data.size() << " messages");
         ros::Time expected;
         expected.fromNSec(seq.data.getMaxTime());
@@ -337,6 +338,7 @@ void MuseARMCLOfflineNode::start()
 
         particle_filter_->end();
     }
+    ROS_INFO_STREAM("Fillter processed " << n_samples << " samples!");
 }
 
 bool MuseARMCLOfflineNode::getPredictionDataProvider(data_provider_t::Ptr &prediction_provider)
