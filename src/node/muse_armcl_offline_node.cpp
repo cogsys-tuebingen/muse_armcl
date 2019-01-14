@@ -330,13 +330,15 @@ void MuseARMCLOfflineNode::start()
             if(node_rate > 0.0) {
                 ros::WallRate(node_rate).sleep();
             }
+            //// tiny workaround
+           particle_filter_->triggerEvent();
         }
-
+        	
         state_publisher_->reset();
         state_publisher_->exportResults(results_file_base_name_);
         ROS_INFO_STREAM("processed: " << ++count << " of " << nv << " messages.");
 
-        particle_filter_->end();
+       particle_filter_->end();
     }
     ROS_INFO_STREAM("Fillter processed " << n_samples << " samples!");
 }
