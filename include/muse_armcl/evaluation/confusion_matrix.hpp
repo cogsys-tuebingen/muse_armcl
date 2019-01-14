@@ -45,7 +45,7 @@ public:
         }
         std::ofstream of(file);
 
-        std::cout << file << std::endl;
+//        std::cout << file << std::endl;
 
         // row = prediction, col = actual
         std::sort(classes.begin(), classes.end());
