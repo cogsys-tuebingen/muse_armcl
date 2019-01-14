@@ -40,7 +40,7 @@ public:
 
     virtual void publish(const typename sample_set_t::ConstPtr &sample_set) override
     {
-        std::cout << "after resampling" << std::endl;
+//        std::cout << "after resampling" << std::endl;
 
         StatePublisher::publish(sample_set);
 
@@ -119,10 +119,10 @@ public:
                 }
             }
         }
-        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
-                  << " detected: " << event.closest_point << std::endl;
-//        confusion_matrix_.reportClassification(gt.label, event.closest_point);
-//        results_.push_back(event);
+//        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
+//                  << " detected: " << event.closest_point << std::endl;
+        confusion_matrix_.reportClassification(gt.label, event.closest_point);
+        results_.push_back(event);
 
         set_time_(sample_set->getStamp());
 
