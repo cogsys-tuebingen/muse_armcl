@@ -265,6 +265,7 @@ void MuseARMCLOfflineNode::start()
     std::size_t nv = data_set_->size();
     std::size_t count = 0;
 
+
     for(ContactEvaluationSample& seq : *data_set_){
 
         tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
