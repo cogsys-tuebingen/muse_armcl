@@ -154,6 +154,7 @@
             <param name="resolution"          value="0.05" />
             <param name="weight_threshold"    value="0.002"/>
             <param name="clustering_weight_threshold" value="0.2"/>
+            <param name="number_of_contacts"          value="1"/>
         </group>
 
         <!-- scheduling -->

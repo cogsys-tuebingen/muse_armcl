@@ -20,8 +20,8 @@ public:
 
         vertex_t                        handle;
         distribution_t                  distribution;
-        int                             cluster_id = -1;
-        std::vector<sample_t const*>    samples;
+        int                             cluster_id = 0;
+        std::set<sample_t const*>       samples;
     };
 
     struct EIGEN_ALIGN16 cluster_distribution
@@ -31,13 +31,14 @@ public:
         using Ptr = std::shared_ptr<cluster_distribution>;
 
         distribution_t                  distribution;
-        std::vector<sample_t const*>    samples;
+        std::set<sample_t const*>       samples;
+        std::set<int>                   vertex_ids;
     };
 
 
     using vertex_distributions_t = std::unordered_map<std::size_t,
                                                       std::unordered_map<int, vertex_distribution::Ptr>>;
-
+    using vertex_labels_t        = std::unordered_map<int, int>;
     using cluster_map_t          = std::unordered_map<int, cluster_distribution::Ptr>;
 
 
@@ -48,8 +49,9 @@ public:
 
         ignore_weight_ = nh.param(param_name("ignore_wieght"), false);
         radius_        = nh.param(param_name("radius"), 0.1);
-        radius_ *= radius_;
+        radius_       *= radius_;
         relative_weight_threshold_ = nh.param(param_name("relative_weight_threshold"), 0.8);
+        n_contacts_                = nh.param(param_name("number_of_contacts"), 10);
 
         const std::string map_provider_id = nh.param<std::string>("map", ""); /// toplevel parameter
         if (map_provider_id == "")
@@ -76,14 +78,17 @@ public:
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
 
-        auto get_nearest = [&map](const cluster_distribution &c)
+        auto get_nearest = [&map](const cluster_distribution &c, double& sum_weight)
         {
             double min_distance = std::numeric_limits<double>::max();
+            sum_weight = 0;
             sample_t const * sample = nullptr;
+            const Eigen::Vector3d mean = c.distribution.getMean();
             for(const sample_t* s : c.samples) {
-                const Eigen::Vector3d mean = c.distribution.getMean();
-                const Eigen::Vector3d pos =  s->state.getPosition(map->getNode(sample->state.map_id)->map);
+                const Eigen::Vector3d pos =  s->state.getPosition(map->getNode(s->state.map_id)->map);
                 const double distance = (mean - pos).squaredNorm();
+//                std::cout << s->state.map_id << std::endl;
+                sum_weight += s->weight;
                 if(distance < min_distance) {
                     min_distance = distance;
                     sample = s;
@@ -91,25 +96,44 @@ public:
             }
             return sample;
         };
+//        std::cout << "====="<< std::endl;
 
-        double mean_weight = 0;
-        for(auto &c : clusters_) {
-            const cluster_distribution::Ptr &d = c.second;
-            mean_weight += d->distribution.getWeight();
-        }
-        mean_weight /= static_cast<double>(clusters_.size());
+//        double mean_weight = 0;
+//        double max_weight = 0;
+//        cluster_distribution::Ptr max;
+//        for(auto &c : clusters_) {
+//            const cluster_distribution::Ptr &d = c.second;
+//            const double w = d->distribution.getWeight();
+//            mean_weight += w;
+//            if(w > max_weight) {
+//                max_weight = w;
+//                max = d;
+//            }
+//        }
+//        std::cout << clusters_.size() << std::endl;
+
+//        mean_weight /= static_cast<double>(clusters_.size());
 
         /// iterate the clusters and find the point nearest to the mean to estimate the contact
         ///  mean cluster weights ...
+        std::map<double, std::vector<sample_t>> candidates;
         for(auto &c : clusters_) {
             /// drop a cluster if it is not weighted high enough compared to the others
-            if(c.second->distribution.getWeight() * relative_weight_threshold_ < mean_weight)
-                continue;
+//            if(c.second->distribution.getWeight() * relative_weight_threshold_ < mean_weight)
+//                continue;
 
-            sample_t const * s = get_nearest(*c.second);
-            if(s != nullptr) {
-                states.emplace_back(*s);
+            double weight = 0;
+            sample_t const * s = get_nearest(*c.second, weight);
+            if( s != nullptr){
+                candidates[weight].emplace_back(*s);
+//                states.emplace_back(*s);
             }
+        }
+        states.clear();
+        std::map<double, std::vector<sample_t>>::reverse_iterator it = candidates.rbegin();
+        while(states.size() < std::min(n_contacts_, clusters_.size()) && it != candidates.rend()){
+            states.insert(states.end(), it->second.begin(), it->second.end());
+            ++it;
         }
     }
 
@@ -117,6 +141,7 @@ public:
     {
         vertex_distributions_.clear();
         clusters_.clear();
+        vertex_labels_.clear();
     }
 
     void insert(const sample_t &sample) override
@@ -140,7 +165,7 @@ public:
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
         const cslibs_math_3d::Vector3d pos = sample.state.getPosition(map->getNode(sample.state.map_id)->map);
         d->distribution.add(pos.data(), ignore_weight_ ? 1.0 : sample.weight);
-        d->samples.emplace_back(&sample);
+        d->samples.insert(&sample);
     }
 
     void estimate() override
@@ -152,50 +177,82 @@ public:
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
-        int cluster_id = -1;
+        int cluster_id = 0;
         /// clustering by map
         for(auto &vd : vertex_distributions_) {
             for(auto &v : vd.second) {
                 vertex_distribution::Ptr &d = v.second;
 
-                if(d->cluster_id != -1)
+                if(d->cluster_id != 0)
                     continue;
 
-                /// check all neighbors for cluster id
-                /// if d < dmax : assign to neighbor
-                /// else new cluster
-                const Eigen::Vector3d mean = d->distribution.getMean();
                 const cslibs_mesh_map::MeshMapTreeNode* state_map = map->getNode(vd.first);
                 const auto& neighbors = state_map->map.getNeighbors(d->handle);
-                double min_dist = std::numeric_limits<double>::max();
-                int min_id = -1;
+                std::set<int> found_labels;
                 for(const auto& n : neighbors){
-                    const Eigen::Vector3d pn = state_map->map.getPoint(n);
-                    double dist = (pn - mean).squaredNorm();
-                    if(dist < radius_ ){
-                        min_dist = dist;
-                        min_id = n.idx();
-                    }
+                    int l = vertex_labels_[n.idx()];
+                    found_labels.emplace(l);
                 }
 
-                if(vertex_distributions_.find(min_id) == vertex_distributions_.end())
-                    min_id = -1;
-
-                if(min_id != -1){
-                    d->cluster_id = min_id;
-                    cluster_distribution::Ptr &cd = clusters_[min_id];
-                    assert(cd);
-                    cd->samples.insert(cd->samples.end(), d->samples.begin(), d->samples.end());
-                    cd->distribution += d->distribution;
-                } else {
+                found_labels.erase(0);
+                if(found_labels.size() == 0) {
+                    /// the current node is alone ...
                     ++cluster_id;
                     d->cluster_id = cluster_id;
-                    cluster_distribution::Ptr cd = clusters_[cluster_id];
-                    if(!cd) {
-                        cd.reset(new cluster_distribution);
-                    }
-                    cd->distribution = d->distribution;
+                    cluster_distribution::Ptr &cd = clusters_[cluster_id];
+                    cd.reset(new cluster_distribution);
                     cd->samples = d->samples;
+                    vertex_labels_[d->handle.idx()];
+                    for(const auto &n : neighbors) {
+                        vertex_labels_[n.idx()] = cluster_id;
+                        cd->vertex_ids.emplace(n.idx());
+                    }
+                    cd->vertex_ids.emplace(d->handle.idx());
+                } else if(found_labels.size() == 1) {
+                    const int fl = *(found_labels.begin());
+                    cluster_distribution::Ptr &cd = clusters_[fl];
+                    cd->samples.insert(d->samples.begin(), d->samples.end());
+                    cd->distribution += d->distribution;
+                    cd->vertex_ids.emplace(d->handle.idx());
+                    vertex_labels_[d->handle.idx()] = fl;
+                } else {
+                    /// merge clusters
+                    /// biggest cluster so far
+                    std::size_t               large_count   = 0;
+                    int                       large_label   = 0;
+                    cluster_distribution::Ptr large_cluster = nullptr;
+                    for(const int fl : found_labels) {
+                        cluster_distribution::Ptr &cd = clusters_[fl];
+                        std::size_t cs = cd->vertex_ids.size();
+                        if(cs > large_count) {
+                            large_count =  cs;
+                            large_label =  fl;
+                            large_cluster = cd;
+                        }
+                    }
+                    /// add other clusters
+                    found_labels.erase(large_label);
+                    for(const int fl : found_labels) {
+                        cluster_distribution::Ptr &cd = clusters_[fl];
+                        large_cluster->distribution += cd->distribution;
+
+                        for(const int n : cd->vertex_ids) {
+                            vertex_labels_[n] = large_label;
+                        }
+
+                        large_cluster->samples.insert(cd->samples.begin(), cd->samples.end());
+                        large_cluster->vertex_ids.insert(cd->vertex_ids.begin(), cd->vertex_ids.end());
+                    }
+
+                    /// add new node and neighbors
+                    large_cluster->samples.insert(d->samples.begin(), d->samples.end());
+                    large_cluster->distribution += d->distribution;
+                    large_cluster->vertex_ids.emplace(d->handle.idx());
+
+                    for(const auto &n : neighbors) {
+                        vertex_labels_[n.idx()] = large_label;
+                        large_cluster->vertex_ids.emplace(n.idx());
+                    }
                 }
             }
         }
@@ -203,11 +260,13 @@ public:
 
 private:
     vertex_distributions_t      vertex_distributions_;
+    vertex_labels_t             vertex_labels_;
     cluster_map_t               clusters_;
     MeshMapProvider::Ptr        map_provider_;
     bool                        ignore_weight_;
     double                      radius_;
     double                      relative_weight_threshold_;
+    std::size_t                 n_contacts_;
 
 };
 }

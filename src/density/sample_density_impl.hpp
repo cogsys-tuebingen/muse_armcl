@@ -86,8 +86,10 @@ public:
 
         using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
         const mesh_map_tree_t *map = ss->as<MeshMap>().data();
-
-        const position_t pos = sample.state.getPosition(map->getNode(sample.state.map_id)->map);
+        const auto map_sample = map->getNode(sample.state.map_id);
+        position_t pos = sample.state.getPosition(map_sample->map);
+        cslibs_math_3d::Transform3d base_T_sample = map->getTranformToBase(map_sample->frameId());
+        pos = base_T_sample * pos;
         kdtree_->insert(indexation_.create(pos), data_t(sample, pos));
 
         if (sample.weight > max_weight_)
