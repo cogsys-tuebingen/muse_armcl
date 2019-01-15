@@ -65,6 +65,10 @@
    <class type="muse_armcl::WeightedMeans" base_class_type="muse_armcl::SampleDensity">
      <description>Implements density estimation, where the particle closest to the weighted mean is estimated per cluster.</description>
    </class>
+   <class type="muse_armcl::NearestNeighborDensity" base_class_type="muse_armcl::SampleDensity">
+     <description>Clustering on the surface of directly.</description>
+   </class>
+
 
    <!-- Data Providers -->
    <class type="muse_armcl::JointStateProvider" base_class_type="cslibs_plugins_data::DataProvider">
