@@ -3,13 +3,14 @@
 #include <muse_armcl/state_space/state_publisher.h>
 #include <muse_armcl/evaluation/confusion_matrix.hpp>
 #include <muse_armcl/evaluation/detection_result.hpp>
+#include <muse_armcl/evaluation/ground_truth_particle_set_distance.hpp>
 #include <muse_armcl/evaluation/contact_evaluation_data.hpp>
-
 #include <muse_armcl/density/sample_density.hpp>
-
+// other
 #include <jaco2_contact_msgs/Jaco2CollisionSequence.h>
 #include <jaco2_contact_msgs/Jaco2CollisionSample.h>
 #include <cslibs_kdl/yaml_to_kdl_tranform.h>
+#include <eigen_conversions/eigen_kdl.h>
 
 namespace muse_armcl {
 class EIGEN_ALIGN16 StatePublisherOffline : public StatePublisher
@@ -205,27 +206,53 @@ public:
         save(results_, file_ds);
     }
 
-    void getLikelyHoodOfGt(const typename sample_set_t::ConstPtr &sample_set, const ContactSample& gt,
-                           const cslibs_mesh_map::MeshMapTree* map)
+    void reportLikelyHoodOfGt(const typename sample_set_t::ConstPtr &sample_set,
+                              const ContactSample& gt,
+                              const cslibs_mesh_map::MeshMapTree* map)
     {
-//        cslibs_kdl::KDLTransformation true_contact_point = getLabledPoint(gt.label);
-//        cslibs_math_3d::Transform3d T = map->getTranformToBase(true_contact_point.frame);
-////        cslibs_kdl::convert()
+        const cslibs_kdl::KDLTransformation& true_contact_point = getLabledPoint(gt.label);
+        const KDL::Vector& pos_t = true_contact_point.frame.p;
+        KDL::Vector direction = true_contact_point.frame.M * KDL::Vector(1,0,0);
+        cslibs_math_3d::Transform3d b_T_cp = map->getTranformToBase(true_contact_point.parent);
+        cslibs_math_3d::Vector3d true_point = b_T_cp * cslibs_math_3d::Vector3d(pos_t.x(),pos_t.y(),pos_t.z());
+        cslibs_math_3d::Vector3d true_dir = b_T_cp * cslibs_math_3d::Vector3d(direction.x(),direction.y(), direction.z());
 
-//        for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
-//            const slibs_mesh_map::MeshMapTree* p_map = map->getNode(p.state.map_id);
-//            if (p_map) {
-//                cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
-//                cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
-//                pos = T * pos;
-//            }
-//        }
+        GroundTruthParticleSetDistance d;
+        d.distance    = std::numeric_limits<double>::max();
+        d.angle       = std::numeric_limits<double>::max();
+        d.likely_hood = 0;
+        d.contact_force = 0;
+        d.contact_force_true = gt.contact_force.norm();
+        d.link = 0;
+        auto gt_map = map->getNode(true_contact_point.parent);
+        if(gt_map){
+            d.link = gt_map->mapId();
+        }
+        for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
+            const cslibs_mesh_map::MeshMapTreeNode* p_map = map->getNode(p.state.map_id);
+            if (p_map) {
+                cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
+                cslibs_math_3d::Vector3d pos = p.state.getPosition(p_map->map);
+                pos = T * pos;
+                double dist = (true_point - pos).length2();
+                if(dist < d.distance){
+                    cslibs_math_3d::Vector3d dir = p.state.getDirection(p_map->map);
+                    d.distance = dist;
+                    d.likely_hood = p.state.last_update;
+                    d.contact_force = p.state.force;
+                    d.angle = cslibs_math::linear::angle(true_dir, dir);
+                }
+            }
+        }
+        d.distance = std::sqrt(d.distance);
+        gt_likely_hood_.emplace_back(d);
+
     }
 
     const cslibs_kdl::KDLTransformation& getLabledPoint(int label) const
     {
         std::string point_name = "p" + std::to_string(label);
-        for(const cslibs_kdl::KDLTransformation t : labeled_contact_points_){
+        for(const cslibs_kdl::KDLTransformation& t : labeled_contact_points_){
             if(point_name == t.name){
                 return t;
             }
@@ -241,6 +268,7 @@ private:
     ConfusionMatrix confusion_matrix_;
     int no_collision_label_;
     std::vector<DetectionResult> results_;
+    std::vector<GroundTruthParticleSetDistance> gt_likely_hood_;
 
 };
 }
