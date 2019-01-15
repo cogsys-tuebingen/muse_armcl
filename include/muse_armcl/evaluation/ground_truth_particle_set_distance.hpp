@@ -12,6 +12,7 @@ struct  GroundTruthParticleSetDistance
      int link;
      double likely_hood;
      double distance;
+     double angle;
      double contact_force;
      double contact_force_true;
 
@@ -22,6 +23,7 @@ struct  GroundTruthParticleSetDistance
          sstream << link << delimiter;
          sstream << likely_hood << delimiter;
          sstream << distance << delimiter;
+         sstream << angle << delimiter;
          sstream << contact_force << delimiter;
          sstream << contact_force_true << delimiter;
 
@@ -35,6 +37,7 @@ struct  GroundTruthParticleSetDistance
          sstream << "link" << delimiter;
          sstream << "likely_hood" << delimiter;
          sstream << "distance" << delimiter;
+         sstream << "angle" << delimiter;
          sstream << "contact_force" << delimiter;
          sstream << "contact_force_true" << delimiter;
          return sstream.str();
