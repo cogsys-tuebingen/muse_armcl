@@ -205,6 +205,34 @@ public:
         save(results_, file_ds);
     }
 
+    void getLikelyHoodOfGt(const typename sample_set_t::ConstPtr &sample_set, const ContactSample& gt,
+                           const cslibs_mesh_map::MeshMapTree* map)
+    {
+//        cslibs_kdl::KDLTransformation true_contact_point = getLabledPoint(gt.label);
+//        cslibs_math_3d::Transform3d T = map->getTranformToBase(true_contact_point.frame);
+////        cslibs_kdl::convert()
+
+//        for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
+//            const slibs_mesh_map::MeshMapTree* p_map = map->getNode(p.state.map_id);
+//            if (p_map) {
+//                cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
+//                cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
+//                pos = T * pos;
+//            }
+//        }
+    }
+
+    const cslibs_kdl::KDLTransformation& getLabledPoint(int label) const
+    {
+        std::string point_name = "p" + std::to_string(label);
+        for(const cslibs_kdl::KDLTransformation t : labeled_contact_points_){
+            if(point_name == t.name){
+                return t;
+            }
+        }
+        throw std::runtime_error("Cannot find point with label " + std::to_string(label));
+    }
+
 
 private:
     time_callback_t     set_time_;
