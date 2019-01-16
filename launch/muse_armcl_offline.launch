@@ -17,7 +17,7 @@
 <!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
     <arg name="bag_joint_state_topic" value="/contact_data"/>
     <arg name="bag_tf_topic"          value="/first_tf"/>
-    <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
+    <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points_no_fingers.yaml"/>
     <arg name="results_base_file"     value="/home/zwiener/Desktop/armcl_sim_nd_no_l1"/>
     <arg name="no_contact_threshold"   value="0.24495"/>
 
