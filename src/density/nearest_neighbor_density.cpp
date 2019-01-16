@@ -71,6 +71,7 @@ public:
 
     void contacts(sample_vector_t &states) const override
     {
+
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
         if (!ss->isType<MeshMap>())
             return;
@@ -116,6 +117,7 @@ public:
 
         /// iterate the clusters and find the point nearest to the mean to estimate the contact
         ///  mean cluster weights ...
+
         std::map<double, std::vector<sample_t>> candidates;
         for(auto &c : clusters_) {
             /// drop a cluster if it is not weighted high enough compared to the others
@@ -135,6 +137,8 @@ public:
             states.insert(states.end(), it->second.begin(), it->second.end());
             ++it;
         }
+
+        std::cout << " # clusters " << clusters_.size() << " # states: " << states.size() << std::endl;
     }
 
     void clear() override

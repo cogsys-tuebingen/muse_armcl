@@ -99,7 +99,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
 
     if (publish_contacts) {
         markers.markers.clear();
-        msg.action = visualization_msgs::Marker::DELETEALL;
+        msg.action = visualization_msgs::Marker::MODIFY;
 
         /// density estimation
         SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
@@ -111,6 +111,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         /// publish all detected contacts
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
+        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
 
         msg.lifetime = ros::Duration(0.2);
         msg.color.a = 0.8;
@@ -127,7 +128,8 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         cslibs_kdl_msgs::ContactMessageArray contact_msg;
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            if (p_map && std::fabs(p.state.force) > no_contact_torque_threshold_) {
+            if (p_map){
+
                 cslibs_kdl_msgs::ContactMessage contact;
                 contact.header.frame_id = p_map->frameId();
                 contact.header.stamp = stamp;
