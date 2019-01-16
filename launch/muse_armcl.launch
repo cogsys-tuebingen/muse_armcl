@@ -138,8 +138,9 @@
             <param name="resolution"          value="0.025" />
             <param name="weight_threshold"    value="0.002"/>
             <param name="clustering_weight_threshold" value="0.2"/>
-            <param name="radius" value="0.05" />
-            <param name="number_of_contacts"          value="3"/>
+            <param name="radius" value="0.02" />
+            <param name="number_of_contacts"          value="10"/>
+            <parma name="ignore_weight"              value="true" />
         </group>
 
         <!-- scheduling -->

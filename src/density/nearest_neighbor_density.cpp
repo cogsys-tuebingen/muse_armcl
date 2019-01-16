@@ -2,7 +2,10 @@
 
 #include <unordered_map>
 #include <cslibs_math/statistics/weighted_distribution.hpp>
-
+#include <sensor_msgs/PointCloud2.h>
+#include <cslibs_math_3d/linear/pointcloud.hpp>
+#include <cslibs_math/color/color.hpp>
+#include <cslibs_math_ros/sensor_msgs/conversion_3d.hpp>
 namespace muse_armcl {
 class EIGEN_ALIGN16 NearestNeighborDensity : public muse_armcl::SampleDensity
 {
@@ -30,6 +33,7 @@ public:
         using allocator_t = Eigen::aligned_allocator<cluster_distribution>;
         using Ptr = std::shared_ptr<cluster_distribution>;
 
+        std::size_t                     map_id;
         distribution_t                  distribution;
         std::set<sample_t const*>       samples;
         std::set<int>                   vertex_ids;
@@ -37,7 +41,7 @@ public:
 
 
     using vertex_distributions_t = std::unordered_map<std::size_t,
-                                                      std::unordered_map<int, vertex_distribution::Ptr>>;
+    std::unordered_map<int, vertex_distribution::Ptr>>;
     using vertex_labels_t        = std::unordered_map<int, int>;
     using cluster_map_t          = std::unordered_map<int, cluster_distribution::Ptr>;
 
@@ -52,6 +56,7 @@ public:
         radius_       *= radius_;
         relative_weight_threshold_ = nh.param(param_name("relative_weight_threshold"), 0.8);
         n_contacts_                = nh.param(param_name("number_of_contacts"), 10);
+        min_cluster_size_          = nh.param(param_name("min_cluster_size"), 10);
 
         const std::string map_provider_id = nh.param<std::string>("map", ""); /// toplevel parameter
         if (map_provider_id == "")
@@ -61,6 +66,7 @@ public:
             throw std::runtime_error("[SampleDensity]: Cannot find map provider '" + map_provider_id + "'!");
 
         map_provider_ = map_providers.at(map_provider_id);
+        pub_ = nh.advertise<sensor_msgs::PointCloud2>("cluster_cloud",1);
 
     }
 
@@ -69,8 +75,34 @@ public:
         return vertex_distributions_.size();
     }
 
+    void publishClusters(const cslibs_mesh_map::MeshMapTree* map) const
+    {
+        std::shared_ptr<cslibs_math_3d::PointcloudRGB3d> part_cloud(new cslibs_math_3d::PointcloudRGB3d);
+        /// publish all particles
+
+        for(auto &c : clusters_) {
+            cslibs_math::color::Color ccolor = cslibs_math::color::random();
+            for(const sample_t* s : c.second->samples) {
+                const cslibs_mesh_map::MeshMapTreeNode* p_map = map->getNode(s->state.map_id);
+                if (p_map) {
+                    cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
+                    cslibs_math_3d::Point3d pos = s->state.getPosition(p_map->map);
+                    pos = T * pos;
+                    cslibs_math_3d::PointRGB3d point(pos, 0.9f, ccolor);
+                    part_cloud->insert(point);
+                }
+            }
+        }
+        sensor_msgs::PointCloud2 cloud;
+        cslibs_math_ros::sensor_msgs::conversion_3d::from(part_cloud, cloud);
+        cloud.header.frame_id = map->front()->frameId();
+        cloud.header.stamp = ros::Time::now();
+        pub_.publish(cloud);
+    }
+
     void contacts(sample_vector_t &states) const override
     {
+
 
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
         if (!ss->isType<MeshMap>())
@@ -88,32 +120,34 @@ public:
             for(const sample_t* s : c.samples) {
                 const Eigen::Vector3d pos =  s->state.getPosition(map->getNode(s->state.map_id)->map);
                 const double distance = (mean - pos).squaredNorm();
-//                std::cout << s->state.map_id << std::endl;
-                sum_weight += s->weight;
+                //                std::cout << s->state.map_id << std::endl;
+                //                sum_weight += s->weight;
+                sum_weight += s->state.last_update;
                 if(distance < min_distance) {
                     min_distance = distance;
                     sample = s;
                 }
             }
+//            sum_weight *= c.samples.size();
             return sample;
         };
-//        std::cout << "====="<< std::endl;
+        //        std::cout << "====="<< std::endl;
 
-//        double mean_weight = 0;
-//        double max_weight = 0;
-//        cluster_distribution::Ptr max;
-//        for(auto &c : clusters_) {
-//            const cluster_distribution::Ptr &d = c.second;
-//            const double w = d->distribution.getWeight();
-//            mean_weight += w;
-//            if(w > max_weight) {
-//                max_weight = w;
-//                max = d;
-//            }
-//        }
-//        std::cout << clusters_.size() << std::endl;
+        //        double mean_weight = 0;
+        //        double max_weight = 0;
+        //        cluster_distribution::Ptr max;
+        //        for(auto &c : clusters_) {
+        //            const cluster_distribution::Ptr &d = c.second;
+        //            const double w = d->distribution.getWeight();
+        //            mean_weight += w;
+        //            if(w > max_weight) {
+        //                max_weight = w;
+        //                max = d;
+        //            }
+        //        }
+        //        std::cout << clusters_.size() << std::endl;
 
-//        mean_weight /= static_cast<double>(clusters_.size());
+        //        mean_weight /= static_cast<double>(clusters_.size());
 
         /// iterate the clusters and find the point nearest to the mean to estimate the contact
         ///  mean cluster weights ...
@@ -121,24 +155,33 @@ public:
         std::map<double, std::vector<sample_t>> candidates;
         for(auto &c : clusters_) {
             /// drop a cluster if it is not weighted high enough compared to the others
-//            if(c.second->distribution.getWeight() * relative_weight_threshold_ < mean_weight)
-//                continue;
+            //            if(c.second->distribution.getWeight() * relative_weight_threshold_ < mean_weight)
+            //                continue;
 
             double weight = 0;
             sample_t const * s = get_nearest(*c.second, weight);
             if( s != nullptr){
                 candidates[weight].emplace_back(*s);
-//                states.emplace_back(*s);
+                //                states.emplace_back(*s);
+                std::cout << c.first << " " << weight  << " " << c.second->samples.size() << std::endl;
             }
         }
         states.clear();
         std::map<double, std::vector<sample_t>>::reverse_iterator it = candidates.rbegin();
         while(states.size() < std::min(n_contacts_, clusters_.size()) && it != candidates.rend()){
-            states.insert(states.end(), it->second.begin(), it->second.end());
+            std::size_t remaining = n_contacts_ - states.size();
+            if(it->second.size() > remaining){
+                states.insert(states.end(),
+                              it->second.begin(),
+                              it->second.begin() + remaining);
+            } else{
+                states.insert(states.end(), it->second.begin(), it->second.end());
+            }
             ++it;
         }
 
         std::cout << " # clusters " << clusters_.size() << " # states: " << states.size() << std::endl;
+        publishClusters(map);
     }
 
     void clear() override
@@ -206,6 +249,7 @@ public:
                     cluster_distribution::Ptr &cd = clusters_[cluster_id];
                     cd.reset(new cluster_distribution);
                     cd->samples = d->samples;
+                    cd->map_id = vd.first;
                     vertex_labels_[d->handle.idx()];
                     for(const auto &n : neighbors) {
                         vertex_labels_[n.idx()] = cluster_id;
@@ -238,6 +282,9 @@ public:
                     found_labels.erase(large_label);
                     for(const int fl : found_labels) {
                         cluster_distribution::Ptr &cd = clusters_[fl];
+                        if(large_cluster->map_id != cd->map_id){
+                            std::cout << "thats where shit comes frome" << std::endl;
+                        }
                         large_cluster->distribution += cd->distribution;
 
                         for(const int n : cd->vertex_ids) {
@@ -259,7 +306,71 @@ public:
                     }
                 }
             }
+            vertex_labels_.clear();
+            ++cluster_id;
         }
+
+        //        for(auto& c1 : clusters_){
+        //            std::set<sample_t const*>::const_iterator s = c1.second->samples.begin();
+        //            std::size_t map_id_c = (*s)->state.map_id;
+        //            bool test = true;
+        //            for(const sample_t* s : c1.second->samples){
+        //                std::size_t id = s->state.map_id;
+        //                test &= (id == map_id_c);
+        //                if(!test){
+        //                    std::cout << " cluster id: " << c1.first << ", " << map_id_c << "; " << id << std::endl;
+        //                }
+        //            }
+        //            if(!test){
+        //                std::cout << (test ? "test passed" : " test failed") << " cluster id: " << c1.first << std::endl;
+        //            }
+        //        }
+
+        /// maybe use edge costs to expand on surface approximating an integral
+
+        std::vector<int> to_remove;
+
+        /// check for cluster size and remove too small clusters
+        //        std::vector<int> to_remove;
+        for(auto &c : clusters_) {
+            if(c.second->samples.size() < min_cluster_size_) {
+                to_remove.emplace_back(c.first);
+            }
+        }
+        for(int c : to_remove)  {
+            clusters_.erase(c);
+        }
+
+        to_remove.clear();
+        /// fuse closeby clusters
+//        for(auto &c1 : clusters_) {
+//            if(std::fabs(c1.second->distribution.getWeight()) == 0 ){
+//                continue;
+//            }
+//            const Eigen::Vector3d mean1 = c1.second->distribution.getMean();
+//            for(auto &c2 : clusters_){
+//                if( c1.first != c2.first && std::fabs(c2.second->distribution.getWeight()) > 0){
+//                    if(c1.second->map_id == c2.second->map_id && std::find(to_remove.begin(), to_remove.end(), c1.first) == to_remove.end()){
+//                        const Eigen::Vector3d mean2 = c2.second->distribution.getMean();
+//                        double dist = (mean1 -mean2).squaredNorm();
+//                        std::cout << "cluster distance " << dist << std::endl;
+//                        if(std::isfinite(dist)){
+
+//                            //                        std::cout << c1.second->map_id << "  | " << c2.second->samples.begin()->state->map_id << std::endl;
+//                            if( dist < radius_){
+//                                to_remove.emplace_back(c2.first);
+//                                c1.second->samples.insert(c2.second->samples.begin(), c2.second->samples.end());
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+
+//        for(int c : to_remove)  {
+//            clusters_.erase(c);
+//        }
+
     }
 
 private:
@@ -271,6 +382,8 @@ private:
     double                      radius_;
     double                      relative_weight_threshold_;
     std::size_t                 n_contacts_;
+    mutable ros::Publisher      pub_;
+    int                         min_cluster_size_;
 
 };
 }
