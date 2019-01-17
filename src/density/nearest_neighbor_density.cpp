@@ -128,7 +128,7 @@ public:
                     sample = s;
                 }
             }
-//            sum_weight *= c.samples.size();
+            //            sum_weight *= c.samples.size();
             return sample;
         };
         //        std::cout << "====="<< std::endl;
@@ -282,9 +282,6 @@ public:
                     found_labels.erase(large_label);
                     for(const int fl : found_labels) {
                         cluster_distribution::Ptr &cd = clusters_[fl];
-                        if(large_cluster->map_id != cd->map_id){
-                            std::cout << "thats where shit comes frome" << std::endl;
-                        }
                         large_cluster->distribution += cd->distribution;
 
                         for(const int n : cd->vertex_ids) {
@@ -328,10 +325,9 @@ public:
 
         /// maybe use edge costs to expand on surface approximating an integral
 
-        std::vector<int> to_remove;
 
         /// check for cluster size and remove too small clusters
-        //        std::vector<int> to_remove;
+        std::vector<int> to_remove;
         for(auto &c : clusters_) {
             if(c.second->samples.size() < min_cluster_size_) {
                 to_remove.emplace_back(c.first);
@@ -343,33 +339,34 @@ public:
 
         to_remove.clear();
         /// fuse closeby clusters
-//        for(auto &c1 : clusters_) {
-//            if(std::fabs(c1.second->distribution.getWeight()) == 0 ){
-//                continue;
-//            }
-//            const Eigen::Vector3d mean1 = c1.second->distribution.getMean();
-//            for(auto &c2 : clusters_){
-//                if( c1.first != c2.first && std::fabs(c2.second->distribution.getWeight()) > 0){
-//                    if(c1.second->map_id == c2.second->map_id && std::find(to_remove.begin(), to_remove.end(), c1.first) == to_remove.end()){
-//                        const Eigen::Vector3d mean2 = c2.second->distribution.getMean();
-//                        double dist = (mean1 -mean2).squaredNorm();
-//                        std::cout << "cluster distance " << dist << std::endl;
-//                        if(std::isfinite(dist)){
+        for(auto &c1 : clusters_) {
+            if(std::fabs(c1.second->distribution.getWeight()) > 0 ){
+                const Eigen::Vector3d mean1 = c1.second->distribution.getMean();
+                std::cout << "mean 1" << mean1 << std::endl;
+                for(auto &c2 : clusters_){
+                    if( c1.first != c2.first && std::fabs(c2.second->distribution.getWeight()) > 0){
+                        if(c1.second->map_id == c2.second->map_id && std::find(to_remove.begin(), to_remove.end(), c1.first) == to_remove.end()){
+                            const Eigen::Vector3d mean2 = c2.second->distribution.getMean();
+                            std::cout << "mean 2 " << mean2 << std::endl;
+                            double dist = (mean1 -mean2).squaredNorm();
+                            std::cout << "cluster distance " << dist << std::endl;
+                            if(std::isfinite(dist)){
 
-//                            //                        std::cout << c1.second->map_id << "  | " << c2.second->samples.begin()->state->map_id << std::endl;
-//                            if( dist < radius_){
-//                                to_remove.emplace_back(c2.first);
-//                                c1.second->samples.insert(c2.second->samples.begin(), c2.second->samples.end());
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
+                                //                        std::cout << c1.second->map_id << "  | " << c2.second->samples.begin()->state->map_id << std::endl;
+                                if( dist < radius_){
+                                    to_remove.emplace_back(c2.first);
+                                    c1.second->samples.insert(c2.second->samples.begin(), c2.second->samples.end());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-//        for(int c : to_remove)  {
-//            clusters_.erase(c);
-//        }
+        for(int c : to_remove)  {
+            clusters_.erase(c);
+        }
 
     }
 
