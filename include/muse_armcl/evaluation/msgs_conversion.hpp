@@ -19,8 +19,7 @@ inline void convert(const jaco2_msgs::Jaco2JointState& in, sensor_msgs::JointSta
 
 inline void convert(const jaco2_msgs::Jaco2JointState &in, cslibs_kdl_data::JointStateDataStamped& out)
 {
-    out.header.frame_id = in.header.frame_id;
-    out.header.stamp.fromNSec(in.header.stamp.toNSec());
+    cslibs_kdl::HeaderConversion::ros2data(in.header, out.header);
     out.gravity = cslibs_kdl_data::Vector3(in.gx, in.gy, in.gz);
     out.names = in.name;
     out.position = in.position;
