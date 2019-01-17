@@ -128,6 +128,10 @@ public:
         confusion_matrix_.reportClassification(gt.label, event.closest_point);
         results_.push_back(event);
 
+        if(tau_norm > no_contact_torque_threshold_){
+                reportLikelyHoodOfGt(sample_set, gt, map);
+        }
+
         set_time_(sample_set->getStamp());
 
     }
@@ -200,19 +204,24 @@ public:
 
     void exportResults(const std::string& path)
     {
-        std::string file_cm = path + "confusion_matrix.csv";
-        std::string file_ds = path + "detection_results.csv";
+        std::string file_cm = path + "_confusion_matrix.csv";
+        std::string file_ds = path + "_detection_results.csv";
+        std::string file_gt = path + "_gt_likely_hood.csv";
         confusion_matrix_.exportCsv(file_cm);
         save(results_, file_ds);
+        save(gt_likely_hood_, file_gt);
     }
 
     void reportLikelyHoodOfGt(const typename sample_set_t::ConstPtr &sample_set,
                               const ContactSample& gt,
                               const cslibs_mesh_map::MeshMapTree* map)
     {
+        if(gt.label == no_collision_label_){
+            return;
+        }
         const cslibs_kdl::KDLTransformation& true_contact_point = getLabledPoint(gt.label);
         const KDL::Vector& pos_t = true_contact_point.frame.p;
-        KDL::Vector direction = true_contact_point.frame.M * KDL::Vector(1,0,0);
+        KDL::Vector direction = true_contact_point.frame.M * KDL::Vector(-1,0,0);
         cslibs_math_3d::Transform3d b_T_cp = map->getTranformToBase(true_contact_point.parent);
         cslibs_math_3d::Vector3d true_point = b_T_cp * cslibs_math_3d::Vector3d(pos_t.x(),pos_t.y(),pos_t.z());
         cslibs_math_3d::Vector3d true_dir = b_T_cp * cslibs_math_3d::Vector3d(direction.x(),direction.y(), direction.z());
@@ -224,6 +233,7 @@ public:
         d.contact_force = 0;
         d.contact_force_true = gt.contact_force.norm();
         d.link = 0;
+        d.true_point = gt.label;
         auto gt_map = map->getNode(true_contact_point.parent);
         if(gt_map){
             d.link = gt_map->mapId();
@@ -241,6 +251,7 @@ public:
                     d.likely_hood = p.state.last_update;
                     d.contact_force = p.state.force;
                     d.angle = cslibs_math::linear::angle(true_dir, dir);
+                    d.link = p.state.map_id;
                 }
             }
         }
