@@ -126,6 +126,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         msg.action = visualization_msgs::Marker::MODIFY;
         msg.points.resize(2);
         cslibs_kdl_msgs::ContactMessageArray contact_msg;
+        bool diff_colors = states.size() > 1;
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             if (p_map){
@@ -140,7 +141,15 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
                 contact.force = p.state.force;
                 msg.header.frame_id = p_map->map.frame_id_;
                 ++msg.id;
-                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2);
+                double fac = 1.0;
+                if(diff_colors){
+                    cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
+                    msg.color.r = color.r;
+                    msg.color.g = color.g;
+                    msg.color.b = color.b;
+                    fac = p.state.last_update;
+                }
+                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2 * fac);
                 msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
 
                 markers.markers.push_back(msg);
@@ -152,3 +161,4 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     }
 }
 }
+

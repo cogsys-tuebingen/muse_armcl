@@ -168,9 +168,9 @@ bool MuseARMCLNode::setup()
                                            cslibs_time::Time(ros::Time::now().toNSec()),
                                            minimum_sample_size,
                                            maximum_sample_size,
-                                           sample_density_,
+                                           sample_density_/*,
                                            reset_weights_after_insertion,
-                                           reset_weights_to_one));
+                                           reset_weights_to_one*/));
         state_publisher_.reset(new StatePublisher);
         state_publisher_->setup(nh_private_, map_providers_);
 

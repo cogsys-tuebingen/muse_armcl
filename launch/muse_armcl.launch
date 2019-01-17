@@ -132,7 +132,7 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"               value="muse_armcl::NearestNeighborDensity" /><!--WeightedMeans, NearestNeighborDensity-->
+            <param name="class"               value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity-->
             <param name="base_class"          value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
             <param name="resolution"          value="0.025" />

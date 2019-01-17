@@ -200,9 +200,8 @@ bool MuseARMCLOfflineNode::setup()
                                            cslibs_time::Time(ros::Time::now().toNSec()),
                                            minimum_sample_size,
                                            maximum_sample_size,
-                                           sample_density_,
-                                           reset_weights_after_insertion,
-                                           reset_weights_to_one));
+                                           sample_density_/*,
+                                           reset_weights_after_insertion*/));
         state_publisher_.reset(new StatePublisherOffline);
         StatePublisherOffline::time_callback_t time_callback =  StatePublisherOffline::time_callback_t::from<MuseARMCLOfflineNode, &MuseARMCLOfflineNode::setFilterTime>(this);
         state_publisher_->setup(nh_private_,
