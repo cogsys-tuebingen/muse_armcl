@@ -20,7 +20,7 @@ struct EIGEN_ALIGN16 ClusterDistribution
     using position_t          = Indexation::position_t;
     using data_t              = ClusterData;
     using sample_t            = ClusterData::sample_t;
-    using sample_map_t        = std::unordered_map<int, const sample_t*>;
+    using sample_map_t        = std::map<double, const sample_t*>;
     using sample_vector_t     = ClusterData::sample_vector_t;
     using sample_vector_map_t = std::unordered_map<int,
                                                    sample_vector_t,
