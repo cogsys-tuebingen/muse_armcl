@@ -15,10 +15,11 @@ struct EIGEN_ALIGN16 ClusterDominant
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<ClusterDominant>;
 
-    using index_t      = Indexation::index_t;
-    using data_t       = ClusterData;
-    using sample_t     = StateSpaceDescription::sample_t;
-    using sample_map_t = std::unordered_map<int, const sample_t*>;
+    using index_t             = Indexation::index_t;
+    using data_t              = ClusterData;
+    using sample_t            = StateSpaceDescription::sample_t;
+    using sample_map_t        = std::unordered_map<int, const sample_t*>;
+    using sample_map_ranked_t = std::map<double, std::vector<const sample_t*>>;
 
     ClusterDominant(double threshold = 0.1) :
         clustering_weight_threshold_percentage(threshold)
@@ -84,9 +85,14 @@ struct EIGEN_ALIGN16 ClusterDominant
     }
 
     /// get cluster samples
-    inline sample_map_t getSamples() const
+    inline sample_map_ranked_t getSamples() const
     {
-        return dominants;
+        sample_map_ranked_t map;
+
+        for (auto &d : dominants) {
+            map[d.second->weight].emplace_back(d.second);
+        }
+        return map;
     }
 
     int current_cluster = -1;   /// keep track of the current cluster index

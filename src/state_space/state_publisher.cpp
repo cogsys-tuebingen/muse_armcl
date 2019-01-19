@@ -143,11 +143,10 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
                 ++msg.id;
                 double fac = 1.0;
                 if(diff_colors){
-                    cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
-                    msg.color.r = color.r;
-                    msg.color.g = color.g;
-                    msg.color.b = color.b;
                     fac = p.state.last_update;
+                    msg.color.r *= fac;
+                    msg.color.g *= fac;
+                    msg.color.b *= fac;
                 }
                 msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2 * fac);
                 msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);

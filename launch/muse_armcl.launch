@@ -126,20 +126,20 @@
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.0"/>
             <param name="recovery_alpha_fast" value="0.0"/>
-            <param name="uniform_percent"     value="0.25" />
+            <param name="uniform_percent"     value="0.3" />
             <param name="min_weight_ratio"    value="0.5" />
         </group>
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"               value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity-->
+            <param name="class"               value="muse_armcl::NearestNeighborDensity" /><!--WeightedMeans, NearestNeighborDensity-->
             <param name="base_class"          value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
             <param name="resolution"          value="0.025" />
             <param name="weight_threshold"    value="0.002"/>
             <param name="clustering_weight_threshold" value="0.2"/>
             <param name="radius" value="0.02" />
-            <param name="number_of_contacts"          value="1"/>
+            <param name="number_of_contacts"          value="2"/>
             <parma name="ignore_weight"              value="true" />
         </group>
 

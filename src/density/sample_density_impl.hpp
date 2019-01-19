@@ -39,7 +39,7 @@ public:
     using index_t               = indexation_t::index_t;
     using position_t            = indexation_t::position_t;
     using data_t                = ClusterData;
-    using sample_map_t          = typename clustering_t::sample_map_t;
+    using sample_map_t          = typename clustering_t::sample_map_ranked_t;
 
 //    using kd_tree_t            = cis::Storage<data_t, index_t, cis::backend::kdtree::KDTreeBuffered>;
     using kd_tree_t            = cis::Storage<data_t, index_t, cis::backend::simple::UnorderedComponentMap>;
@@ -49,6 +49,7 @@ public:
                        ros::NodeHandle &nh)
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
+        n_contacts_                = nh.param(param_name("number_of_contacts"), 10);
         weight_threshold_percentage_ = nh.param(param_name("weight_threshold"), 0.1);
         std::cout << "weight_threshold: "<< weight_threshold_percentage_ << std::endl;
         const double resolution = nh.param(param_name("resolution"), 0.1);
@@ -113,6 +114,34 @@ public:
     virtual void contacts(sample_vector_t &states) const override
     {
         const sample_map_t map = clustering_.getSamples();
+        std::size_t n_cluster = 0; // todo
+
+        states.clear();
+        auto it = candidates.rbegin();
+        while(states.size() < std::min(n_contacts_, map.size()) && it != candidates.rend()){
+            std::size_t remaining = n_contacts_ - states.size();
+            if(it->second.size() > remaining){
+                std::map<double, std::vector<sample_t>> cand2;
+                for(auto s  = it->second.begin(); s < it->second.end(); ++s){
+                    cand2[s->state.last_update].emplace_back(*s);
+                }
+
+                auto it2 = cand2.rbegin();
+                while(states.size() < std::min(n_contacts_, clusters_.size()) && it2 != cand2.rend()){
+                    std::size_t remaining = n_contacts_ - states.size();
+                    if(it2->second.size() > remaining){
+                        states.insert(states.end(), it2->second.begin(), it2->second.begin() + remaining);
+                    } else{
+                        states.insert(states.end(), it2->second.begin(), it2->second.end());
+                    }
+                    ++it2;
+                }
+            } else{
+                states.insert(states.end(), it->second.begin(), it->second.end());
+            }
+            ++it;
+        }
+
         for (const auto &entry : map)
             if (entry.second->weight > weight_threshold_)
                 states.push_back(*entry.second);
@@ -127,5 +156,6 @@ private:
     indexation_t               indexation_;
     clustering_t               clustering_;
     std::shared_ptr<kd_tree_t> kdtree_;
+    std::size_t                n_contacts_;
 };
 }

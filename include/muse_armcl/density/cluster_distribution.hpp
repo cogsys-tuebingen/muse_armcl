@@ -20,7 +20,8 @@ struct EIGEN_ALIGN16 ClusterDistribution
     using position_t          = Indexation::position_t;
     using data_t              = ClusterData;
     using sample_t            = ClusterData::sample_t;
-    using sample_map_t        = std::map<double, const sample_t*>;
+    using sample_map_t        = std::unordered_map<int, const sample_t*>;
+    using sample_map_ranked_t = std::map<double, std::vector<const sample_t*>>;
     using sample_vector_t     = ClusterData::sample_vector_t;
     using sample_vector_map_t = std::unordered_map<int,
                                                    sample_vector_t,
@@ -101,9 +102,9 @@ struct EIGEN_ALIGN16 ClusterDistribution
     }
 
     /// get cluster sample
-    inline sample_map_t getSamples() const
+    inline sample_map_ranked_t getSamples() const
     {
-        sample_map_t map;
+        sample_map_ranked_t map;
 
         for (auto &d : distributions) {
             const int cluster = d.first;
@@ -111,6 +112,7 @@ struct EIGEN_ALIGN16 ClusterDistribution
             const position_t mean(m(0), m(1), m(2));
             double dist = std::numeric_limits<double>::max();
 
+            double weight_sum = 0;
             const sample_t* res = NULL;
             for (auto &s : samples.at(cluster)) {
                 const position_t pos = s.second;
@@ -118,10 +120,11 @@ struct EIGEN_ALIGN16 ClusterDistribution
                 if (d < dist) {
                     dist = d;
                     res = s.first;
+                    weight_sum += s.first->weight;
                 }
             }
 
-            map[cluster] = res;
+            map[weight_sum].emplace_back(res);
         }
         return map;
     }
