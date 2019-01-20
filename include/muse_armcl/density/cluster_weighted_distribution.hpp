@@ -125,8 +125,10 @@ struct EIGEN_ALIGN16 ClusterWeightedDistribution
                     res = s.first;
                 }
             }
+            if(weight_sum > clustering_weight_threshold){
+                map[weight_sum].emplace_back(res);
+            }
 
-            map[weight_sum].emplace_back(res);
         }
         return map;
     }

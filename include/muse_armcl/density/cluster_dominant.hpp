@@ -47,8 +47,8 @@ struct EIGEN_ALIGN16 ClusterDominant
         data.cluster = current_cluster;        
 
         for (const auto &sample : data.samples) {
-            if (sample.first->weight >= clustering_weight_threshold &&
-                    (!dominants[current_cluster] || sample.first->weight > dominants[current_cluster]->weight))
+            if (sample.first->state.last_update  >= clustering_weight_threshold &&
+                    (!dominants[current_cluster] || sample.first->state.last_update  > dominants[current_cluster]->state.last_update ))
                 dominants[current_cluster] = sample.first;
         }
 
@@ -64,8 +64,8 @@ struct EIGEN_ALIGN16 ClusterDominant
         data.cluster = current_cluster;
 
         for (const auto &sample : data.samples) {
-            if (sample.first->weight >= clustering_weight_threshold &&
-                    (!dominants[current_cluster] || sample.first->weight > dominants[current_cluster]->weight))
+            if (sample.first->state.last_update >= clustering_weight_threshold &&
+                    (!dominants[current_cluster] || sample.first->weight > dominants[current_cluster]->state.last_update ))
                 dominants[current_cluster] = sample.first;
         }
 

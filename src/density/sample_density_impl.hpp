@@ -114,37 +114,50 @@ public:
     virtual void contacts(sample_vector_t &states) const override
     {
         const sample_map_t map = clustering_.getSamples();
-        std::size_t n_cluster = 0; // todo
+        std::size_t n_cluster = 0;
+        for(const auto& entry : map){
+            n_cluster += entry.second.size();
+        }
 
         states.clear();
-        auto it = candidates.rbegin();
-        while(states.size() < std::min(n_contacts_, map.size()) && it != candidates.rend()){
+        auto it = map.rbegin();
+        while(states.size() < std::min(n_contacts_, map.size()) && it != map.rend()){
             std::size_t remaining = n_contacts_ - states.size();
             if(it->second.size() > remaining){
-                std::map<double, std::vector<sample_t>> cand2;
-                for(auto s  = it->second.begin(); s < it->second.end(); ++s){
-                    cand2[s->state.last_update].emplace_back(*s);
+                std::map<double, std::vector<const sample_t*>> cand2;
+                for(std::vector<const sample_t*>::const_iterator s  = it->second.begin(); s < it->second.end(); ++s){
+                    double lu = (*s)->state.last_update;
+                    cand2[lu].emplace_back(*s);
                 }
 
                 auto it2 = cand2.rbegin();
-                while(states.size() < std::min(n_contacts_, clusters_.size()) && it2 != cand2.rend()){
+                while(states.size() < std::min(n_contacts_, n_cluster) && it2 != cand2.rend()){
                     std::size_t remaining = n_contacts_ - states.size();
                     if(it2->second.size() > remaining){
-                        states.insert(states.end(), it2->second.begin(), it2->second.begin() + remaining);
+                        for(std::size_t i = 0; i < remaining; ++i){
+                            states.emplace_back(*it2->second.at(i));
+                        }
+//                        states.insert(states.end(), it2->second.begin(), it2->second.begin() + remaining);
                     } else{
-                        states.insert(states.end(), it2->second.begin(), it2->second.end());
+                        for(auto si : it2->second){
+                            states.emplace_back(*si);
+                        }
+//                        states.insert(states.end(), it2->second.begin(), it2->second.end());
                     }
                     ++it2;
                 }
             } else{
-                states.insert(states.end(), it->second.begin(), it->second.end());
+                for(auto si : it->second){
+                    states.emplace_back(*si);
+                }
+//                states.insert(states.end(), it->second.begin(), it->second.end());
             }
             ++it;
         }
 
-        for (const auto &entry : map)
-            if (entry.second->weight > weight_threshold_)
-                states.push_back(*entry.second);
+//        for (const auto &entry : map)
+//            if (entry.second->weight > weight_threshold_)
+//                states.push_back(*entry.second);
     }
 
 private:
