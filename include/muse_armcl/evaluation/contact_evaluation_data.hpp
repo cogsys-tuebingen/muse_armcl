@@ -169,6 +169,14 @@ public:
 };
 
 struct ContactEvaluationSample{
+
+    ContactEvaluationSample() :
+        has_transform(false),
+        has_data(false)
+    {}
+
+    bool has_transform;
+    bool has_data;
     std::vector<tf::StampedTransform> transforms;
     ContactSequence data;
 };
@@ -201,7 +209,13 @@ public:
                 max_time_ = time;
 
         } else {
-            data_[it->second].transforms = tf_vec;
+            if(data_[it->second].has_transform){
+                ++time;
+                setTf(time, tf_msg);
+            } else {
+                data_[it->second].transforms = tf_vec;
+                data_[it->second].has_transform = true;
+            }
         }
     }
 
@@ -224,7 +238,13 @@ public:
                 max_time_ = time;
 
         } else {
-            data_[it->second].data = seq;
+            if(data_[it->second].has_data){
+                ++time;
+                setContactData(time, data);
+            } else {
+                data_[it->second].data = seq;
+                data_[it->second].has_data = true;
+            }
         }
 
     }
