@@ -111,7 +111,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         /// publish all detected contacts
         std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
         density->contacts(states);
-        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
+//        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
 
         msg.lifetime = ros::Duration(0.2);
         msg.color.a = 0.8;

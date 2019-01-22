@@ -171,7 +171,7 @@ public:
             if( s != nullptr){
                 candidates[weight]/*[weight][c.second->samples.size()]*/.emplace_back(*s);
                 //                states.emplace_back(*s);
-                std::cout << c.first << " " << weight  << " " << c.second->samples.size() << std::endl;
+//                std::cout << c.first << " " << weight  << " " << c.second->samples.size() << std::endl;
             }
         }
         states.clear();
@@ -200,7 +200,7 @@ public:
             ++it;
         }
 
-        std::cout << " # clusters " << clusters_.size() << " # states: " << states.size() << std::endl;
+//        std::cout << " # clusters " << clusters_.size() << " # states: " << states.size() << std::endl;
         publishClusters(map);
     }
 

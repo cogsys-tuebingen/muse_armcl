@@ -12,7 +12,7 @@
     <arg name="contact_marker_r"      value="0.0"/>
     <arg name="contact_marker_g"      value="1.0"/>
     <arg name="contact_marker_b"      value="0.0"/>
-    <arg name="bag"                   value="/home/zwiener/contact_detection/sim_new_data_no_l1_valid_ext_torque.bag"/>
+    <arg name="bag"                   value="/home/zwiener/contact_detection/seed0_nol1_ext_t_valid.bag"/>
 <!--    <arg name="bag"                   value="/home/hanten/Workspace/localization/muse_armcl/data/test_bag.bag"/>-->
 <!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
     <arg name="bag_joint_state_topic" value="/contact_data"/>
