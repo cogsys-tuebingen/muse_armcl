@@ -98,6 +98,7 @@
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
             <rosparam param="information_matrix">
+<!--            [1, 1, 1, 1, 1, 1.0]-->
                 [2.44, 4.83, 13.50, 13.50, 10, 6.25]
             </rosparam>
         </group>
@@ -132,15 +133,15 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"               value="muse_armcl::NearestNeighborDensity" /><!--WeightedMeans, NearestNeighborDensity-->
-            <param name="base_class"          value="muse_armcl::SampleDensity" />
-            <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
-            <param name="resolution"          value="0.025" />
-            <param name="weight_threshold"    value="0.002"/>
+            <param name="class"                       value="muse_armcl::NearestNeighborDensity" /><!--WeightedMeans, NearestNeighborDensity-->
+            <param name="base_class"                  value="muse_armcl::SampleDensity" />
+            <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
+            <param name="resolution"                  value="0.025" />
+            <param name="weight_threshold"            value="0.002"/>
             <param name="clustering_weight_threshold" value="0.2"/>
-            <param name="radius" value="0.02" />
-            <param name="number_of_contacts"          value="2"/>
-            <parma name="ignore_weight"              value="true" />
+            <param name="radius"                      value="0.02" />
+            <param name="number_of_contacts"          value="1"/>
+            <parma name="ignore_weight"               value="false" />
         </group>
 
         <!-- scheduling -->
