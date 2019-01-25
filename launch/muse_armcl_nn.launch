@@ -6,11 +6,11 @@
     <arg name="minimum_sample_size" value="1500"/>
     <arg name="maximum_sample_size" value="5000"/>
     <arg name="contact_marker_r"    value="0.0"/>
-    <arg name="contact_marker_g"    value="0.0"/>
-    <arg name="contact_marker_b"    value="1.0"/>
+    <arg name="contact_marker_g"    value="1.0"/>
+    <arg name="contact_marker_b"    value="0.0"/>
 
 
-    <group ns="muse_armcl">
+    <group ns="muse_armcl_nn">
         <!-- toplevel parameters -->
         <param name="map"             value="mesh_map" />
         <param name="topic_particles" value="particles"/>
@@ -35,33 +35,33 @@
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
             <rosparam param="meshes">
-                ["jaco2_link_2.obj", 
-                 "jaco2_link_3.obj", 
-                 "jaco2_link_4_5.obj", 
-                 "jaco2_link_4_5.obj", 
-                 "jaco2_link_hand.obj", 
-                 "jaco2_link_finger.obj", 
-                 "jaco2_link_finger.obj", 
+                ["jaco2_link_2.obj",
+                 "jaco2_link_3.obj",
+                 "jaco2_link_4_5.obj",
+                 "jaco2_link_4_5.obj",
+                 "jaco2_link_hand.obj",
+                 "jaco2_link_finger.obj",
+                 "jaco2_link_finger.obj",
                  "jaco2_link_finger.obj"]
             </rosparam>
             <rosparam param="frame_ids">
-                ["jaco_link_2", 
-                 "jaco_link_3", 
-                 "jaco_link_4", 
-                 "jaco_link_5", 
-                 "jaco_link_hand", 
-                 "jaco_link_finger_1", 
-                 "jaco_link_finger_2", 
+                ["jaco_link_2",
+                 "jaco_link_3",
+                 "jaco_link_4",
+                 "jaco_link_5",
+                 "jaco_link_hand",
+                 "jaco_link_finger_1",
+                 "jaco_link_finger_2",
                  "jaco_link_finger_3"]
             </rosparam>
             <rosparam param="parent_ids">
-                ["jaco_link_2", 
-                 "jaco_link_2", 
-                 "jaco_link_3", 
-                 "jaco_link_4", 
-                 "jaco_link_5", 
-                 "jaco_link_hand", 
-                 "jaco_link_hand", 
+                ["jaco_link_2",
+                 "jaco_link_2",
+                 "jaco_link_3",
+                 "jaco_link_4",
+                 "jaco_link_5",
+                 "jaco_link_hand",
+                 "jaco_link_hand",
                  "jaco_link_hand"]
             </rosparam>
         </group>
@@ -136,7 +136,7 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"                       value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity-->
+            <param name="class"                       value="muse_armcl::NearestNeighborDensity" /><!--WeightedMeans, NearestNeighborDensity-->
             <param name="base_class"                  value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
             <param name="resolution"                  value="0.025" />
@@ -168,9 +168,9 @@
     </group>
 
     <!-- MuSe ARMCL node -->
-    <node type="muse_armcl_node" 
-          name="muse_armcl" 
-          pkg="muse_armcl" 
-          output="screen"  
+    <node type="muse_armcl_node"
+          name="muse_armcl_nn"
+          pkg="muse_armcl"
+          output="screen"
           clear_params="true"/>
 </launch>
