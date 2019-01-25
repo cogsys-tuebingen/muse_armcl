@@ -129,7 +129,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         bool diff_colors = states.size() > 1;
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            if (p_map){
+            if (p_map && std::fabs(p.state.force) > 1e-3){
 
                 cslibs_kdl_msgs::ContactMessage contact;
                 contact.header.frame_id = p_map->frameId();
