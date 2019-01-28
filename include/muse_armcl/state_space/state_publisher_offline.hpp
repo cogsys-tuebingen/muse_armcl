@@ -9,7 +9,6 @@
 // other
 #include <jaco2_contact_msgs/Jaco2CollisionSequence.h>
 #include <jaco2_contact_msgs/Jaco2CollisionSample.h>
-#include <cslibs_kdl/yaml_to_kdl_tranform.h>
 #include <eigen_conversions/eigen_kdl.h>
 
 namespace muse_armcl {
@@ -29,11 +28,7 @@ public:
     void setup(ros::NodeHandle &nh, map_provider_map_t &map_providers, time_callback_t &set_time)
     {
         StatePublisher::setup(nh, map_providers);
-        std::string path;
-        path = nh.param<std::string>("contact_points_file", std::string(""));
-        if(path != ""){
-            cslibs_kdl::load(path, labeled_contact_points_);
-        }
+
         no_collision_label_ = nh.param<int>("no_collision_label", -1);
 
         set_time_ = set_time;
@@ -166,13 +161,10 @@ public:
         std::pair<int,double> min;
         min.first = -1;
         min.second = std::numeric_limits<double>::infinity();
-        for(const cslibs_kdl::KDLTransformation t : labeled_contact_points_){
-            if(t.parent == frame_id){
-                std::pair<int,double> p;
-                std::string name = t.name;
-                name.erase(0,1);
-                int label = std::stoi(name);
-                double dist = (t.frame.p - pos).Norm();
+        for(const auto& t : labeled_contact_points_){
+            if(t.second.parent == frame_id){
+                int label = t.first;
+                double dist = (t.second.frame.p - pos).Norm();
                 if(dist < min.second){
                     min.first = label;
                     min.second = dist;
@@ -186,17 +178,17 @@ public:
     std::string getGroundTruthContact(int label, cslibs_math_3d::Vector3d& position, cslibs_math_3d::Vector3d& direction) const
     {
         std::string point_name = "p" + std::to_string(label);
-        for(const cslibs_kdl::KDLTransformation t : labeled_contact_points_)
+        for(const auto& t : labeled_contact_points_)
         {
-            if(point_name == t.name){
-                position(0) = t.frame.p.x();
-                position(1) = t.frame.p.y();
-                position(2) = t.frame.p.z();
-                KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+            if(point_name == t.second.name){
+                position(0) = t.second.frame.p.x();
+                position(1) = t.second.frame.p.y();
+                position(2) = t.second.frame.p.z();
+                KDL::Vector dir = t.second.frame.M * KDL::Vector(-1,0,0);
                 direction(0) = dir.x();
                 direction(1) = dir.y();
                 direction(2) = dir.z();
-                return t.parent;
+                return t.second.parent;
             }
         }
         throw std::runtime_error("Cannot find point with label " + std::to_string(label));
@@ -262,20 +254,13 @@ public:
 
     const cslibs_kdl::KDLTransformation& getLabledPoint(int label) const
     {
-        std::string point_name = "p" + std::to_string(label);
-        for(const cslibs_kdl::KDLTransformation& t : labeled_contact_points_){
-            if(point_name == t.name){
-                return t;
-            }
-        }
-        throw std::runtime_error("Cannot find point with label " + std::to_string(label));
+        return labeled_contact_points_.at(label);
     }
 
 
 private:
     time_callback_t     set_time_;
     const ContactSequence* data_;
-    std::vector<cslibs_kdl::KDLTransformation> labeled_contact_points_;
     ConfusionMatrix confusion_matrix_;
     int no_collision_label_;
     std::vector<DetectionResult> results_;

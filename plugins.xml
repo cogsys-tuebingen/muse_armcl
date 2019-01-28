@@ -68,6 +68,12 @@
    <class type="muse_armcl::NearestNeighborDensity" base_class_type="muse_armcl::SampleDensity">
      <description>Clustering on the surface of directly.</description>
    </class>
+   <class type="muse_armcl::ContactPointHistogram" base_class_type="muse_armcl::SampleDensity">
+     <description>Histogram clustering sorts particles into discrete bins per joint.</description>
+   </class>
+   <class type="muse_armcl::ContactPointHistogramMin" base_class_type="muse_armcl::SampleDensity">
+     <description>Histogram clustering sorts particles into discrete by optimizing distance and orientation.</description>
+   </class>
 
 
    <!-- Data Providers -->

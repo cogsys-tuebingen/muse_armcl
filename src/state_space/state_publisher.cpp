@@ -33,6 +33,20 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
 
     no_contact_torque_threshold_ = nh.param<double>("no_contact_threshold", 0.1);
 
+    std::string path;
+    path = nh.param<std::string>("contact_points_file", std::string(""));
+    if(path != ""){
+        std::vector<cslibs_kdl::KDLTransformation> labeled_contact_points;
+        cslibs_kdl::load(path, labeled_contact_points);
+        labeled_contact_points_.clear();
+        for(auto p : labeled_contact_points){
+            std::string name = p.name;
+            name.erase(0,1);
+            int label = std::stoi(name);
+            labeled_contact_points_[label] = p;
+        }
+    }
+
     pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
     pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 1);
     pub_contacts_vis_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts_vis, 1);
@@ -63,20 +77,99 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     if (!ss->isType<MeshMap>())
         return;
 
-    using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
-    using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
     const mesh_map_tree_t* map = ss->as<MeshMap>().data();
     uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
     const ros::Time stamp = ros::Time().fromNSec(nsecs);
 
+    publishSet(sample_set, map, stamp);
+
+
+    if (publish_contacts) {
+        visualization_msgs::Marker msg;
+        msg.lifetime = ros::Duration(0.2);
+        msg.color.a = 0.8;
+        msg.color.r = contact_marker_r_;
+        msg.color.g = contact_marker_g_;
+        msg.color.b = contact_marker_b_;
+        msg.scale.x = 0.005;
+        msg.scale.y = 0.01;
+        msg.scale.z = 0.01;
+        msg.ns = "contact";
+        msg.type = visualization_msgs::Marker::ARROW;
+        msg.action = visualization_msgs::Marker::MODIFY;
+        msg.points.resize(2);
+
+        /// density estimation
+        ContactPointHistogram::ConstPtr histogram = std::dynamic_pointer_cast<ContactPointHistogram const>(sample_set->getDensity());
+        if(histogram && !labeled_contact_points_.empty()){
+            std::vector<std::pair<int,double>> labels;
+            histogram->getTopLabels(labels);
+        } else {
+            publishContacts(sample_set, map, stamp, msg);
+        }
+
+    }
+}
+void StatePublisher::publishContacts(const typename sample_set_t::ConstPtr & sample_set,
+                                     const mesh_map_tree_t* map,
+                                     const ros::Time& stamp,
+                                     visualization_msgs::Marker& msg)
+{
     visualization_msgs::MarkerArray markers;
-    visualization_msgs::Marker msg;
     msg.header.stamp = stamp;
     msg.id = 0;
 
-    msg.action = visualization_msgs::Marker::DELETEALL;
-    markers.markers.push_back(msg);
+    SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
+    if (!density) {
+        std::cerr << "[StatePublisher]: Incomaptible sample density estimation!" << "\n";
+        return;
+    }
 
+    /// publish all detected contacts
+    std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
+    density->contacts(states);
+//        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
+
+
+    cslibs_kdl_msgs::ContactMessageArray contact_msg;
+    bool diff_colors = states.size() > 1;
+    for (const StateSpaceDescription::sample_t& p : states) {
+        const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
+        if (p_map && std::fabs(p.state.force) > 1e-3){
+
+            cslibs_kdl_msgs::ContactMessage contact;
+            contact.header.frame_id = p_map->frameId();
+            contact.header.stamp = stamp;
+            cslibs_math_3d::Vector3d point = p.state.getPosition(p_map->map);
+            cslibs_math_3d::Vector3d direction = p.state.getDirection(p_map->map);
+            contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(point);
+            contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(direction);
+            contact.force = p.state.force;
+            msg.header.frame_id = p_map->map.frame_id_;
+            ++msg.id;
+            double fac = 1.0;
+            if(diff_colors){
+                fac = p.state.last_update;
+                msg.color.r *= fac;
+                msg.color.g *= fac;
+                msg.color.b *= fac;
+            }
+            msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2 * fac);
+            msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
+
+            markers.markers.push_back(msg);
+            contact_msg.contacts.push_back(contact);
+        }
+    }
+
+    pub_contacts_.publish(contact_msg);
+    pub_contacts_vis_.publish(markers);
+}
+
+void StatePublisher::publishSet(const typename sample_set_t::ConstPtr &sample_set,
+                                const mesh_map_tree_t* map,
+                                const ros::Time& stamp)
+{
     std::shared_ptr<cslibs_math_3d::PointcloudRGB3d> part_cloud(new cslibs_math_3d::PointcloudRGB3d);
     /// publish all particles
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
@@ -95,69 +188,19 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
     cloud.header.frame_id = map->front()->frameId();
     cloud.header.stamp = stamp;
     pub_particles_.publish(cloud);
+}
 
+void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, double>>& labels,
+                                           const ros::Time& stamp,
+                                           visualization_msgs::Marker& msg)
+{
+    cslibs_kdl_msgs::ContactMessageArray contact_msg;
+    visualization_msgs::MarkerArray markers;
+    for(const std::pair<int, double>& p : labels){
 
-    if (publish_contacts) {
-        markers.markers.clear();
-        msg.action = visualization_msgs::Marker::MODIFY;
-
-        /// density estimation
-        SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
-        if (!density) {
-            std::cerr << "[StatePublisher]: Incomaptible sample density estimation!" << "\n";
-            return;
-        }
-
-        /// publish all detected contacts
-        std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
-        density->contacts(states);
-//        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
-
-        msg.lifetime = ros::Duration(0.2);
-        msg.color.a = 0.8;
-        msg.color.r = contact_marker_r_;
-        msg.color.g = contact_marker_g_;
-        msg.color.b = contact_marker_b_;
-        msg.scale.x = 0.005;
-        msg.scale.y = 0.01;
-        msg.scale.z = 0.01;
-        msg.ns = "contact";
-        msg.type = visualization_msgs::Marker::ARROW;
-        msg.action = visualization_msgs::Marker::MODIFY;
-        msg.points.resize(2);
-        cslibs_kdl_msgs::ContactMessageArray contact_msg;
-        bool diff_colors = states.size() > 1;
-        for (const StateSpaceDescription::sample_t& p : states) {
-            const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            if (p_map && std::fabs(p.state.force) > 1e-3){
-
-                cslibs_kdl_msgs::ContactMessage contact;
-                contact.header.frame_id = p_map->frameId();
-                contact.header.stamp = stamp;
-                cslibs_math_3d::Vector3d point = p.state.getPosition(p_map->map);
-                cslibs_math_3d::Vector3d direction = p.state.getDirection(p_map->map);
-                contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(point);
-                contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(direction);
-                contact.force = p.state.force;
-                msg.header.frame_id = p_map->map.frame_id_;
-                ++msg.id;
-                double fac = 1.0;
-                if(diff_colors){
-                    fac = p.state.last_update;
-                    msg.color.r *= fac;
-                    msg.color.g *= fac;
-                    msg.color.b *= fac;
-                }
-                msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2 * fac);
-                msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
-
-                markers.markers.push_back(msg);
-                contact_msg.contacts.push_back(contact);
-            }
-        }
-        pub_contacts_.publish(contact_msg);
-        pub_contacts_vis_.publish(markers);
     }
+    pub_contacts_.publish(contact_msg);
+    pub_contacts_vis_.publish(markers);
 }
 }
 

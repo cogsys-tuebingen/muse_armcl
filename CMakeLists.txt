@@ -55,6 +55,8 @@ add_library(${PROJECT_NAME}_lib SHARED
   src/density/means.cpp
   src/density/weighted_means.cpp
   src/density/nearest_neighbor_density.cpp
+  src/density/contact_point_histogram.cpp
+  src/density/contact_point_histogram_min.cpp
   src/prediction/random_walk.cpp
   src/update/joint_state_provider.cpp
   src/update/normalized_update_model.cpp
