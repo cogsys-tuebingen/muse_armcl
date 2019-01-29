@@ -183,8 +183,6 @@ bool MuseARMCLOfflineNode::setup()
         const std::size_t sample_size                   = nh_private_.param<int>(param_name("sample_size"), 0);
         const std::size_t minimum_sample_size           = sample_size == 0 ? nh_private_.param<int>(param_name("minimum_sample_size"), 0) : sample_size;
         const std::size_t maximum_sample_size           = sample_size == 0 ? nh_private_.param<int>(param_name("maximum_sample_size"), 0) : sample_size;
-        const bool        reset_weights_after_insertion = nh_private_.param<bool>(param_name("reset_weights_after_insertion"), false);
-        const bool        reset_weights_to_one          = nh_private_.param<bool>(param_name("reset_weights_to_one"), false);
         const bool        enable_lag_correction         = nh_private_.param<bool>(param_name("enable_lag_correction"), false);
 
         if (minimum_sample_size == 0) {

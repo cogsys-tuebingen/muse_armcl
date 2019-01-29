@@ -55,30 +55,21 @@
                  "jaco2_link_3.obj", 
                  "jaco2_link_4_5.obj", 
                  "jaco2_link_4_5.obj", 
-                 "jaco2_link_hand.obj", 
-                 "jaco2_link_finger.obj", 
-                 "jaco2_link_finger.obj", 
-                 "jaco2_link_finger.obj"]
+                 "jaco2_link_hand.obj"]
             </rosparam>
             <rosparam param="frame_ids">
                 ["jaco_link_2", 
                  "jaco_link_3", 
                  "jaco_link_4", 
                  "jaco_link_5", 
-                 "jaco_link_hand", 
-                 "jaco_link_finger_1", 
-                 "jaco_link_finger_2", 
-                 "jaco_link_finger_3"]
+                 "jaco_link_hand"]
             </rosparam>
             <rosparam param="parent_ids">
                 ["jaco_link_2", 
                  "jaco_link_2", 
                  "jaco_link_3", 
                  "jaco_link_4", 
-                 "jaco_link_5", 
-                 "jaco_link_hand", 
-                 "jaco_link_hand", 
-                 "jaco_link_hand"]
+                 "jaco_link_5"]
             </rosparam>
         </group>
 
@@ -148,13 +139,18 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"               value="muse_armcl::WeightedMeans" />
-            <param name="base_class"          value="muse_armcl::SampleDensity" />
-            <param name="maximum_sample_size" value="$(arg maximum_sample_size)" />
-            <param name="resolution"          value="0.05" />
-            <param name="weight_threshold"    value="0.002"/>
+            <param name="class"                       value="muse_armcl::ContactPointHistogramMin" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
+            <param name="base_class"                  value="muse_armcl::SampleDensity" />
+            <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
+            <param name="resolution"                  value="0.025" />
+            <param name="weight_threshold"            value="0.002"/>
             <param name="clustering_weight_threshold" value="0.2"/>
+            <param name="radius"                      value="0.02" />
             <param name="number_of_contacts"          value="1"/>
+            <parma name="ignore_weight"               value="false" />
+            <param name="restrict_neigbours"          value="true"/> <!-- for histogram filters-->
+            <param name="scale_pos"                   value="1.2"/> <!-- for histogram filter ContactPointHistogramMin (likelihood)-->
+            <param name="scale_dir"                   value="1.0"/><!-- for histogram filter  ContactPointHistogramMin (likelihood)-->
         </group>
 
         <!-- scheduling -->
@@ -170,9 +166,6 @@
 
             <param name="minimum_sample_size" value="$(arg minimum_sample_size)" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)"/>
-
-            <param name="reset_weights_after_insertion" value="true"  />
-            <param name="reset_weights_to_one"          value="false" />
             <param name="enable_lag_correction"         value="false" />
         </group>
     </group>

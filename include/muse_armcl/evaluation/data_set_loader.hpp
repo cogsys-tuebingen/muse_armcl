@@ -14,7 +14,7 @@ bool loadFromBag(const rosbag::Bag& bag,
 {
     std::vector<std::string> topics = {topic_tf, topic_contact};
     rosbag::View view(bag, rosbag::TopicQuery(topics));
-    uint64_t last_nsecs = 0;
+//    suint64_t last_nsecs = 0;
     tf::tfMessage::Ptr tf;
     jaco2_contact_msgs::Jaco2CollisionSequence::Ptr sequence;
     std::size_t calls_tf = 0;

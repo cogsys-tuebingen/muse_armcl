@@ -165,8 +165,6 @@
             <param name="minimum_sample_size" value="$(arg minimum_sample_size)" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)"/>
 
-            <param name="reset_weights_after_insertion" value="true"  />
-            <param name="reset_weights_to_one"          value="false" />
             <param name="enable_lag_correction"         value="false" />
         </group>
     </group>

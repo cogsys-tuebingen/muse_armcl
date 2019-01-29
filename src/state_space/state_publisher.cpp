@@ -199,11 +199,7 @@ void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, doub
     visualization_msgs::MarkerArray markers;
     msg.header.stamp = stamp;
     for(const std::pair<int, double>& p : labels){
-//        ROS_INFO_STREAM(p.first);
-//        if(p.first / 100  == 7){
-//            double s = 0;
-//            std::cout << "label" << p.first << std::endl;
-//        }
+
         cslibs_kdl_msgs::ContactMessage contact;
         const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
         contact.header.frame_id = t.parent;

@@ -15,7 +15,7 @@ namespace muse_armcl {
 class EIGEN_ALIGN16 StatePublisherOffline : public StatePublisher
 {
 public:
-//    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    //    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<StatePublisherOffline>;
 
     using Ptr                = std::shared_ptr<StatePublisherOffline>;
@@ -36,7 +36,7 @@ public:
 
     virtual void publish(const typename sample_set_t::ConstPtr &sample_set) override
     {
-//        std::cout << "after resampling" << std::endl;
+        //        std::cout << "after resampling" << std::endl;
 
         StatePublisher::publish(sample_set);
 
@@ -52,7 +52,7 @@ public:
             return;
         }
 
-//        std::cout << "evaluate" << std::endl;
+        //        std::cout << "evaluate" << std::endl;
 
         /// get the map
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
@@ -60,18 +60,13 @@ public:
             return;
         const mesh_map_tree_t* map = ss->as<MeshMap>().data();
 
-        /// density estimation
-        SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
-        std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
-        density->contacts(states);
-
         // ground truth data
         uint64_t nsecs = static_cast<uint64_t>(sample_set->getStamp().nanoseconds());
         if(!data_->contains(nsecs)){
             return;
         }
         const ContactSample& gt = data_->at(nsecs);
-        std::size_t sample_id = data_->getID(nsecs);
+        /*std::size_t sample_id = */data_->getID(nsecs);
         if(gt.state.torque.empty()) {
             std::cout << nsecs << std::endl;
             throw std::runtime_error("Empty data recieved");
@@ -82,7 +77,7 @@ public:
         cslibs_math_3d::Vector3d actual_dir;
 
         if(gt.label != no_collision_label_ && gt.label > 0){
-            std::string actual_frame = getGroundTruthContact(gt.label, actual_pos, actual_dir);
+            std::string actual_frame = getDiscreteContact(gt.label, actual_pos, actual_dir);
             cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
             actual_pos = baseTactual * actual_pos;
             actual_dir = baseTactual * actual_dir;
@@ -99,32 +94,69 @@ public:
         event.s = 0;
         event.closest_point = no_collision_label_;
 
-        for (const StateSpaceDescription::sample_t& p : states) {
-            const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
-            if (p_map && (tau_norm > no_contact_torque_threshold_)) {
-                std::string link = p_map->frameId();
-                cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
-                cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
-                int prediction = getClosetPoint(link, point);
-                double dist_error = (point - actual_pos).length();
-                double tmp = direction.dot(actual_dir) /direction.length() / actual_dir.length();
-                double angle = std::acos(tmp);
-                if(dist_error < event.error_dist){
-                    event.contact_force = p.state.force;
-                    event.closest_point = prediction;
-                    event.error_dist = dist_error;
-                    event.error_ori = angle;
+        auto distanceMetric = [actual_pos, actual_dir](const cslibs_math_3d::Vector3d& p,
+                const cslibs_math_3d::Vector3d& v,
+                double& e_dist,
+                double& e_ori)
+        {
+            e_dist = (p - actual_pos).length();
+            double tmp = v.dot(actual_dir) / v.length() / actual_dir.length();
+            e_ori = std::acos(tmp);
+        };
+
+        /// density estimation
+        ContactPointHistogram::ConstPtr histogram = std::dynamic_pointer_cast<ContactPointHistogram const>(sample_set->getDensity());
+        if(histogram && !labeled_contact_points_.empty()){
+            std::vector<std::pair<int,double>> labels;
+            if (tau_norm > no_contact_torque_threshold_){
+                histogram->getTopLabels(labels);
+                if(!labels.empty()){
+                    event.closest_point = labels.front().first;
+                    event.contact_force = labels.front().second;
+                    cslibs_math_3d::Vector3d detected_pos;
+                    cslibs_math_3d::Vector3d detected_dir;
+                    std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
+                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
+                    detected_pos = baseTdetect * detected_pos;
+                    detected_pos = baseTdetect * detected_pos;
+                    distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                }
+            }
+        } else {
+            /// density estimation
+            SampleDensity::ConstPtr density = std::dynamic_pointer_cast<SampleDensity const>(sample_set->getDensity());
+            std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
+            density->contacts(states);
+
+            for (const StateSpaceDescription::sample_t& p : states) {
+                const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
+                cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
+                if (p_map && (tau_norm > no_contact_torque_threshold_)) {
+                    std::string link = p_map->frameId();
+                    cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
+                    cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
+                    int prediction = getClosetPoint(link, point);
+                    double dist_error;
+                    double angle;
+                    distanceMetric(point, direction, dist_error, angle);
+                    if(dist_error < event.error_dist){
+                        event.contact_force = p.state.force;
+                        event.closest_point = prediction;
+                        event.error_dist = dist_error;
+                        event.error_ori = angle;
+                    }
                 }
             }
         }
-//        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
-//                  << " detected: " << event.closest_point << std::endl;
+
+
+        //        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
+        //                  << " detected: " << event.closest_point << std::endl;
         confusion_matrix_.reportClassification(gt.label, event.closest_point);
         results_.push_back(event);
 
         if(tau_norm > no_contact_torque_threshold_){
-                reportLikelyHoodOfGt(sample_set, gt, map);
+            reportLikelyHoodOfGt(sample_set, gt, map);
         }
 
         set_time_(sample_set->getStamp());
@@ -132,17 +164,17 @@ public:
     }
     virtual void publishIntermediate(const typename sample_set_t::ConstPtr &sample_set) override
     {
-//        std::cout << "intermediate" << "\n";
-//        StatePublisher::publishIntermediate(sample_set);
+        //        std::cout << "intermediate" << "\n";
+        //        StatePublisher::publishIntermediate(sample_set);
         publish(sample_set);
-//        set_time_(sample_set->getStamp());
+        //        set_time_(sample_set->getStamp());
     }
     virtual void publishConstant(const typename sample_set_t::ConstPtr &sample_set) override
     {
-//        std::cout << "constant" << "\n";
-//        StatePublisher::publishConstant(sample_set);
+        //        std::cout << "constant" << "\n";
+        //        StatePublisher::publishConstant(sample_set);
         publish(sample_set);
-//        set_time_(sample_set->getStamp());
+        //        set_time_(sample_set->getStamp());
     }
 
     void setData(const ContactSequence& data)
@@ -155,7 +187,7 @@ public:
         data_ = nullptr;
     }
 
-      int getClosetPoint(const std::string& frame_id, const cslibs_math_3d::Vector3d& estimated) const
+    int getClosetPoint(const std::string& frame_id, const cslibs_math_3d::Vector3d& estimated) const
     {
         KDL::Vector pos (estimated(0), estimated(1), estimated(2));
         std::pair<int,double> min;
@@ -171,27 +203,21 @@ public:
                 }
             }
         }
-//        std::cout << "get point" << std::endl;
+        //        std::cout << "get point" << std::endl;
         return min.first;
     }
 
-    std::string getGroundTruthContact(int label, cslibs_math_3d::Vector3d& position, cslibs_math_3d::Vector3d& direction) const
+    std::string getDiscreteContact(int label, cslibs_math_3d::Vector3d& position, cslibs_math_3d::Vector3d& direction) const
     {
-        std::string point_name = "p" + std::to_string(label);
-        for(const auto& t : labeled_contact_points_)
-        {
-            if(point_name == t.second.name){
-                position(0) = t.second.frame.p.x();
-                position(1) = t.second.frame.p.y();
-                position(2) = t.second.frame.p.z();
-                KDL::Vector dir = t.second.frame.M * KDL::Vector(-1,0,0);
-                direction(0) = dir.x();
-                direction(1) = dir.y();
-                direction(2) = dir.z();
-                return t.second.parent;
-            }
-        }
-        throw std::runtime_error("Cannot find point with label " + std::to_string(label));
+        const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
+        position(0) = t.frame.p.x();
+        position(1) = t.frame.p.y();
+        position(2) = t.frame.p.z();
+        KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+        direction(0) = dir.x();
+        direction(1) = dir.y();
+        direction(2) = dir.z();
+        return t.parent;
     }
 
     void exportResults(const std::string& path)
