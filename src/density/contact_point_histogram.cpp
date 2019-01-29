@@ -28,7 +28,7 @@ namespace muse_armcl {
         for(const auto& p : labeled_contact_points){
             labeled_contact_points_[p.parent].emplace_back(DiscreteContactPoint(p));
         }
-
+        ignore_func_ = nh.param(param_name("ignore_weight"), false);
         n_contacts_ = nh.param(param_name("number_of_contacts"), 10);
 
         const std::string map_provider_id = nh.param<std::string>("map", ""); /// toplevel parameter
@@ -178,7 +178,11 @@ namespace muse_armcl {
             }
         }
         DiscreteCluster& cluster = histo_[min_id];
-        ++cluster.hits;
+        if(ignore_func_){
+          cluster.hits += 1.0;
+        } else {
+          cluster.hits += sample.state.last_update;
+        }
         if(min_d < cluster.dist){
             cluster.dist = min_d;
             cluster.sample = &sample;
@@ -188,7 +192,7 @@ namespace muse_armcl {
     void ContactPointHistogram::estimate()
     {
         ranked_labels_.clear();
-        for(const std::pair<int, DiscreteCluster>& p : histo_){
+        for(const std::pair<double, DiscreteCluster>& p : histo_){
             ranked_labels_[p.second.hits].emplace_back(p.first);
         }
     }

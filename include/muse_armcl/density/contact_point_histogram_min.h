@@ -15,7 +15,16 @@ public:
         return "muse_armcl::ContactPointHistogramMin";
     }
 
+    void setup(const map_provider_map_t &map_providers,
+               ros::NodeHandle &nh) override;
     void insert(const sample_t &sample) override;
+protected:
+    bool restrict_neigbours_;
+    double scale_pos_;
+    double scale_dir_;
+    std::map<std::string, std::vector<std::string>> search_links_;
+
+    void setupSearchLinks();
 };
 }
 #endif // CONTACT_POINT_HISTOGRAM_MIN_H

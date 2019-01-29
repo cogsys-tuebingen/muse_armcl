@@ -146,6 +146,9 @@
             <param name="radius"                      value="0.02" />
             <param name="number_of_contacts"          value="1"/>
             <parma name="ignore_weight"               value="false" />
+            <param name="restrict_neigbours"          value="true"/> <!-- for histogram filters-->
+            <param name="scale_pos"                   value="1.2"/> <!-- for histogram filter ContactPointHistogramMin (likelihood)-->
+            <param name="scale_dir"                   value="1.0"/><!-- for histogram filter  ContactPointHistogramMin (likelihood)-->
         </group>
 
         <!-- scheduling -->

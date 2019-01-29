@@ -115,6 +115,20 @@ target_link_libraries(${PROJECT_NAME}_offline_node
   ${NLOPT_LIBRARIES}
 )
 
+add_executable(${PROJECT_NAME}_labeled_contact_points_change_frames
+  src/node/labeled_contact_points_change_frames.cpp
+)
+
+add_dependencies(${PROJECT_NAME}_labeled_contact_points_change_frames ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(${PROJECT_NAME}_labeled_contact_points_change_frames
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
+  ${NLOPT_LIBRARIES}
+)
+
+
 install(FILES plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 install(TARGETS ${PROJECT_NAME}_lib

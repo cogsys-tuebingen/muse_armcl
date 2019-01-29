@@ -51,7 +51,7 @@ public:
     {
         auto param_name = [this](const std::string &name){return name_ + "/" + name;};
 
-        ignore_weight_ = nh.param(param_name("ignore_wieght"), false);
+        ignore_weight_ = nh.param(param_name("ignore_weight"), false);
         radius_        = nh.param(param_name("radius"), 0.1);
         radius_       *= radius_;
         relative_weight_threshold_ = nh.param(param_name("relative_weight_threshold"), 0.8);

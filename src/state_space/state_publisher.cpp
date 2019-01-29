@@ -10,7 +10,6 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <cslibs_kdl_msgs/ContactMessageArray.h>
-
 namespace muse_armcl {
 void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_providers)
 {
@@ -104,6 +103,7 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         if(histogram && !labeled_contact_points_.empty()){
             std::vector<std::pair<int,double>> labels;
             histogram->getTopLabels(labels);
+            publishDiscretePoints(labels, stamp, msg);
         } else {
             publishContacts(sample_set, map, stamp, msg);
         }
@@ -128,7 +128,7 @@ void StatePublisher::publishContacts(const typename sample_set_t::ConstPtr & sam
     /// publish all detected contacts
     std::vector<StateSpaceDescription::sample_t, StateSpaceDescription::sample_t::allocator_t> states;
     density->contacts(states);
-//        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
+    //        std::cout << "[StatePublisher]: number of contacts: " << states.size() << std::endl;
 
 
     cslibs_kdl_msgs::ContactMessageArray contact_msg;
@@ -154,11 +154,12 @@ void StatePublisher::publishContacts(const typename sample_set_t::ConstPtr & sam
                 msg.color.g *= fac;
                 msg.color.b *= fac;
             }
-            msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2 * fac);
+            msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point - direction * 0.2 );
             msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(point);
 
             markers.markers.push_back(msg);
             contact_msg.contacts.push_back(contact);
+
         }
     }
 
@@ -196,7 +197,39 @@ void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, doub
 {
     cslibs_kdl_msgs::ContactMessageArray contact_msg;
     visualization_msgs::MarkerArray markers;
+    msg.header.stamp = stamp;
     for(const std::pair<int, double>& p : labels){
+//        ROS_INFO_STREAM(p.first);
+//        if(p.first / 100  == 7){
+//            double s = 0;
+//            std::cout << "label" << p.first << std::endl;
+//        }
+        cslibs_kdl_msgs::ContactMessage contact;
+        const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
+        contact.header.frame_id = t.parent;
+        msg.header.frame_id = t.parent;
+        contact.header.stamp = stamp;
+        contact.force = p.second;
+        contact.location.x = t.frame.p.x();
+        contact.location.y = t.frame.p.y();
+        contact.location.z = t.frame.p.z();
+        KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+        contact.direction.x = dir.x();
+        contact.direction.y = dir.y();
+        contact.direction.z = dir.z();
+        geometry_msgs::Point p0;
+        p0.x = t.frame.p.x();
+        p0.y = t.frame.p.y();
+        p0.z = t.frame.p.z();
+        geometry_msgs::Point p1;
+        p1.x = t.frame.p.x()  - 0.2 * dir.x();
+        p1.y = t.frame.p.y()  - 0.2 * dir.y();
+        p1.z = t.frame.p.z()  - 0.2 * dir.z();
+        msg.points[0] = p1;
+        msg.points[1] = p0;
+
+        markers.markers.push_back(msg);
+        contact_msg.contacts.push_back(contact);
 
     }
     pub_contacts_.publish(contact_msg);

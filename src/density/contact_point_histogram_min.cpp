@@ -7,6 +7,16 @@
 #include <cslibs_kdl/yaml_to_kdl_tranform.h>
 using namespace muse_armcl;
 
+void ContactPointHistogramMin::setup(const map_provider_map_t &map_providers, ros::NodeHandle &nh)
+{
+    ContactPointHistogram::setup(map_providers, nh);
+    auto param_name = [this](const std::string &name){return name_ + "/" + name;};
+
+    restrict_neigbours_ = nh.param(param_name("restrict_neigbours"), true);
+    scale_pos_          = nh.param(param_name("scale_pos"), 1.0);
+    scale_dir_          = nh.param(param_name("scale_dir"), 1.0);
+}
+
 void ContactPointHistogramMin::insert(const sample_t &sample)
 {
     if(labeled_contact_points_.empty()){
@@ -37,8 +47,8 @@ void ContactPointHistogramMin::insert(const sample_t &sample)
     dir   = base_T_sample * dir;
 
     //        cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
-    double scale_p = 1.0;
-    double scale_d = 1.0;
+    double scale_p = scale_pos_;
+    double scale_d = scale_dir_;
     auto likelihood = [point, dir, scale_p, scale_d](const cslibs_math_3d::Vector3d& p,
                                                   const cslibs_math_3d::Vector3d& v){
         cslibs_math_3d::Vector3d dp = point -p;
@@ -49,17 +59,25 @@ void ContactPointHistogramMin::insert(const sample_t &sample)
 
     double max_likelihood = std::numeric_limits<double>::min();
     int min_id = -1;
-    for(const std::pair<std::string, std::vector<DiscreteContactPoint>>& p : labeled_contact_points_){
-        for(const DiscreteContactPoint& cp  : p.second){
+
+    if(search_links_.empty()){
+        setupSearchLinks();
+        if(search_links_.empty()){
+            return;
+        }
+    }
+    for(const std::string& frame_id: search_links_.at(link)){
+        const std::vector<DiscreteContactPoint>& points = labeled_contact_points_.at(frame_id);
+        for(const DiscreteContactPoint& cp  : points){
             const KDL::Frame& f = cp.frame;
             cslibs_math_3d::Vector3d pos_cp (f.p(0), f.p(1), f.p(2));
             KDL::Vector dir_kdl = f.M * KDL::Vector(-1,0,0);
             cslibs_math_3d::Vector3d dir_cp(dir_kdl(0), dir_kdl(1), dir_kdl(2));
-            cslibs_math_3d::Transform3d base_T_cp = map->getTranformToBase(p.first);
+            cslibs_math_3d::Transform3d base_T_cp = map->getTranformToBase(frame_id);
             pos_cp = base_T_cp * pos_cp;
             dir_cp = base_T_cp * dir_cp;
-
             double l_cp = likelihood(pos_cp, dir_cp);
+
             if(l_cp > max_likelihood){
                 max_likelihood = l_cp;
                 min_id = cp.label;
@@ -69,10 +87,46 @@ void ContactPointHistogramMin::insert(const sample_t &sample)
     }
     double fitness = std::fabs(2.0 - max_likelihood);
     DiscreteCluster& cluster = histo_[min_id];
-    ++cluster.hits;
+    if(ignore_func_){
+      cluster.hits += 1.0;
+    } else {
+      cluster.hits += sample.state.last_update;
+    }
     if(fitness < cluster.dist){
         cluster.dist = fitness;
         cluster.sample = &sample;
+    }
+}
+
+void ContactPointHistogramMin::setupSearchLinks()
+{
+    const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
+    if (!ss->isType<MeshMap>())
+        return;
+
+    using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
+    using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
+    const mesh_map_tree_t *map = ss->as<MeshMap>().data();
+
+    if(restrict_neigbours_){
+        for(const mesh_map_tree_node_t::Ptr& partial_map : *map){
+            std::string frame_id = partial_map->frameId();
+            search_links_[frame_id].emplace_back(frame_id);
+            std::string parent;
+            if(partial_map->parentFrameId(parent)){
+                search_links_[frame_id].emplace_back(parent);
+            }
+            for(const mesh_map_tree_node_t* c : partial_map->children){
+                search_links_[frame_id].emplace_back(c->frameId());
+            }
+        }
+    } else {
+        std::vector<std::string> frame_ids;
+        map->getFrameIds(frame_ids);
+        for(const mesh_map_tree_node_t::Ptr& partial_map : *map){
+            std::string frame_id = partial_map->frameId();
+            search_links_[frame_id] = frame_ids;
+        }
     }
 }
 

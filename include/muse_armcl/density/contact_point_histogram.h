@@ -20,7 +20,7 @@ public:
             hits(0),
             dist(std::numeric_limits<double>::max())
         {}
-        std::size_t hits;
+        double hits;
         double dist;
         sample_t const* sample;
     };
@@ -61,11 +61,12 @@ public:
     void insert(const sample_t &sample) override;
     void estimate() override;
 protected:
+    bool                                                     ignore_func_;
     std::size_t                                              n_contacts_;
     std::map<std::string, std::vector<DiscreteContactPoint>> labeled_contact_points_;
     histogram_t                                              histo_;
     MeshMapProvider::Ptr                                     map_provider_;
-    std::map<std::size_t, std::vector<int>>                  ranked_labels_;
+    std::map<double, std::vector<int>>                       ranked_labels_;
 
 };
 }
