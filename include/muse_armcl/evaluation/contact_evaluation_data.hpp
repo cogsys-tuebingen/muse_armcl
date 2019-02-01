@@ -22,14 +22,46 @@ public:
 
     T& at(const uint64_t& time)
     {
-        std::size_t id = time_to_index_.at(time);
-        return data_.at(id);
+        try{
+            std::size_t id = time_to_index_.at(time);
+            return data_.at(id);
+
+        } catch (const std::exception& ex){
+            std::cerr << ex.what() << time << " using minimum distance instead!" << std::endl;
+            uint64_t min_diff = std::numeric_limits<uint64_t>::max();
+            std::size_t min_id = 0;
+            for(const std::pair<uint64_t,std::size_t>& p : time_to_index_){
+                long int d = static_cast<long int>(p.first) - static_cast<long int>(time);
+                uint64_t diff = static_cast<uint64_t>(std::abs(d));
+                if(diff < min_diff){
+                    min_id = p.second;
+                    min_diff = diff;
+                }
+            }
+            return data_.at(min_id);
+        }
     }
 
     const T& at(const uint64_t& time) const
     {
-        std::size_t id = time_to_index_.at(time);
-        return data_.at(id);
+        try{
+            std::size_t id = time_to_index_.at(time);
+            return data_.at(id);
+
+        } catch (const std::exception& ex){
+            std::cerr << ex.what() << time << " using minimum distance instead!" << std::endl;
+            uint64_t min_diff = std::numeric_limits<uint64_t>::max();
+            std::size_t min_id = 0;
+            for(const std::pair<uint64_t,std::size_t>& p : time_to_index_){
+                long int d = static_cast<long int>(p.first) - static_cast<long int>(time);
+                uint64_t diff = static_cast<uint64_t>(std::abs(d));
+                if(diff < min_diff){
+                    min_id = p.second;
+                    min_diff = diff;
+                }
+            }
+            return data_.at(min_id);
+        }
     }
 
     std::size_t getID(const uint64_t time) const

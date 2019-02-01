@@ -34,5 +34,10 @@ int main(int argc, char *argv[])
 
     bag.close();
 
+    auto it = data_set.begin();
+    uint64_t mt = it->data.getMaxTime();
+    ++mt;
+    auto a = it->data.at(mt);
+
     return 0;
 }
