@@ -262,7 +262,7 @@ void MuseARMCLOfflineNode::start()
     std::size_t nv = data_set_->size();
     std::size_t count = 0;
     std::size_t n_samples = 0;
-
+    cslibs_time::Time start_time = cslibs_time::Time::now();
     std::string file = results_file_base_name_ + "_send_messages.txt";
 
     for(ContactEvaluationSample& seq : *data_set_){
@@ -336,9 +336,11 @@ void MuseARMCLOfflineNode::start()
         	
         state_publisher_->reset();
         state_publisher_->exportResults(results_file_base_name_);
+        cslibs_time::Time current_time = cslibs_time::Time::now();
         ROS_INFO_STREAM("processed: " << ++count << " of " << nv << " messages.");
-        of << "Send: " << count << " of " << nv << " messages." << std::endl;
-        of << "Thus, send" << n_samples << " of " << data_set_->n_samples << " samples." << std::endl;
+        of << "Send sequences: " << count << " of " << nv << std::endl;
+        of << "Send samples:   " << n_samples << " of " << data_set_->n_samples << std::endl;
+        of << "duration:       " << (current_time - start_time).seconds() << " seconds." << std::endl;
         of.close();
        particle_filter_->end();
     }
