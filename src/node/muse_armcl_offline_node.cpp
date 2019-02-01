@@ -9,7 +9,7 @@
 #include <jaco2_contact_msgs/Jaco2CollisionSequence.h>
 #include <jaco2_msgs/Jaco2JointState.h>
 #include <tf/tf.h>
-
+#include <fstream>
 namespace muse_armcl {
 MuseARMCLOfflineNode::MuseARMCLOfflineNode() :
     nh_private_("~"),
@@ -263,7 +263,10 @@ void MuseARMCLOfflineNode::start()
     std::size_t count = 0;
     std::size_t n_samples = 0;
 
+    std::string file = results_file_base_name_ + "_send_messages.txt";
+
     for(ContactEvaluationSample& seq : *data_set_){
+        std::ofstream of(file);
 
         tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
 
@@ -334,7 +337,9 @@ void MuseARMCLOfflineNode::start()
         state_publisher_->reset();
         state_publisher_->exportResults(results_file_base_name_);
         ROS_INFO_STREAM("processed: " << ++count << " of " << nv << " messages.");
-
+        of << "Send: " << count << " of " << nv << " messages." << std::endl;
+        of << "Thus, send" << n_samples << " of " << data_set_->n_samples << " samples." << std::endl;
+        of.close();
        particle_filter_->end();
     }
     ROS_INFO_STREAM("Fillter processed " << n_samples << " samples!");

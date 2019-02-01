@@ -6,6 +6,7 @@ class EIGEN_ALIGN16 ContactPointHistogramMin : public muse_armcl::ContactPointHi
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    using allocator_t = Eigen::aligned_allocator<ContactPointHistogramMin>;
 
     using Ptr                = std::shared_ptr<ContactPointHistogramMin>;
     using ConstPtr           = std::shared_ptr<ContactPointHistogramMin const>;

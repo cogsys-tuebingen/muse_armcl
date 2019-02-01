@@ -27,6 +27,8 @@ public:
     ///  weight_iterator_t::notify_touch::template    from<sample_set_t, &sample_set_t::weightStatisticReset>(this)
     void setup(ros::NodeHandle &nh, map_provider_map_t &map_providers, time_callback_t &set_time)
     {
+        n_sequences_ = 0;
+        n_samples_ = 0;
         StatePublisher::setup(nh, map_providers);
 
         no_collision_label_ = nh.param<int>("no_collision_label", -1);
@@ -103,7 +105,7 @@ public:
             double tmp = v.dot(actual_dir) / v.length() / actual_dir.length();
             e_ori = std::acos(tmp);
         };
-
+        ++n_samples_;
         /// density estimation
         ContactPointHistogram::ConstPtr histogram = std::dynamic_pointer_cast<ContactPointHistogram const>(sample_set->getDensity());
         if(histogram && !labeled_contact_points_.empty()){
@@ -225,9 +227,16 @@ public:
         std::string file_cm = path + "_confusion_matrix.csv";
         std::string file_ds = path + "_detection_results.csv";
         std::string file_gt = path + "_gt_likely_hood.csv";
+        std::string file_p  = path + "_process_progress.txt";
         confusion_matrix_.exportCsv(file_cm);
         save(results_, file_ds);
         save(gt_likely_hood_, file_gt);
+        ++n_sequences_;
+        std::ofstream of(file_p);
+        of << "Processed " << n_sequences_ << " messages." << std::endl;
+        of << "Thus, processed " << n_samples_ << " samples." << std::endl;
+        of.close();
+
     }
 
     void reportLikelyHoodOfGt(const typename sample_set_t::ConstPtr &sample_set,
@@ -291,6 +300,8 @@ private:
     int no_collision_label_;
     std::vector<DetectionResult> results_;
     std::vector<GroundTruthParticleSetDistance> gt_likely_hood_;
+    std::size_t n_sequences_;
+    std::size_t n_samples_;
 
 };
 }

@@ -184,7 +184,9 @@ struct ContactEvaluationSample{
 class DataSet : public TimedData<ContactEvaluationSample>
 {
 public:
-    DataSet(){}
+    DataSet() :
+        n_samples(0)
+    {}
 
     void setTf(uint64_t time, const tf::tfMessage& tf_msg)
     {
@@ -223,6 +225,7 @@ public:
     {
         ContactSequence seq;
         seq.setData(time, data);
+        n_samples += seq.size();
 
         auto it = time_to_index_.find(time);
         if(it == time_to_index_.end()){
@@ -248,6 +251,7 @@ public:
         }
 
     }
+    std::size_t n_samples;
 };
 
 }
