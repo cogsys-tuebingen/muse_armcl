@@ -190,15 +190,20 @@ int StatePublisherOffline::getClosetPoint(const std::string& frame_id, const csl
 
 std::string StatePublisherOffline::getDiscreteContact(int label, cslibs_math_3d::Vector3d& position, cslibs_math_3d::Vector3d& direction) const
 {
-    const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
-    position(0) = t.frame.p.x();
-    position(1) = t.frame.p.y();
-    position(2) = t.frame.p.z();
-    KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
-    direction(0) = dir.x();
-    direction(1) = dir.y();
-    direction(2) = dir.z();
-    return t.parent;
+    try {
+        const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
+        position(0) = t.frame.p.x();
+        position(1) = t.frame.p.y();
+        position(2) = t.frame.p.z();
+        KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+        direction(0) = dir.x();
+        direction(1) = dir.y();
+        direction(2) = dir.z();
+        return t.parent;
+    } catch(std::exception &e) {
+        std::cerr << "[StatePublisherOffline]: Could not find KLD transformation!" << std::endl;
+        throw e;
+    }
 }
 
 void StatePublisherOffline::exportResults(const std::string& path)

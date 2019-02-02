@@ -28,19 +28,30 @@ public:
 
 //        Eigen::VectorXd tau_particle_local = model_.getExternalTorques(joint_state.position, frame_id, w);
         if(frame_id.find("finger") != std::string::npos ){
-            w = transforms.at(state.map_id) *  w;
+            try {
+                w = transforms.at(state.map_id) *  w;
+            } catch (const std::exception &e) {
+                std::cerr << "[UpdateModel] : looked for finger..." << std::endl;
+                throw e;
+            }
         }
         Eigen::VectorXd F = cslibs_kdl::convert2Eigen(w);
-        Eigen::VectorXd tau_particle_local  = jacobian.at(state.map_id) * F;
-
-        std::size_t rows = tau_particle_local.rows();
-
-        std::size_t max_dim = std::min(rows, n_joints_);
-
         Eigen ::VectorXd tau_particle(Eigen::VectorXd::Zero(n_joints_));
-        for(std::size_t i= 0; i < max_dim ; ++i){
-            tau_particle(i) = tau_particle_local(i);
+
+
+        try {
+            const Eigen::VectorXd &tau_particle_local = jacobian.at(state.map_id) * F;
+            std::size_t rows = tau_particle_local.rows();
+            std::size_t max_dim = std::min(rows, n_joints_);
+
+            for(std::size_t i= 0; i < max_dim ; ++i){
+                tau_particle(i) = tau_particle_local(i);
+            }
+        } catch (const std::exception &e) {
+            std::cerr << "[UpdateModel] : could not get jacobian ..." << std::endl;
+            throw e;
         }
+
         Eigen ::VectorXd tau_sensed = tau_ext_sensed;
         double tsn = tau_sensed.norm();
         double tpn = tau_particle.norm();
