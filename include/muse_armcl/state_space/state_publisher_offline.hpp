@@ -36,7 +36,14 @@ public:
     void reset();
 
     int getClosetPoint(const std::string& frame_id, const cslibs_math_3d::Vector3d& estimated) const;
-    std::string getDiscreteContact(int label, cslibs_math_3d::Vector3d& position, cslibs_math_3d::Vector3d& direction) const;
+    std::string getDiscreteContact(const cslibs_mesh_map::MeshMapTree* map,
+                                   const ContactSample& gt,
+                                   cslibs_math_3d::Vector3d& position,
+                                   cslibs_math_3d::Vector3d& direction) const;
+    std::string getDiscreteContact(int label,
+                                   cslibs_math_3d::Vector3d& position,
+                                   cslibs_math_3d::Vector3d& direction) const;
+
     void exportResults(const std::string& path);
 
     void reportLikelyHoodOfGt(const typename sample_set_t::ConstPtr &sample_set,
@@ -46,6 +53,7 @@ public:
     const cslibs_kdl::KDLTransformation& getLabledPoint(int label) const;
 
 private:
+    bool vertex_gt_model_;
     time_callback_t     set_time_;
     const ContactSequence* data_;
     ConfusionMatrix confusion_matrix_;
