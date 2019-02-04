@@ -54,6 +54,7 @@ public:
 
 private:
     bool vertex_gt_model_;
+    bool create_confusion_matrix_;
     time_callback_t     set_time_;
     const ContactSequence* data_;
     ConfusionMatrix confusion_matrix_;

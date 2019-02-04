@@ -10,7 +10,7 @@ void StatePublisherOffline::setup(ros::NodeHandle &nh, map_provider_map_t &map_p
 
     no_collision_label_ = nh.param<int>("no_collision_label", -1);
     vertex_gt_model_ = nh.param<bool>("vertex_gt_model", false);
-
+    create_confusion_matrix_ = nh.param<bool>("create_confusion_matrix", true);
     set_time_ = set_time;
 }
 
@@ -144,7 +144,9 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 
     //        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
     //                  << " detected: " << event.closest_point << std::endl;
-    confusion_matrix_.reportClassification(gt.label, event.closest_point);
+    if(create_confusion_matrix_){
+        confusion_matrix_.reportClassification(gt.label, event.closest_point);
+    }
     results_.push_back(event);
 
     if(tau_norm > no_contact_torque_threshold_){
@@ -216,7 +218,8 @@ std::string StatePublisherOffline::getDiscreteContact(const cslibs_mesh_map::Mes
             return gt_node->frameId();
         }
         std::cerr << "Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
-        return map->front()->frameId();
+//        return map->front()->frameId();
+        throw std::runtime_error("Did not find ground truth point");
     } else {
         return getDiscreteContact(gt.label, position, direction);
     }
@@ -243,7 +246,9 @@ void StatePublisherOffline::exportResults(const std::string& path)
     std::string file_ds = path + "_detection_results.csv";
     std::string file_gt = path + "_gt_likely_hood.csv";
     std::string file_p  = path + "_process_progress.txt";
-    confusion_matrix_.exportCsv(file_cm);
+    if(create_confusion_matrix_){
+        confusion_matrix_.exportCsv(file_cm);
+    }
     save(results_, file_ds);
     save(gt_likely_hood_, file_gt);
     ++n_sequences_;
