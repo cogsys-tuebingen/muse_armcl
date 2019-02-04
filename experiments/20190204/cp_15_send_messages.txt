@@ -1,0 +1,3 @@
+Send sequences: 819 of 820
+Send samples:   429138 of 429270
+duration:       22122.8 seconds.
