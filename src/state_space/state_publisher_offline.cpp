@@ -9,7 +9,8 @@ void StatePublisherOffline::setup(ros::NodeHandle &nh, map_provider_map_t &map_p
     StatePublisher::setup(nh, map_providers);
 
     no_collision_label_ = nh.param<int>("no_collision_label", -1);
-
+    vertex_gt_model_ = nh.param<bool>("vertex_gt_model", false);
+    create_confusion_matrix_ = nh.param<bool>("create_confusion_matrix", true);
     set_time_ = set_time;
 }
 
@@ -55,16 +56,22 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
     cslibs_math_3d::Vector3d actual_pos;
     cslibs_math_3d::Vector3d actual_dir;
 
+    DetectionResult event;
+    event.true_point = gt.label;
+
     if(gt.label != no_collision_label_ && gt.label > 0){
-        std::string actual_frame = getDiscreteContact(gt.label, actual_pos, actual_dir);
+        std::string actual_frame = getDiscreteContact(map, gt, actual_pos, actual_dir);
+        auto node = map->getNode(actual_frame);
+        if(node){
+            std::size_t map_id = node->mapId();
+            event.true_point = static_cast<int>(map_id) * 100000 + gt.label;
+        }
         cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
         actual_pos = baseTactual * actual_pos;
         actual_dir = baseTactual * actual_dir;
     }
 
 
-    DetectionResult event;
-    event.true_point = gt.label;
     event.contact_force_true = gt.contact_force.norm();
     event.error_dist = std::numeric_limits<double>::infinity();
     event.error_ori = std::numeric_limits<double>::infinity();
@@ -114,7 +121,13 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
                 std::string link = p_map->frameId();
                 cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
                 cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
-                int prediction = getClosetPoint(link, point);
+                int prediction = -1;
+                if(vertex_gt_model_){
+                    std::size_t vid = p.state.s > 0.5 ? p.state.goal_vertex.idx() : p.state.active_vertex.idx();
+                    prediction = p_map->mapId() * 100000 + vid;
+                } else {
+                    prediction = getClosetPoint(link, point);
+                }
                 double dist_error;
                 double angle;
                 distanceMetric(point, direction, dist_error, angle);
@@ -131,7 +144,9 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 
     //        std::cout << "[" << nsecs << "]" << "(" << sample_id << ")" << " torque res: " << tau_norm << " gt label: "<< gt.label
     //                  << " detected: " << event.closest_point << std::endl;
-    confusion_matrix_.reportClassification(gt.label, event.closest_point);
+    if(create_confusion_matrix_){
+        confusion_matrix_.reportClassification(gt.label, event.closest_point);
+    }
     results_.push_back(event);
 
     if(tau_norm > no_contact_torque_threshold_){
@@ -188,7 +203,31 @@ int StatePublisherOffline::getClosetPoint(const std::string& frame_id, const csl
     return min.first;
 }
 
-std::string StatePublisherOffline::getDiscreteContact(int label, cslibs_math_3d::Vector3d& position, cslibs_math_3d::Vector3d& direction) const
+std::string StatePublisherOffline::getDiscreteContact(const cslibs_mesh_map::MeshMapTree* map,
+                                                      const ContactSample &gt,
+                                                      cslibs_math_3d::Vector3d& position,
+                                                      cslibs_math_3d::Vector3d& direction) const
+{   
+    if(vertex_gt_model_ && gt.label > 0){
+        std::size_t vertex_id = static_cast<std::size_t>(gt.label);
+        const cslibs_mesh_map::MeshMapTreeNode* gt_node = map->getNode(gt.contact_force.frameId());
+        if(gt_node){
+            cslibs_mesh_map::MeshMap::VertexHandle vh = gt_node->map.vertexHandle(vertex_id);
+            position = gt_node->map.getPoint(vh);
+            direction = gt_node->map.getNormal(vh) * (-1.0);
+            return gt_node->frameId();
+        }
+        std::cerr << "Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
+//        return map->front()->frameId();
+        throw std::runtime_error("Did not find ground truth point");
+    } else {
+        return getDiscreteContact(gt.label, position, direction);
+    }
+}
+
+std::string StatePublisherOffline::getDiscreteContact(int label,
+                                                      cslibs_math_3d::Vector3d& position,
+                                                      cslibs_math_3d::Vector3d& direction) const
 {
     try {
         const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
@@ -212,7 +251,9 @@ void StatePublisherOffline::exportResults(const std::string& path)
     std::string file_ds = path + "_detection_results.csv";
     std::string file_gt = path + "_gt_likely_hood.csv";
     std::string file_p  = path + "_process_progress.txt";
-    confusion_matrix_.exportCsv(file_cm);
+    if(create_confusion_matrix_){
+        confusion_matrix_.exportCsv(file_cm);
+    }
     save(results_, file_ds);
     save(gt_likely_hood_, file_gt);
     ++n_sequences_;
@@ -230,12 +271,15 @@ void StatePublisherOffline::reportLikelyHoodOfGt(const typename sample_set_t::Co
     if(gt.label == no_collision_label_){
         return;
     }
-    const cslibs_kdl::KDLTransformation& true_contact_point = getLabledPoint(gt.label);
-    const KDL::Vector& pos_t = true_contact_point.frame.p;
-    KDL::Vector direction = true_contact_point.frame.M * KDL::Vector(-1,0,0);
-    cslibs_math_3d::Transform3d b_T_cp = map->getTranformToBase(true_contact_point.parent);
-    cslibs_math_3d::Vector3d true_point = b_T_cp * cslibs_math_3d::Vector3d(pos_t.x(),pos_t.y(),pos_t.z());
-    cslibs_math_3d::Vector3d true_dir = b_T_cp * cslibs_math_3d::Vector3d(direction.x(),direction.y(), direction.z());
+    //    const cslibs_kdl::KDLTransformation& true_contact_point = getLabledPoint(gt.label);
+    //    const KDL::Vector& pos_t = true_contact_point.frame.p;
+    //    KDL::Vector direction = true_contact_point.frame.M * KDL::Vector(-1,0,0);
+    cslibs_math_3d::Vector3d true_point;
+    cslibs_math_3d::Vector3d true_dir;
+    std::string true_point_frame_id = getDiscreteContact(map, gt, true_point, true_dir);
+    cslibs_math_3d::Transform3d b_T_cp = map->getTranformToBase(true_point_frame_id);
+    true_point = b_T_cp * true_point;
+    true_dir = b_T_cp * true_dir;
 
     GroundTruthParticleSetDistance d;
     d.distance    = std::numeric_limits<double>::max();
@@ -245,9 +289,9 @@ void StatePublisherOffline::reportLikelyHoodOfGt(const typename sample_set_t::Co
     d.contact_force_true = gt.contact_force.norm();
     d.link = 0;
     d.true_point = gt.label;
-    auto gt_map = map->getNode(true_contact_point.parent);
+    auto gt_map = map->getNode(true_point_frame_id);
     if(gt_map){
-        d.link = gt_map->mapId();
+        d.link = static_cast<int>(gt_map->mapId());
     }
     for (const StateSpaceDescription::sample_t& p : sample_set->getSamples()) {
         const cslibs_mesh_map::MeshMapTreeNode* p_map = map->getNode(p.state.map_id);
@@ -262,7 +306,7 @@ void StatePublisherOffline::reportLikelyHoodOfGt(const typename sample_set_t::Co
                 d.likely_hood = p.state.last_update;
                 d.contact_force = p.state.force;
                 d.angle = cslibs_math::linear::angle(true_dir, dir);
-                d.link = p.state.map_id;
+                d.link = static_cast<int>(p.state.map_id);
             }
         }
     }

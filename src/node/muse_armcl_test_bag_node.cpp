@@ -39,5 +39,13 @@ int main(int argc, char *argv[])
     ++mt;
     auto a = it->data.at(mt);
 
+    for(const  muse_armcl::ContactEvaluationSample& di : data_set){
+        for(const  muse_armcl::ContactSample& ci : di.data){
+            if(ci.label < -1){
+                std::cerr << "wrong label?" << std::endl;
+            }
+        }
+    }
+
     return 0;
 }
