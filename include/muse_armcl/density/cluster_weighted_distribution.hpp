@@ -84,7 +84,7 @@ struct EIGEN_ALIGN16 ClusterWeightedDistribution
                 samples[current_cluster].push_back(sample);
                 distributions[current_cluster].add(sample.second, sample.first->weight);
             } else {
-                std::cout << "reject" << std::endl;
+//                std::cout << "reject" << std::endl;
             }
         }
 
