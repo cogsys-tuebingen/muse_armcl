@@ -11,6 +11,8 @@ void StatePublisherOffline::setup(ros::NodeHandle &nh, map_provider_map_t &map_p
     no_collision_label_ = nh.param<int>("no_collision_label", -1);
     vertex_gt_model_ = nh.param<bool>("vertex_gt_model", false);
     create_confusion_matrix_ = nh.param<bool>("create_confusion_matrix", true);
+    use_force_threshold_ = nh.param<bool>("use_force_threshold", false);
+    force_threshold_ = nh.param<double>("force_threshold", 0.1);
     set_time_ = set_time;
 }
 
@@ -97,15 +99,17 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
         if (tau_norm > no_contact_torque_threshold_){
             histogram->getTopLabels(labels);
             if(!labels.empty()){
-                event.closest_point = labels.front().first;
-                event.contact_force = labels.front().second;
-                cslibs_math_3d::Vector3d detected_pos;
-                cslibs_math_3d::Vector3d detected_dir;
-                std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
-                cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
-                detected_pos = baseTdetect * detected_pos;
-                detected_pos = baseTdetect * detected_pos;
-                distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                if(!use_force_threshold_ || (std::fabs(labels.front().second) > force_threshold_)){
+                    event.closest_point = labels.front().first;
+                    event.contact_force = labels.front().second;
+                    cslibs_math_3d::Vector3d detected_pos;
+                    cslibs_math_3d::Vector3d detected_dir;
+                    std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
+                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
+                    detected_pos = baseTdetect * detected_pos;
+                    detected_pos = baseTdetect * detected_pos;
+                    distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                }
             }
         }
     } else {
@@ -118,6 +122,9 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
             if (p_map && (tau_norm > no_contact_torque_threshold_)) {
+                if(use_force_threshold_ && (std::fabs(p.state.force) < force_threshold_)){
+                    continue;
+                }
                 std::string link = p_map->frameId();
                 cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
                 cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
