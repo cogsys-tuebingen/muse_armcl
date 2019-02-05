@@ -218,7 +218,7 @@ std::string StatePublisherOffline::getDiscreteContact(const cslibs_mesh_map::Mes
             return gt_node->frameId();
         }
         std::cerr << "Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
-//        return map->front()->frameId();
+        //        return map->front()->frameId();
         throw std::runtime_error("Did not find ground truth point");
     } else {
         return getDiscreteContact(gt.label, position, direction);
@@ -229,15 +229,22 @@ std::string StatePublisherOffline::getDiscreteContact(int label,
                                                       cslibs_math_3d::Vector3d& position,
                                                       cslibs_math_3d::Vector3d& direction) const
 {
-    const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
-    position(0) = t.frame.p.x();
-    position(1) = t.frame.p.y();
-    position(2) = t.frame.p.z();
-    KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
-    direction(0) = dir.x();
-    direction(1) = dir.y();
-    direction(2) = dir.z();
-    return t.parent;
+    try{
+        const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
+
+
+        position(0) = t.frame.p.x();
+        position(1) = t.frame.p.y();
+        position(2) = t.frame.p.z();
+        KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+        direction(0) = dir.x();
+        direction(1) = dir.y();
+        direction(2) = dir.z();
+        return t.parent;
+    } catch(const std::out_of_range& ex){
+        std::cerr << ex.what() << "labled_contact_points at label " << label << ". #(labled contact points)" << labeled_contact_points_.size();
+        throw ex;
+    }
 }
 
 void StatePublisherOffline::exportResults(const std::string& path)
