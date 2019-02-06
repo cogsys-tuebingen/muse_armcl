@@ -64,9 +64,21 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
     if(gt.label != no_collision_label_ && gt.label > 0){
         std::string actual_frame = getDiscreteContact(map, gt, actual_pos, actual_dir);
         auto node = map->getNode(actual_frame);
-        if(node){
+        if(node && vertex_gt_model_){
             std::size_t map_id = node->mapId();
             event.true_point = static_cast<int>(map_id) * 100000 + gt.label;
+
+            cslibs_math_3d::Vector3d z(0,0,1);
+            cslibs_math_3d::Vector3d  axis = z.cross(actual_dir);
+            double alpha = std::acos(z.dot(actual_dir));
+            cslibs_math_3d::Vector3d dir_local(gt.contact_force(0),
+                                               gt.contact_force(1),
+                                               gt.contact_force(2));
+            dir_local = dir_local.normalized();
+            cslibs_math_3d::Quaternion q(alpha, axis);
+            actual_dir = q*dir_local;
+        } else{
+            std::cerr << "could not  set label probably." << std::endl;
         }
         cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
         actual_pos = baseTactual * actual_pos;
