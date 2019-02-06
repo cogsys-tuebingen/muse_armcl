@@ -22,6 +22,7 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 
     StatePublisher::publish(sample_set);
 
+    std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
     using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
 
@@ -194,11 +195,13 @@ void StatePublisherOffline::publishConstant(const typename sample_set_t::ConstPt
 
 void StatePublisherOffline::setData(const ContactSequence& data)
 {
+    std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     data_ = &data;
 }
 
 void StatePublisherOffline::reset()
 {
+    std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     data_ = nullptr;
 }
 
@@ -268,6 +271,7 @@ std::string StatePublisherOffline::getDiscreteContact(int label,
 
 void StatePublisherOffline::exportResults(const std::string& path)
 {
+    std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     std::string file_cm = path + "_confusion_matrix.csv";
     std::string file_ds = path + "_detection_results.csv";
     std::string file_gt = path + "_gt_likely_hood.csv";

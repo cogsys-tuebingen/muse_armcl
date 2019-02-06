@@ -53,6 +53,7 @@ public:
     const cslibs_kdl::KDLTransformation& getLabledPoint(int label) const;
 
 private:
+    std::recursive_mutex data_mutex_;
     bool vertex_gt_model_;
     bool create_confusion_matrix_;
     bool use_force_threshold_;
