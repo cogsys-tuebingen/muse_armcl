@@ -5,7 +5,7 @@
 #include <cslibs_kdl_data/types.h>
 #include <cslibs_kdl_data/joint_state_data.h>
 #include <cslibs_kdl_conversion/cslibs_kdl_conversion.h>
-#include <muse_armcl/evaluation//contact_sample.hpp>
+#include <muse_armcl/evaluation/contact_sample.hpp>
 namespace muse_armcl {
 
 inline void convert(const jaco2_msgs::Jaco2JointState& in, sensor_msgs::JointState& out)
