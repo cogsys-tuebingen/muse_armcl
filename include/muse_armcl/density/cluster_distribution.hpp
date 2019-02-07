@@ -114,14 +114,19 @@ struct EIGEN_ALIGN16 ClusterDistribution
 
             double weight_sum = 0;
             const sample_t* res = NULL;
-            for (auto &s : samples.at(cluster)) {
-                const position_t pos = s.second;
-                const double d = (mean - pos).length();
-                if (d < dist) {
-                    dist = d;
-                    res = s.first;
-                    weight_sum += s.first->weight;
+            try {
+                for (auto &s : samples.at(cluster)) {
+                    const position_t pos = s.second;
+                    const double d = (mean - pos).length();
+                    if (d < dist) {
+                        dist = d;
+                        res = s.first;
+                        weight_sum += s.first->weight;
+                    }
                 }
+            } catch (const std::exception &e) {
+                std::cerr << "[ClusterDistribution]: cluster " << cluster << " not found." << std::endl;
+                throw e;
             }
 
             if(weight_sum > clustering_weight_threshold){

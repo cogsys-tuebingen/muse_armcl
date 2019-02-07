@@ -317,5 +317,10 @@ void StatePublisherOffline::reportLikelyHoodOfGt(const typename sample_set_t::Co
 
 const cslibs_kdl::KDLTransformation& StatePublisherOffline::getLabledPoint(int label) const
 {
-    return labeled_contact_points_.at(label);
+    try {
+        return labeled_contact_points_.at(label);
+    } catch(const std::exception &e) {
+        ROS_ERROR_STREAM("[StatePublisherOffline]: Did not find label '" << label << "'!" );
+        throw e;
+    }
 }

@@ -56,8 +56,13 @@ namespace muse_armcl {
             if(it->second.size() > remaining){
                 std::map<double, std::vector<sample_t>> cand2;
                 for(int label : it->second){
-                    const DiscreteCluster& c = histo_.at(label);
-                    cand2[c.dist].emplace_back(*c.sample);
+                    try {
+                        const DiscreteCluster& c = histo_.at(label);
+                        cand2[c.dist].emplace_back(*c.sample);
+                    } catch (const std::exception &e) {
+                        std::cerr << "[ContactPointHistogram]: label " << label <<  " not found!" << std::endl;
+                        throw e;
+                    }
                 }
 
                 auto it2 = cand2.begin();
@@ -72,8 +77,13 @@ namespace muse_armcl {
                 }
             } else{
                 for(int label : it->second){
-                    const DiscreteCluster& c = histo_.at(label);
-                    states.emplace_back(*(c.sample));
+                    try {
+                        const DiscreteCluster& c = histo_.at(label);
+                        states.emplace_back(*(c.sample));
+                    } catch (const std::exception &e) {
+                        std::cerr << "[ContactPointHistogram]: label " << label <<  " not found!" << std::endl;
+                        throw e;
+                    }
                 }
             }
             ++it;
@@ -91,8 +101,13 @@ namespace muse_armcl {
             if(it->second.size() > remaining){
                 std::map<double, std::vector<int>> cand2;
                 for(int label : it->second){
-                    const DiscreteCluster& c = histo_.at(label);
-                    cand2[c.dist].emplace_back(label);
+                    try {
+                        const DiscreteCluster& c = histo_.at(label);
+                        cand2[c.dist].emplace_back(label);
+                    } catch (const std::exception &e) {
+                        std::cerr << "[ContactPointHistogram]: label " << label <<  " not found!" << std::endl;
+                        throw e;
+                    }
                 }
 
                 auto it2 = cand2.begin();
@@ -103,15 +118,25 @@ namespace muse_armcl {
                         for(std::size_t i = 0; i < remaining; ++i){
                             std::pair<int, double> p;
                             p.first = *it3;
-                            p.second = histo_.at(*it3).sample->state.force;
-                            labels.emplace_back(p);
+                            try {
+                                p.second = histo_.at(*it3).sample->state.force;
+                                labels.emplace_back(p);
+                            } catch (const std::exception &e) {
+                                std::cerr << "[ContactPointHistogram]: label " << p.first  <<  " not found!" << std::endl;
+                                throw e;
+                            }
                         }
                     } else{
                         for(auto l : it2->second){
                             std::pair<int, double> p;
                             p.first = l;
-                            p.second = histo_.at(l).sample->state.force;
-                            labels.emplace_back(p);
+                            try {
+                                p.second = histo_.at(l).sample->state.force;
+                                labels.emplace_back(p);
+                            } catch (const std::exception &e) {
+                                std::cerr << "[ContactPointHistogram]: label " << l <<  " not found!" << std::endl;
+                                throw e;
+                            }
                         }
                     }
                     ++it2;
@@ -170,13 +195,19 @@ namespace muse_armcl {
 
         double min_d = std::numeric_limits<double>::max();
         int min_id = -1;
-        for(const auto& p : labeled_contact_points_.at(link)){
-            double dist = dist_sq(p.frame.p);
-            if(dist < min_d){
-                min_d = dist;
-                min_id = p.label;
+        try {
+            for(const auto& p : labeled_contact_points_.at(link)){
+                double dist = dist_sq(p.frame.p);
+                if(dist < min_d){
+                    min_d = dist;
+                    min_id = p.label;
+                }
             }
+        }  catch (const std::exception &e) {
+            std::cerr << "[ContactPointHistogram]: link " << link <<  " not found!" << std::endl;
+            throw e;
         }
+
         DiscreteCluster& cluster = histo_[min_id];
         if(ignore_func_){
           cluster.hits += 1.0;

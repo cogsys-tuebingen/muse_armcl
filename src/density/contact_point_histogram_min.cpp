@@ -66,25 +66,37 @@ void ContactPointHistogramMin::insert(const sample_t &sample)
             return;
         }
     }
-    for(const std::string& frame_id: search_links_.at(link)){
-        const std::vector<DiscreteContactPoint>& points = labeled_contact_points_.at(frame_id);
-        for(const DiscreteContactPoint& cp  : points){
-            const KDL::Frame& f = cp.frame;
-            cslibs_math_3d::Vector3d pos_cp (f.p(0), f.p(1), f.p(2));
-            KDL::Vector dir_kdl = f.M * KDL::Vector(-1,0,0);
-            cslibs_math_3d::Vector3d dir_cp(dir_kdl(0), dir_kdl(1), dir_kdl(2));
-            cslibs_math_3d::Transform3d base_T_cp = map->getTranformToBase(frame_id);
-            pos_cp = base_T_cp * pos_cp;
-            dir_cp = base_T_cp * dir_cp;
-            double l_cp = likelihood(pos_cp, dir_cp);
+    try {
+        for(const std::string& frame_id: search_links_.at(link)){
+            try {
+                const std::vector<DiscreteContactPoint>& points = labeled_contact_points_.at(frame_id);
+                for(const DiscreteContactPoint& cp  : points){
+                    const KDL::Frame& f = cp.frame;
+                    cslibs_math_3d::Vector3d pos_cp (f.p(0), f.p(1), f.p(2));
+                    KDL::Vector dir_kdl = f.M * KDL::Vector(-1,0,0);
+                    cslibs_math_3d::Vector3d dir_cp(dir_kdl(0), dir_kdl(1), dir_kdl(2));
+                    cslibs_math_3d::Transform3d base_T_cp = map->getTranformToBase(frame_id);
+                    pos_cp = base_T_cp * pos_cp;
+                    dir_cp = base_T_cp * dir_cp;
+                    double l_cp = likelihood(pos_cp, dir_cp);
 
-            if(l_cp > max_likelihood){
-                max_likelihood = l_cp;
-                min_id = cp.label;
+                    if(l_cp > max_likelihood){
+                        max_likelihood = l_cp;
+                        min_id = cp.label;
+                    }
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "[ContactPointHistogramMin]: frame_id " << frame_id << " not found!" << std::endl;
+                throw e;
             }
-        }
 
+        }
+    } catch (const std::exception &e) {
+        std::cerr << "[ContactPointHistogramMin]: link " << link << " not found!" << std::endl;
+        throw e;
     }
+
+
     double fitness = std::fabs(2.0 - max_likelihood);
     DiscreteCluster& cluster = histo_[min_id];
     if(ignore_func_){
