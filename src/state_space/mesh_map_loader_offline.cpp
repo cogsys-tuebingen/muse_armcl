@@ -24,24 +24,24 @@ public:
 
     virtual ~MeshMapLoaderOffline()
     {
-        stop_waiting_you_son_of_a_bitch_ = true;
-        if(worker_.joinable())
-            worker_.join();
+//        stop_waiting_you_son_of_a_bitch_ = true;
+//        if(worker_.joinable())
+//            worker_.join();
     }
 
     state_space_t::ConstPtr getStateSpace() const override
     {
-        waitForStateSpace();
+//        waitForStateSpace();
 
-        std::unique_lock<std::mutex> l(map_mutex_);
+//        std::unique_lock<std::mutex> l(map_mutex_);
         return map_;
     }
 
     void waitForStateSpace() const override
     {
-        std::unique_lock<std::mutex> l(map_mutex_);
-        if (!map_)
-            notify_.wait(l);
+//        std::unique_lock<std::mutex> l(map_mutex_);
+//        if (!map_)
+//            notify_.wait(l);
     }
 
     void doSetup(ros::NodeHandle &nh) override
@@ -64,9 +64,9 @@ public:
                 /// load map
                 tree_.loadFromFile(path_, parent_ids_, frame_ids_, files_);
 
-                std::unique_lock<std::mutex> l(map_mutex_);
+//                std::unique_lock<std::mutex> l(map_mutex_);
                 map_.reset(new MeshMap(&tree_, frame_ids_.front()));
-                l.unlock();
+//                l.unlock();
 
                 /// update transformations
                 first_load_ = true;
@@ -75,11 +75,12 @@ public:
 
                 ROS_INFO_STREAM("[" << name_ << "]: Loaded map.");
 
-                notify_.notify_all();
+//                notify_.notify_all();
             }
         };
 
-        worker_ = std::thread(load);
+//        worker_ = std::thread(load);
+        load();
     }
 
     bool initializeTF(const std::vector<tf::StampedTransform>& transforms)
