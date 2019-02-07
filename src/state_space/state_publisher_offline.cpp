@@ -78,8 +78,8 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
             dir_local = dir_local.normalized();
             cslibs_math_3d::Quaternion q(alpha, axis);
             actual_dir = q*dir_local;
-        } else{
-            std::cerr << "could not  set label probably." << std::endl;
+        } else if(vertex_gt_model_){
+            std::cerr << "could not set label probably." << std::endl;
         }
         cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
         actual_pos = baseTactual * actual_pos;
@@ -264,7 +264,7 @@ std::string StatePublisherOffline::getDiscreteContact(int label,
         direction(2) = dir.z();
         return t.parent;
     } catch(const std::out_of_range& ex){
-        std::cerr << ex.what() << "labled_contact_points at label " << label << ". #(labled contact points)" << labeled_contact_points_.size();
+        std::cerr << ex.what() << "labled_contact_points at label " << label << ". #(labled contact points) " << labeled_contact_points_.size();
         throw ex;
     }
 }

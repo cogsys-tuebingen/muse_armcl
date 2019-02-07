@@ -129,6 +129,20 @@ target_link_libraries(${PROJECT_NAME}_labeled_contact_points_change_frames
   ${NLOPT_LIBRARIES}
 )
 
+add_executable(${PROJECT_NAME}_bag_file_data_publisher
+  src/node/muse_armcl_bag_file_data_publisher.cpp
+)
+
+add_dependencies(${PROJECT_NAME}_bag_file_data_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(${PROJECT_NAME}_bag_file_data_publisher
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_lib
+  ${orocos_kdl_LIBRARIES}
+  ${NLOPT_LIBRARIES}
+)
+
+
 
 install(FILES plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
