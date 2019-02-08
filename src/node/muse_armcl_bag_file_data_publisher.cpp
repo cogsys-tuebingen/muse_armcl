@@ -9,26 +9,40 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <cslibs_mesh_map/mesh_map_tree.h>
 #include <cslibs_math_ros/geometry_msgs/conversion_3d.hpp>
+#include <std_srvs/Trigger.h>
 using namespace muse_armcl;
 
+bool play = false;
+bool cb(std_srvs::TriggerRequest& reg, std_srvs::TriggerResponse& res)
+{
+    play = !play;
+    if(play){
+        res.message = "Playing data!";
+    } else {
+        res.message = "Pausing";
+    }
+    res.success = true;
+    return true;
+}
 int main(int argc, char *argv[])
 {
-    ros::init(argc, argv, "muse_armcl_test_bag_node");
-    if(argc != 2) {
-        std::cout << "Please run 'rosrun muse_armcl muse_armcl_test_bag_node <path-to-bag>'" << std::endl;
-        return 0;
-    }
-
+    ros::init(argc, argv, "muse_armcl_bag_file_data_publisher");
     ros::NodeHandle nh("~");
 
     std::vector<std::string> topics = {{nh.param<std::string>("tf", "/first_tf"),
                                         nh.param<std::string>("joint", "/contact_data")}};
-    rosbag::Bag     bag(argv[1]);
-    rosbag::View    view(bag, rosbag::TopicQuery(topics));
+
+    std::string bag_file = nh.param<std::string>("bag_file","");
+    if(bag_file == ""){
+        ROS_ERROR("No bag file provided. Shutting done");
+        return 41;
+    }
+    rosbag::Bag bag(bag_file);
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
 
     std::cout << view.getBeginTime() << "\n";
 
-    muse_armcl::DataSet data_set;
+        muse_armcl::DataSet data_set;
     bool success = muse_armcl::DataSetLoader::loadFromBag(bag, topics[0], topics[1], data_set);
     std::cout << (success ? " loaded data successfully" : " loading data failed") << std::endl;
 
@@ -42,6 +56,7 @@ int main(int argc, char *argv[])
     ros::Publisher pub_joint        = nh.advertise<sensor_msgs::JointState>(joint_state_topic, 1);
     ros::Publisher pub_contacts     = nh.advertise<cslibs_kdl_msgs::ContactMessage>(topic_contacts, 1);
     ros::Publisher pub_contacts_vis = nh.advertise<visualization_msgs::Marker>(topic_contacts_vis, 1);
+    ros::ServiceServer service      = nh.advertiseService("play_pause", cb);
 
     double contact_marker_r = nh.param<double>("contact_marker_r", 1.0);
     double contact_marker_g = nh.param<double>("contact_marker_g", 0.0);
@@ -67,7 +82,7 @@ int main(int argc, char *argv[])
         }
 
     } else {
-        std::string path                    = nh.param<std::string>("path", "");
+        std::string path                    = nh.param<std::string>("mesh_path", "");
         std::vector<std::string> files      = nh.param<std::vector<std::string>>("meshes",     std::vector<std::string>());
         std::vector<std::string> parent_ids = nh.param<std::vector<std::string>>("parent_ids", std::vector<std::string>());
         std::vector<std::string> frame_ids  = nh.param<std::vector<std::string>>("frame_ids",  std::vector<std::string>());
@@ -75,10 +90,12 @@ int main(int argc, char *argv[])
         tree.loadFromFile(path, parent_ids, frame_ids, files);
     }
 
-    double msg_ratio = nh.param<double>("sample_ration", 0.5);
+    double msg_ratio = nh.param<double>("sample_ratio", 0.5);
     double frequency = nh.param<double>("frequency", 30);
     double loop_time = nh.param<double>("loop_time", 30);
+    bool loop        = nh.param<bool>("play_sequence", false);
     ros::Duration loop_duration(loop_time);
+    ROS_INFO_STREAM("Duration: " << loop_duration.toSec());
     ros::Rate rate(frequency);
 
     visualization_msgs::Marker msg;
@@ -98,19 +115,49 @@ int main(int argc, char *argv[])
 
     ros::Time start = ros::Time::now();
     auto it = data_set.begin();
+    std::size_t counter = 0;
+    std::size_t seq_counter = 0;
     while(ros::ok() && it !=  data_set.end()){
         ros::Time current = ros::Time::now();
-        ros::Duration delta = current  - start;
-        if(delta > loop_duration){
+        ros::Duration delta = (current  - start);
+        ros::spinOnce();
+        rate.sleep();
+//        ROS_INFO_STREAM("duration: " << delta.toSec());
+        ++counter;
+        if(!play){
+            if(counter % 10 == 0 ){
+                ROS_INFO_STREAM("paused, trigger serivce to continue");
+            }
+            continue;
+        }
+        if(delta.toSec() > loop_time && ! loop){
+            ROS_INFO_STREAM("Next squence");
             ++it;
+            start = ros::Time::now();
+            seq_counter = 0;
             if(it == data_set.end()){
+                ROS_INFO_STREAM("End of bag reached!");
                 break;
             }
         }
         std::size_t sample_id = std::floor(static_cast<std::size_t>(static_cast<double>(it->data.size() -1) * msg_ratio));
+        if(loop){
+            ++seq_counter;
+            if(seq_counter >= it->data.size()){
+                ++it;
+                start = ros::Time::now();
+                seq_counter = 0;
+                continue;
+            }
+            sample_id = seq_counter;
+        }
         const ContactSample& cs = it->data.entry(sample_id);
         if(cs.label < 0){
             continue;
+        }
+        if(counter % 10 == 0 ){
+            ROS_INFO_STREAM("Looping sample for the next " << loop_time - delta.toSec());
+            ROS_INFO_STREAM("Vertex " << cs.label << " at " << cs.contact_force.header.frame_id );
         }
         sensor_msgs::JointState state;
         cslibs_kdl::JointStateConversion::data2ros(cs.state.data, state);
@@ -131,9 +178,9 @@ int main(int argc, char *argv[])
                 cslibs_math_3d::Vector3d z(0,0,1);
                 cslibs_math_3d::Vector3d  axis = z.cross(n);
                 double alpha = std::acos(z.dot(n));
-                cslibs_math_3d::Vector3d dir_local(cs.contact_force(0),
-                                                   cs.contact_force(1),
-                                                   cs.contact_force(2));
+                cslibs_math_3d::Vector3d dir_local(-cs.contact_force(0),
+                                                   -cs.contact_force(1),
+                                                   -cs.contact_force(2));
                 dir_local = dir_local.normalized();
                 cslibs_math_3d::Quaternion q(alpha, axis);
                 actual_dir = q*dir_local;
@@ -161,7 +208,6 @@ int main(int argc, char *argv[])
         pub_joint.publish(state);
         pub_contacts.publish(contact);
         pub_contacts_vis.publish(msg);
-        rate.sleep();
     }
 
 

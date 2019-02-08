@@ -9,6 +9,7 @@
     <arg name="contact_marker_g"    value="0.0"/>
     <arg name="contact_marker_b"    value="1.0"/>
     <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
+    <arg name="no_contact_threshold"  value="0.7"/>
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
@@ -20,6 +21,7 @@
         <param name="contact_marker_g" value="$(arg contact_marker_g)"/>
         <param name="contact_marker_b" value="$(arg contact_marker_b)"/>
         <param name="contact_points_file"   value="$(arg contact_points_file)"/>
+        <param name="no_contact_threshold"  value="$(arg no_contact_threshold)"/>
 
         <!-- data providers -->
         <group ns="joint_states">
@@ -95,7 +97,7 @@
             <param name="max_time"                  value="0.000013333"/>
             <!--No update is performed and set is initialized if external torque vector norm is
             less than update_threshold -->
-            <param name="update_threshold"          value="0.1"/>
+            <param name="update_threshold"          value="1.2"/>
             <!--  -->
             <param name="reset_particles_threshold" value="1.1"/>
             <!-- information matrix of "update likelyhood": insert values column wise.
@@ -137,7 +139,7 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"                       value="muse_armcl::ContactPointHistogramMin" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
+            <param name="class"                       value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
             <param name="base_class"                  value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
             <param name="resolution"                  value="0.025" />
@@ -155,7 +157,7 @@
         <group ns="scheduler">
             <param name="class"      value="muse_armcl::CFS" />
             <param name="base_class" value="muse_armcl::Scheduler" />
-            <param name="rate"       value="5.0" />
+            <param name="resampling_rate"       value="40" />
         </group>
 
         <!-- particle filter setup -->

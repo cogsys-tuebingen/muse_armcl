@@ -39,11 +39,6 @@ public:
         Eigen::VectorXd tau_sensed;
         cslibs_kdl::convert(joint_states.effort, tau_sensed, offset);
         double tau_s_norm = tau_sensed.norm();
-        if(tau_s_norm < update_threshold_){
-            particle_filter_reset_(time_frame);
-//            std::cout << "reset and return\n";
-            return;
-        }
 
         if(!first_iteration_){
 //            double cos = std::fabs(tau_sensed.dot(last_ext_torques_) /( tau_s_norm * last_ext_torques_norm_));
@@ -87,6 +82,11 @@ public:
             transforms[map_id] = p_T_li;
         }
 
+        if(tau_s_norm < update_threshold_){
+            particle_filter_reset_(time_frame);
+    //            std::cout << "reset and return\n";
+            return;
+        }
         // calculate particle weights
         for(auto it = set.begin() ; it != set.end() ; ++it) {
             /// access particle

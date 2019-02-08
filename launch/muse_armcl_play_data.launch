@@ -1,0 +1,26 @@
+<launch>
+    <arg name="bag_file" default=""/>
+    <arg name="joint_state_topic" default="/estimated_ext_torque"/>
+
+    <node type="muse_armcl_bag_file_data_publisher" name="muse_armcl_bag_file_data_publishers" pkg="muse_armcl" output="screen">
+       <rosparam file="$(find jaco2_surface_model)/cfg/jaco2_surface_model.yaml" command="load"/>
+       <param name="mesh_path"                         value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+       <param name="contact_points_file"               value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
+       <param name="bag_file"                          value="$(arg bag_file)"/>
+       <param name="joint_state_topic"                 value="$(arg joint_state_topic)"/>
+       <param name="topic_true_contact"                value="true_contact"/>
+       <param name="topic_true_contact_visualization"  value="true_contact_visualization"/>
+       <param name="sample_ration"                     value="0.5"/>
+       <param name="frequency"                         value="50"/>
+       <param name="loop_time"                         value="20"/>
+       <param name="contact_marker_r"                  value="1.0"/>
+       <param name="contact_marker_g"                  value="0.0"/>
+       <param name="contact_marker_b"                  value="0.0"/>
+       <param name="play_sequence"                     value="false"/>
+    </node>
+
+    <node name="jaco_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
+        <param name="publish_frequency" type="double" value="50" />
+        <remap from="/joint_states" to="$(arg joint_state_topic)"/>
+    </node>
+</launch>

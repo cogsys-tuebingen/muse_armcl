@@ -5,12 +5,13 @@
     <arg name="joint_state_topic"   value="/estimated_ext_torque"/>
     <arg name="minimum_sample_size" value="1500"/>
     <arg name="maximum_sample_size" value="5000"/>
-    <arg name="contact_marker_r"    value="0.0"/>
+    <arg name="contact_marker_r"    value="1.0"/>
     <arg name="contact_marker_g"    value="1.0"/>
     <arg name="contact_marker_b"    value="0.0"/>
+    <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
+    <arg name="no_contact_threshold"  value="0.7"/>
 
-
-    <group ns="muse_armcl_nn">
+    <group ns="muse_armcl_hist">
         <!-- toplevel parameters -->
         <param name="map"             value="mesh_map" />
         <param name="topic_particles" value="particles"/>
@@ -19,6 +20,8 @@
         <param name="contact_marker_r" value="$(arg contact_marker_r)"/>
         <param name="contact_marker_g" value="$(arg contact_marker_g)"/>
         <param name="contact_marker_b" value="$(arg contact_marker_b)"/>
+        <param name="contact_points_file"   value="$(arg contact_points_file)"/>
+        <param name="no_contact_threshold"  value="$(arg no_contact_threshold)"/>
 
         <!-- data providers -->
         <group ns="joint_states">
@@ -136,7 +139,7 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"                       value="muse_armcl::NearestNeighborDensity" /><!--WeightedMeans, NearestNeighborDensity-->
+            <param name="class"                       value="muse_armcl::ContactPointHistogramMin" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
             <param name="base_class"                  value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
             <param name="resolution"                  value="0.025" />
@@ -145,13 +148,16 @@
             <param name="radius"                      value="0.02" />
             <param name="number_of_contacts"          value="1"/>
             <parma name="ignore_weight"               value="false" />
+            <param name="restrict_neigbours"          value="true"/> <!-- for histogram filters-->
+            <param name="scale_pos"                   value="1.2"/> <!-- for histogram filter ContactPointHistogramMin (likelihood)-->
+            <param name="scale_dir"                   value="1.0"/><!-- for histogram filter  ContactPointHistogramMin (likelihood)-->
         </group>
 
         <!-- scheduling -->
         <group ns="scheduler">
             <param name="class"      value="muse_armcl::CFS" />
             <param name="base_class" value="muse_armcl::Scheduler" />
-            <param name="resampling_rate"       value="40.0" />
+            <param name="resampling_rate"       value="75" />
         </group>
 
         <!-- particle filter setup -->
@@ -161,15 +167,13 @@
             <param name="minimum_sample_size" value="$(arg minimum_sample_size)" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)"/>
 
-            <param name="reset_weights_after_insertion" value="true"  />
-            <param name="reset_weights_to_one"          value="false" />
             <param name="enable_lag_correction"         value="false" />
         </group>
     </group>
 
     <!-- MuSe ARMCL node -->
     <node type="muse_armcl_node"
-          name="muse_armcl_nn"
+          name="muse_armcl_hist"
           pkg="muse_armcl"
           output="screen"
           clear_params="true"/>
