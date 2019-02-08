@@ -100,7 +100,7 @@ public:
         try {
             return time_to_index_.at(time);
         } catch (const std::exception &e) {
-            std::cerr << e.what() << " time does not exist " << n << std::endl;
+            std::cerr << e.what() << " time does not exist " << time << std::endl;
             throw e;
         }
     }

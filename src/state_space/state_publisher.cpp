@@ -227,7 +227,7 @@ void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, doub
 
             markers.markers.push_back(msg);
             contact_msg.contacts.push_back(contact);
-        } catch (const std::Exception &e) {
+        } catch (const std::exception &e) {
             std::cerr << "[StatePublisher] : label " << p.first << " not found!" << std::endl;
             throw e;
         }
