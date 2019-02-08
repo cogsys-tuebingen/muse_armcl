@@ -200,32 +200,38 @@ void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, doub
     msg.header.stamp = stamp;
     for(const std::pair<int, double>& p : labels){
 
-        cslibs_kdl_msgs::ContactMessage contact;
-        const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
-        contact.header.frame_id = t.parent;
-        msg.header.frame_id = t.parent;
-        contact.header.stamp = stamp;
-        contact.force = p.second;
-        contact.location.x = t.frame.p.x();
-        contact.location.y = t.frame.p.y();
-        contact.location.z = t.frame.p.z();
-        KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
-        contact.direction.x = dir.x();
-        contact.direction.y = dir.y();
-        contact.direction.z = dir.z();
-        geometry_msgs::Point p0;
-        p0.x = t.frame.p.x();
-        p0.y = t.frame.p.y();
-        p0.z = t.frame.p.z();
-        geometry_msgs::Point p1;
-        p1.x = t.frame.p.x()  - 0.2 * dir.x();
-        p1.y = t.frame.p.y()  - 0.2 * dir.y();
-        p1.z = t.frame.p.z()  - 0.2 * dir.z();
-        msg.points[0] = p1;
-        msg.points[1] = p0;
+        try {
+            cslibs_kdl_msgs::ContactMessage contact;
+            const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
+            contact.header.frame_id = t.parent;
+            msg.header.frame_id = t.parent;
+            contact.header.stamp = stamp;
+            contact.force = p.second;
+            contact.location.x = t.frame.p.x();
+            contact.location.y = t.frame.p.y();
+            contact.location.z = t.frame.p.z();
+            KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+            contact.direction.x = dir.x();
+            contact.direction.y = dir.y();
+            contact.direction.z = dir.z();
+            geometry_msgs::Point p0;
+            p0.x = t.frame.p.x();
+            p0.y = t.frame.p.y();
+            p0.z = t.frame.p.z();
+            geometry_msgs::Point p1;
+            p1.x = t.frame.p.x()  - 0.2 * dir.x();
+            p1.y = t.frame.p.y()  - 0.2 * dir.y();
+            p1.z = t.frame.p.z()  - 0.2 * dir.z();
+            msg.points[0] = p1;
+            msg.points[1] = p0;
 
-        markers.markers.push_back(msg);
-        contact_msg.contacts.push_back(contact);
+            markers.markers.push_back(msg);
+            contact_msg.contacts.push_back(contact);
+        } catch (const std::Exception &e) {
+            std::cerr << "[StatePublisher] : label " << p.first << " not found!" << std::endl;
+            throw e;
+        }
+
 
     }
     pub_contacts_.publish(contact_msg);

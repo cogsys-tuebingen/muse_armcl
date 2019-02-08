@@ -145,7 +145,12 @@ namespace muse_armcl {
                 for(int label : it->second){
                     std::pair<int, double> p;
                     p.first = label;
-                    p.second = histo_.at(label).sample->state.force;
+                    try {
+                        p.second = histo_.at(label).sample->state.force;
+                    } catch (std::exception &e) {
+                        std::cerr << "[ContactPointHistogram]: label " << label <<  " not found!" << std::endl;
+                        throw e;
+                    }
                     labels.emplace_back(p);
                 }
             }

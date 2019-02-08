@@ -38,7 +38,12 @@ public:
                     min_diff = diff;
                 }
             }
-            return data_.at(min_id);
+            try {
+                return data_.at(min_id);
+            } catch(const std::exception &e) {
+                std::cerr << ex.what() << " did not find min_id" << std::endl;
+                throw e;
+            }
         }
     }
 
@@ -60,23 +65,44 @@ public:
                     min_diff = diff;
                 }
             }
-            return data_.at(min_id);
+            try {
+                return data_.at(min_id);
+            } catch (const std::exception &e) {
+                std::cerr << ex.what() << " did not find min_id" << std::endl;
+                throw e;
+            }
         }
     }
 
     T& entry(std::size_t n)
     {
-        return data_.at(n);
+        try {
+            return data_.at(n);
+        } catch (const std::exception &e) {
+            std::cerr << e.what() << " n does not exist " << n << std::endl;
+            throw e;
+         }
+
     }
 
     const T& entry(std::size_t n) const
     {
-        return data_.at(n);
+        try {
+            return data_.at(n);
+        } catch (const std::exception &e) {
+            std::cerr << e.what() << " n does not exist " << n << std::endl;
+            throw e;
+         }
     }
 
     std::size_t getID(const uint64_t time) const
     {
-        return time_to_index_.at(time);
+        try {
+            return time_to_index_.at(time);
+        } catch (const std::exception &e) {
+            std::cerr << e.what() << " time does not exist " << n << std::endl;
+            throw e;
+        }
     }
 
     bool emplace_back(const uint64_t time, const T& d)
