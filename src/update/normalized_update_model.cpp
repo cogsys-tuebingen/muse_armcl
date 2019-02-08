@@ -36,11 +36,16 @@ public:
             }
         }
         Eigen::VectorXd F = cslibs_kdl::convert2Eigen(w);
-        Eigen ::VectorXd tau_particle(Eigen::VectorXd::Zero(n_joints_));
+        Eigen::VectorXd tau_particle(Eigen::VectorXd::Zero(n_joints_));
 
 
         try {
-            const Eigen::VectorXd &tau_particle_local = jacobian.at(state.map_id) * F;
+            const Eigen::MatrixXd &j = jacobian.at(state.map_id);
+            if(j.cols() != F.rows()) {
+                std::cerr << "[UpdateModel]: cannot multiply j * F" << std::endl;
+            }
+
+            const Eigen::VectorXd &tau_particle_local = j * F;
             std::size_t rows = tau_particle_local.rows();
             std::size_t max_dim = std::min(rows, n_joints_);
 

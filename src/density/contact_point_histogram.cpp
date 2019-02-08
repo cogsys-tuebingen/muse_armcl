@@ -54,7 +54,7 @@ namespace muse_armcl {
         while(states.size() < min_element && it != ranked_labels_.rend()){
             std::size_t remaining = n_contacts_ - states.size();
             if(it->second.size() > remaining){
-                std::map<double, std::vector<sample_t>> cand2;
+                std::map<double, std::vector<sample_t, sample_t::allocator_t>> cand2;
                 for(int label : it->second){
                     try {
                         const DiscreteCluster& c = histo_.at(label);

@@ -156,7 +156,7 @@ public:
 
 
 //        std::map<double, std::map<double, std::map<std::size_t,std::vector<sample_t>>>> candidates;
-        std::map<double, std::vector<sample_t>> candidates;
+        std::map<double, std::vector<sample_t, sample_t::allocator_t>> candidates;
         for(auto &c : clusters_) {
             if(c.second->samples.size() < min_cluster_size_)
                 continue;
@@ -179,7 +179,7 @@ public:
         while(states.size() < std::min(n_contacts_, clusters_.size()) && it != candidates.rend()){
             std::size_t remaining = n_contacts_ - states.size();
             if(it->second.size() > remaining){
-                std::map<double, std::vector<sample_t>> cand2;
+                std::map<double, std::vector<sample_t, sample_t::allocator_t>> cand2;
                 for(auto s  = it->second.begin(); s < it->second.end(); ++s){
                     cand2[s->state.last_update].emplace_back(*s);
                 }
