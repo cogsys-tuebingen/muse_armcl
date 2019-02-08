@@ -46,8 +46,8 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
         }
     }
 
-    pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 1);
-    pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 1);
+    pub_particles_     = nh.advertise<sensor_msgs::PointCloud2>(topic_particles, 10);
+    pub_contacts_      = nh.advertise<cslibs_kdl_msgs::ContactMessageArray>(topic_contacts, 10);
     pub_contacts_vis_  = nh.advertise<visualization_msgs::MarkerArray>(topic_contacts_vis, 1);
 }
 

@@ -64,6 +64,16 @@ public:
         }
     }
 
+    T& entry(std::size_t n)
+    {
+        return data_.at(n);
+    }
+
+    const T& entry(std::size_t n) const
+    {
+        return data_.at(n);
+    }
+
     std::size_t getID(const uint64_t time) const
     {
         return time_to_index_.at(time);

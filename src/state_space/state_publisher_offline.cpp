@@ -11,6 +11,8 @@ void StatePublisherOffline::setup(ros::NodeHandle &nh, map_provider_map_t &map_p
     no_collision_label_ = nh.param<int>("no_collision_label", -1);
     vertex_gt_model_ = nh.param<bool>("vertex_gt_model", false);
     create_confusion_matrix_ = nh.param<bool>("create_confusion_matrix", true);
+    use_force_threshold_ = nh.param<bool>("use_force_threshold", false);
+    force_threshold_ = nh.param<double>("force_threshold", 0.1);
     set_time_ = set_time;
 }
 
@@ -19,6 +21,7 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
     //        std::cout << "after resampling" << std::endl;
 
     StatePublisher::publish(sample_set);
+
     std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
     using mesh_map_tree_node_t = cslibs_mesh_map::MeshMapTreeNode;
@@ -62,9 +65,21 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
     if(gt.label != no_collision_label_ && gt.label > 0){
         std::string actual_frame = getDiscreteContact(map, gt, actual_pos, actual_dir);
         auto node = map->getNode(actual_frame);
-        if(node){
+        if(node && vertex_gt_model_){
             std::size_t map_id = node->mapId();
             event.true_point = static_cast<int>(map_id) * 100000 + gt.label;
+
+            cslibs_math_3d::Vector3d z(0,0,1);
+            cslibs_math_3d::Vector3d  axis = z.cross(actual_dir);
+            double alpha = std::acos(z.dot(actual_dir));
+            cslibs_math_3d::Vector3d dir_local(gt.contact_force(0),
+                                               gt.contact_force(1),
+                                               gt.contact_force(2));
+            dir_local = dir_local.normalized();
+            cslibs_math_3d::Quaternion q(alpha, axis);
+            actual_dir = q*dir_local;
+        } else if(vertex_gt_model_){
+            std::cerr << "could not set label probably." << std::endl;
         }
         cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
         actual_pos = baseTactual * actual_pos;
@@ -97,15 +112,17 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
         if (tau_norm > no_contact_torque_threshold_){
             histogram->getTopLabels(labels);
             if(!labels.empty()){
-                event.closest_point = labels.front().first;
-                event.contact_force = labels.front().second;
-                cslibs_math_3d::Vector3d detected_pos;
-                cslibs_math_3d::Vector3d detected_dir;
-                std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
-                cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
-                detected_pos = baseTdetect * detected_pos;
-                detected_pos = baseTdetect * detected_pos;
-                distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                if(!use_force_threshold_ || (std::fabs(labels.front().second) > force_threshold_)){
+                    event.closest_point = labels.front().first;
+                    event.contact_force = labels.front().second;
+                    cslibs_math_3d::Vector3d detected_pos;
+                    cslibs_math_3d::Vector3d detected_dir;
+                    std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
+                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
+                    detected_pos = baseTdetect * detected_pos;
+                    detected_pos = baseTdetect * detected_pos;
+                    distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                }
             }
         }
     } else {
@@ -118,6 +135,9 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
             cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
             if (p_map && (tau_norm > no_contact_torque_threshold_)) {
+                if(use_force_threshold_ && (std::fabs(p.state.force) < force_threshold_)){
+                    continue;
+                }
                 std::string link = p_map->frameId();
                 cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
                 cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
@@ -220,7 +240,7 @@ std::string StatePublisherOffline::getDiscreteContact(const cslibs_mesh_map::Mes
             return gt_node->frameId();
         }
         std::cerr << "Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
-//        return map->front()->frameId();
+        //        return map->front()->frameId();
         throw std::runtime_error("Did not find ground truth point");
     } else {
         return getDiscreteContact(gt.label, position, direction);
