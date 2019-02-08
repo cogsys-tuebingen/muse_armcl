@@ -273,10 +273,10 @@ void MuseARMCLOfflineNode::start()
         /// init map provider ...
         ROS_INFO_STREAM("Setting tf!");
         for(auto map : map_providers_){
-            if(!map.second->initializeTF(*tf_transforms)){
-                ROS_ERROR_STREAM("Couldn't set initial tf transfroms!");
-                return;
-            }
+            if(!map.second->initializeTF(*tf_transforms) && count == 0){ // actually tf transforms are only required in the first iteration
+                ROS_ERROR_STREAM("Couldn't set initial tf transfroms!"); // to jump to correct links when the motion model is applied before.
+                return;                                                  // the first update is applied. The update model actually calulats FK
+            }                                                            // and updates the map transforms.
         }
 
         /// seq data
