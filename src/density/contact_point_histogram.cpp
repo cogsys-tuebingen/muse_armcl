@@ -28,6 +28,10 @@ namespace muse_armcl {
         for(const auto& p : labeled_contact_points){
             labeled_contact_points_[p.parent].emplace_back(DiscreteContactPoint(p));
         }
+        if(labeled_contact_points_.empty()){
+            throw std::runtime_error("[SampleDensity]: Did not get a set od discrete contact point! Cannot cluster!");
+        }
+
         ignore_func_ = nh.param(param_name("ignore_weight"), false);
         n_contacts_ = nh.param(param_name("number_of_contacts"), 10);
 

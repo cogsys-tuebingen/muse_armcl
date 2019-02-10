@@ -19,7 +19,9 @@ def remove_header(data):
 
     return {'header': data[1:rows, 0], 'matrix': mat}
 
-
+def n_samples(mat):
+    count = sum(mat,0)
+    return sum(count)	
 def get_relative_conf_mat(mat):
     count = sum(mat, 0)
     return mat / count
@@ -120,7 +122,7 @@ def plot_conf_mat(mat, labels):
     axes.set_xticklabels(['No Collision'] + [str(int(labels[i])) for i in range(1, len(labels))], fontsize='7', fontweight='bold', rotation='vertical')
     axes.set_yticklabels(['No Collision'] + [str(int(labels[i])) for i in range(1, len(labels))], fontsize='7', fontweight='bold')
 
-    cax = plt.imshow(mat, cmap='hot',interpolation='none')
+    cax = plt.imshow(mat, cmap='jet',interpolation='none')
     cbar = fig.colorbar(cax, ticks=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
 
     return fig

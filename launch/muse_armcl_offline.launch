@@ -12,9 +12,9 @@
     <arg name="contact_marker_r"      value="0.0"/>
     <arg name="contact_marker_g"      value="1.0"/>
     <arg name="contact_marker_b"      value="0.0"/>
-<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/seed0_nol1_ext_t_valid.bag"/>-->
+    <arg name="bag"                   value="/home/zwiener/contact_detection/seed0_nol1_ext_t_valid.bag"/>
 <!--    <arg name="bag"                   value="/home/zwiener/contact_detection/surface_forces_20_traj_residual_valid.bag"/>-->
-    <arg name="bag"                   value="/home/zwiener/contact_detection/static_moving_no_l1_valid_ext_torque.bag"/>
+<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/static_moving_no_l1_valid_ext_torque.bag"/>-->
 <!--    <arg name="bag"                   value="/home/hanten/Workspace/localization/muse_armcl/data/test_bag.bag"/>-->
 <!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
     <arg name="bag_joint_state_topic" value="/contact_data"/>
@@ -123,7 +123,7 @@
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"                       value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
+            <param name="class"                       value="muse_armcl::ContactPointHistogramMin" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
             <param name="base_class"                  value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
             <param name="resolution"                  value="0.025" />

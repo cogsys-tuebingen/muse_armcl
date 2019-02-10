@@ -20,7 +20,7 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 {
     //        std::cout << "after resampling" << std::endl;
 
-    StatePublisher::publish(sample_set);
+    //    StatePublisher::publish(sample_set);
 
     std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
@@ -35,7 +35,6 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
         return;
     }
 
-    //        std::cout << "evaluate" << std::endl;
 
     /// get the map
     const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
@@ -53,6 +52,15 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
     if(gt.state.torque.empty()) {
         std::cout << nsecs << std::endl;
         throw std::runtime_error("Empty data recieved");
+    }
+    // save all map base transfroms
+    std::vector<std::string> frame_ids;
+    map->getFrameIds(frame_ids);
+    std::map<std::string, std::shared_ptr< cslibs_math_3d::Transform3d>> transforms;
+    for(std::string& l : frame_ids){
+        std::shared_ptr<cslibs_math_3d::Transform3d> bTl(new cslibs_math_3d::Transform3d);
+        *bTl = map->getTranformToBase(l);
+        transforms[l] = bTl;
     }
 
     double tau_norm =  gt.state.norm(cslibs_kdl_data::JointStateData::DataType::JOINT_TORQUE);
@@ -81,9 +89,16 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
         } else if(vertex_gt_model_){
             std::cerr << "could not set label probably." << std::endl;
         }
-        cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
-        actual_pos = baseTactual * actual_pos;
-        actual_dir = baseTactual * actual_dir;
+        //        cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
+        try {
+            const cslibs_math_3d::Transform3d& baseTactual = *transforms.at(actual_frame);
+            actual_pos = baseTactual * actual_pos;
+            actual_dir = baseTactual * actual_dir;
+
+        } catch (const std::exception& ex) {
+            std::cerr << "[StatePublisherOffline]: " << ex.what() <<" Cannot find transform for " << actual_frame << std::endl;
+        }
+
     }
 
 
@@ -118,10 +133,25 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
                     cslibs_math_3d::Vector3d detected_pos;
                     cslibs_math_3d::Vector3d detected_dir;
                     std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
-                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
-                    detected_pos = baseTdetect * detected_pos;
-                    detected_pos = baseTdetect * detected_pos;
+                    //                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
+                    try {
+                        const cslibs_math_3d::Transform3d& baseTdetect = *transforms.at(detected_frame);
+                        detected_pos = baseTdetect * detected_pos;
+                        detected_dir = baseTdetect * detected_dir;
+
+                    } catch (const std::exception& ex) {
+                       std::cerr << "[StatePublisherOffline]: " << ex.what() <<" Cannot find transform for " << detected_frame << std::endl;
+
+                    }
                     distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                    if(event.closest_point == event.true_point){
+                        if(event.error_dist > 0 ||  event.error_ori > 0){
+                            ROS_ERROR_STREAM("Detection: " << event.true_point <<
+                                             " " << event.closest_point <<
+                                             " errors: "<<  event.error_dist <<
+                                             " " << event.error_ori << "Expected are zero errors!");
+                        }
+                    }
                 }
             }
         }
@@ -133,30 +163,36 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
-            if (p_map && (tau_norm > no_contact_torque_threshold_)) {
-                if(use_force_threshold_ && (std::fabs(p.state.force) < force_threshold_)){
-                    continue;
+            //            cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
+            try {
+                const cslibs_math_3d::Transform3d& baseTpred = *transforms.at(p_map->frameId());
+
+                if (p_map && (tau_norm > no_contact_torque_threshold_)) {
+                    if(use_force_threshold_ && (std::fabs(p.state.force) < force_threshold_)){
+                        continue;
+                    }
+                    std::string link = p_map->frameId();
+                    cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
+                    cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
+                    int prediction = -1;
+                    if(vertex_gt_model_){
+                        std::size_t vid = p.state.s > 0.5 ? p.state.goal_vertex.idx() : p.state.active_vertex.idx();
+                        prediction = p_map->mapId() * 100000 + vid;
+                    } else {
+                        prediction = getClosetPoint(link, point);
+                    }
+                    double dist_error;
+                    double angle;
+                    distanceMetric(point, direction, dist_error, angle);
+                    if(dist_error < event.error_dist){
+                        event.contact_force = p.state.force;
+                        event.closest_point = prediction;
+                        event.error_dist = dist_error;
+                        event.error_ori = angle;
+                    }
                 }
-                std::string link = p_map->frameId();
-                cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
-                cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
-                int prediction = -1;
-                if(vertex_gt_model_){
-                    std::size_t vid = p.state.s > 0.5 ? p.state.goal_vertex.idx() : p.state.active_vertex.idx();
-                    prediction = p_map->mapId() * 100000 + vid;
-                } else {
-                    prediction = getClosetPoint(link, point);
-                }
-                double dist_error;
-                double angle;
-                distanceMetric(point, direction, dist_error, angle);
-                if(dist_error < event.error_dist){
-                    event.contact_force = p.state.force;
-                    event.closest_point = prediction;
-                    event.error_dist = dist_error;
-                    event.error_ori = angle;
-                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[StatePublisherOffline]: " << ex.what() <<" Cannot find transform for " << p_map->frameId() << std::endl;
             }
         }
     }
@@ -239,7 +275,7 @@ std::string StatePublisherOffline::getDiscreteContact(const cslibs_mesh_map::Mes
             direction = gt_node->map.getNormal(vh) * (-1.0);
             return gt_node->frameId();
         }
-        std::cerr << "Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
+        std::cerr << "[StatePublisherOffline]: Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
         //        return map->front()->frameId();
         throw std::runtime_error("Did not find ground truth point");
     } else {

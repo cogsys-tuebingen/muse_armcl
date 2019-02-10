@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys, getopt
 import process_conf_mat as cm
-#from matplotlib2tikz import save as tikz_save
+from matplotlib2tikz import save as tikz_save
 
 def main(argv):
     inputfile = ''
@@ -34,6 +34,8 @@ def main(argv):
     conf_mat = data_map['matrix']
     rel_mat = cm.get_relative_conf_mat(data_map['matrix'])
     print(cm.get_rates(conf_mat))
+    print('Number of samples: ',cm.n_samples(conf_mat))
+
     fig = cm.plot_conf_mat(rel_mat, data_map['header'])
 
     if outputfile != '':
