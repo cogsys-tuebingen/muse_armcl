@@ -116,8 +116,11 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
             double& e_ori)
     {
         e_dist = (p - actual_pos).length();
-        double tmp = v.dot(actual_dir) / v.length() / actual_dir.length();
+        double tmp = v.dot(actual_dir)/( v.length() * actual_dir.length() );
         e_ori = std::acos(tmp);
+        if(!std::isfinite(e_ori) && std::fabs(tmp) < 1e-8){
+            e_ori = 0;
+        }
     };
     ++n_samples_;
     /// density estimation
@@ -145,11 +148,12 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
                     }
                     distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
                     if(event.closest_point == event.true_point){
-                        if(event.error_dist > 0 ||  event.error_ori > 0){
+                        if(event.error_dist > 0){
                             ROS_ERROR_STREAM("Detection: " << event.true_point <<
                                              " " << event.closest_point <<
                                              " errors: "<<  event.error_dist <<
-                                             " " << event.error_ori << "Expected are zero errors!");
+                                             " " << event.error_ori << " Expected are zero errors!");
+                            event.error_ori = 0;
                         }
                     }
                 }
