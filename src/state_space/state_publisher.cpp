@@ -144,7 +144,7 @@ void StatePublisher::publishContacts(const typename sample_set_t::ConstPtr & sam
             cslibs_math_3d::Vector3d direction = p.state.getDirection(p_map->map);
             contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(point);
             contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(direction);
-            contact.force = p.state.force;
+            contact.force = static_cast<float>(p.state.force);
             msg.header.frame_id = p_map->map.frame_id_;
             ++msg.id;
             double fac = 1.0;
@@ -199,13 +199,16 @@ void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, doub
     visualization_msgs::MarkerArray markers;
     msg.header.stamp = stamp;
     for(const std::pair<int, double>& p : labels){
-
+        if(p.first <= 0){
+            std::cerr << "[StatePublisher]: Got label "<< p.first << " clusering failed?? "<< "\n";
+            continue; // no contact detected?
+        }
         cslibs_kdl_msgs::ContactMessage contact;
         const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
         contact.header.frame_id = t.parent;
         msg.header.frame_id = t.parent;
         contact.header.stamp = stamp;
-        contact.force = p.second;
+        contact.force = static_cast<float>(p.second);
         contact.location.x = t.frame.p.x();
         contact.location.y = t.frame.p.y();
         contact.location.z = t.frame.p.z();
