@@ -99,7 +99,7 @@
             less than update_threshold -->
             <param name="update_threshold"          value="1.2"/>
             <!--  -->
-            <param name="reset_particles_threshold" value="1.1"/>
+            <param name="reset_particles_threshold" value="3.2"/>
             <!-- information matrix of "update likelyhood": insert values column wise.
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
@@ -157,7 +157,7 @@
         <group ns="scheduler">
             <param name="class"      value="muse_armcl::CFS" />
             <param name="base_class" value="muse_armcl::Scheduler" />
-            <param name="resampling_rate"       value="75" />
+            <param name="resampling_rate"       value="40" />
         </group>
 
         <!-- particle filter setup -->
