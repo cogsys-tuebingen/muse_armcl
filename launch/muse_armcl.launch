@@ -9,7 +9,7 @@
     <arg name="contact_marker_g"    value="0.0"/>
     <arg name="contact_marker_b"    value="1.0"/>
     <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
-    <arg name="no_contact_threshold"  value="0.7"/>
+    <arg name="no_contact_threshold"  value="2.5"/>
 
     <group ns="muse_armcl">
         <!-- toplevel parameters -->
@@ -97,9 +97,9 @@
             <param name="max_time"                  value="0.000013333"/>
             <!--No update is performed and set is initialized if external torque vector norm is
             less than update_threshold -->
-            <param name="update_threshold"          value="1.2"/>
+            <param name="update_threshold"          value="1.5"/>
             <!--  -->
-            <param name="reset_particles_threshold" value="3.2"/>
+            <param name="reset_particles_threshold" value="6.0"/>
             <!-- information matrix of "update likelyhood": insert values column wise.
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
@@ -133,7 +133,7 @@
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.0"/>
             <param name="recovery_alpha_fast" value="0.0"/>
-            <param name="uniform_percent"     value="0.3" />
+            <param name="uniform_percent"     value="0.05" />
             <param name="min_weight_ratio"    value="0.5" />
         </group>
 
