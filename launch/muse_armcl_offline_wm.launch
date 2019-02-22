@@ -1,0 +1,164 @@
+<?xml version="1.0" ?>
+<launch>
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find jaco2_description)/robots/standalone_arm.urdf.xacro'" />
+    <param name="robot_description" command="$(arg urdf_file)" />
+    <arg name="run_name" default="armcl_cp"/>
+    <arg name="u" default="0"/>
+    <param name="/use_sim_time" value="false" />
+    <arg name="mesh_path"             default="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+    <arg name="joint_state_topic"     default="/joint_states"/>
+    <arg name="minimum_sample_size"   default="1500"/>
+    <arg name="maximum_sample_size"   default="5000"/>
+    <arg name="contact_marker_r"      default="0.0"/>
+    <arg name="contact_marker_g"      default="1.0"/>
+    <arg name="contact_marker_b"      default="0.0"/>
+    <arg name="bag"                   default="/home/zwiener/contact_data/seed0_nol1_ext_t_valid.bag"/>
+<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/surface_forces_20_traj_residual_valid.bag"/>-->
+<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/static_moving_no_l1_valid_ext_torque.bag"/>-->
+<!--    <arg name="bag"                   value="/home/hanten/Workspace/localization/muse_armcl/data/test_bag.bag"/>-->
+<!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
+    <arg name="bag_joint_state_topic" default="/contact_data"/>
+    <arg name="bag_tf_topic"          default="/first_tf"/>
+    <arg name="contact_points_file"   default="$(find jaco2_surface_model)/cfg/collision_points_no_fingers.yaml"/>
+    <arg name="results_base_file"     default="/home/zwiener/Desktop/armcl_sim_nd_no_l1"/>
+    <arg name="no_contact_threshold"  default="0.25"/><!--0.24495-->
+    <arg name="vertex_gt_model"       default="false"/>
+
+    <group ns="$(arg run_name)">
+        <!-- toplevel parameters -->
+        <param name="map"                   value="mesh_map" />
+        <param name="topic_particles"       value="particles"/>
+        <param name="topic_contacts"        value="contacts"/>
+        <param name="node_rate"             value="5.0" />
+        <param name="bag_filename"          value="$(arg bag)"/>
+        <param name="bag_joint_state_topic" value="$(arg bag_joint_state_topic)"/>
+        <param name="bag_tf_topic"          value="$(arg bag_tf_topic)"/>
+        <param name="contact_points_file"   value="$(arg contact_points_file)"/>
+        <param name="results_base_file"     value="$(arg results_base_file)"/>
+        <param name="no_contact_threshold"  value="$(arg no_contact_threshold)"/>
+        <param name="vertex_gt_model"       value="$(arg vertex_gt_model)"/>
+        <param name="use_force_threshold"   value="true"/>
+
+        <!-- data providers -->
+        <group ns="joint_states">
+            <param name="class"      value="muse_armcl::JointStateProvider" />
+            <param name="base_class" value="cslibs_plugins_data::DataProvider" />
+            <param name="topic"      value="$(arg joint_state_topic)" />
+            <param name="queue_size" value="10" />
+            <param name="rate"       value="0.0" />
+        </group>
+
+        <!-- map providers -->
+        <group ns="mesh_map">
+            <param name="class"      value="muse_armcl::MeshMapLoaderOffline" />
+            <param name="base_class" value="muse_armcl::MeshMapProvider" />
+            <param name="path"       value="$(arg mesh_path)" />
+            <param name="tf_timeout" value="0.5" />
+            <rosparam file="$(find jaco2_surface_model)/cfg/jaco2_surface_model_no_fingers.yaml" command="load"/>
+        </group>
+
+        <!-- prediction model -->
+        <group ns="prediction">
+            <param name="class"            value="muse_armcl::RandomWalk" />
+            <param name="base_class"       value="muse_armcl::PredictionModel"/>
+            <param name="data_provider"    value="joint_states" />
+            <param name="seed"             value="0" />
+            <param name="min_distance"     value="0.01" />
+            <param name="max_distance"     value="0.1" />
+            <param name="jump_probability" value="0.5" />
+        </group>
+
+        <!-- update model -->
+        <group ns="update">
+            <param name="class"                     value="muse_armcl::NormalizedUpdateModel" />
+            <param name="base_class"                value="muse_armcl::UpdateModel" />
+            <param name="data_provider"             value="joint_states" />
+            <param name="map_provider"              value="mesh_map" />
+            <param name="robot_description"         value="robot_description"/>
+            <param name="chain_root"                value="jaco_link_base"/>
+            <param name="chain_tip"                 value="jaco_link_hand"/>
+            <param name="finger_1_tip"              value="jaco_link_finger_tip_1"/>
+            <param name="finger_2_tip"              value="jaco_link_finger_tip_2"/>
+            <param name="finger_3_tip"              value="jaco_link_finger_tip_3"/>
+            <!--No update is performed and set is initialized if external torque vector norm is
+            less than update_threshold -->
+            <param name="update_threshold"          value="$(arg no_contact_threshold)"/>
+            <!--  -->
+            <param name="reset_particles_threshold" value="1.1"/>
+            <!-- information matrix of "update likelyhood": insert values column wise.
+                  Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
+                  and filled by last provided value-->
+            <rosparam param="information_matrix">
+                [2.44, 4.83, 13.50, 13.50, 10, 6.25]
+            </rosparam>
+        </group>
+
+        <!-- sampling algorithms -->
+        <group ns="uniform_sampler">
+            <param name="class"       value="muse_armcl::UniformPerLink" />
+            <param name="base_class"  value="muse_armcl::UniformSampling" />
+            <param name="seed"        value="1" />
+            <param name="timeout"     value="10.0" />
+            <param name="tf_timeout"  value="0.1" />
+            <param name="sample_size" value="$(arg maximum_sample_size)" />
+        </group>
+        <group ns="normal_sampler">
+            <param name="class"       value="muse_armcl::Normal" />
+            <param name="base_class"  value="muse_armcl::NormalSampling" />
+            <param name="timeout"     value="10.0" />
+            <param name="tf_timeout"  value="0.1" />
+            <param name="sample_size" value="$(arg maximum_sample_size)" />
+            <param name="seed"        value="2" />
+            <param name="jump_probability"     value="0.9" />
+            <param name="likelihood_tolerance" value="0.1" />
+        </group>
+        <group ns="resampling">
+            <param name="class"               value="muse_armcl::KLDRandom" /><!-- KLD, Residual, SIR, Stratified, Systematic, WheelOfFortune, -->
+            <param name="base_class"          value="muse_armcl::Resampling" />
+            <param name="recovery_alpha_slow" value="0.0"/>
+            <param name="recovery_alpha_fast" value="0.0"/>
+            <param name="uniform_percent"     value="$(arg u)" />
+            <param name="min_weight_ratio"    value="0.5" />
+        </group>
+
+        <!-- density estimation -->
+        <group ns="density">
+            <param name="class"                       value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
+            <param name="base_class"                  value="muse_armcl::SampleDensity" />
+            <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
+            <param name="resolution"                  value="0.025" />
+            <param name="weight_threshold"            value="0.002"/>
+            <param name="clustering_weight_threshold" value="0.2"/>
+            <param name="radius"                      value="0.02" />
+            <param name="number_of_contacts"          value="1"/>
+            <parma name="ignore_weight"               value="false" />
+            <param name="restrict_neigbours"          value="true"/> <!-- for histogram filters-->
+            <param name="scale_pos"                   value="1.2"/> <!-- for histogram filter ContactPointHistogramMin (likelihood)-->
+            <param name="scale_dir"                   value="1.0"/><!-- for histogram filter  ContactPointHistogramMin (likelihood)-->
+        </group>
+
+        <!-- scheduling -->
+        <group ns="scheduler">
+            <param name="class"      value="muse_armcl::IntegrateAll" />
+            <param name="base_class" value="muse_armcl::Scheduler" />
+            <param name="rate"       value="5.0" />
+        </group>
+
+        <!-- particle filter setup -->
+        <group ns="particle_filter">
+            <param name="world_frame"         value="/world"/>
+
+            <param name="minimum_sample_size" value="$(arg minimum_sample_size)" />
+            <param name="maximum_sample_size" value="$(arg maximum_sample_size)"/>
+            <param name="enable_lag_correction"         value="false" />
+        </group>
+    </group>
+
+    <!--
+    launch-prefix="gdb -ex run" -->
+    <!-- MuSe ARMCL node -->
+    <node type="muse_armcl_offline_node"
+          name="$(arg run_name)"
+          pkg="muse_armcl"
+          output="screen"/>
+</launch>
