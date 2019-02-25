@@ -133,7 +133,7 @@
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.0"/>
             <param name="recovery_alpha_fast" value="0.0"/>
-            <param name="uniform_percent"     value="0.05" />
+            <param name="uniform_percent"     value="0.025" />
             <param name="min_weight_ratio"    value="0.5" />
         </group>
 
