@@ -2,7 +2,7 @@
     <arg name="bag_file" default=""/>
     <arg name="joint_state_topic" default="/estimated_ext_torque"/>
 
-    <node type="muse_armcl_bag_file_data_publisher" name="muse_armcl_bag_file_data_publishers" pkg="muse_armcl" output="screen">
+    <node type="muse_armcl_bag_file_data_publisher" name="muse_armcl_bag_file_data_publisher" pkg="muse_armcl" output="screen">
        <rosparam file="$(find jaco2_surface_model)/cfg/jaco2_surface_model.yaml" command="load"/>
        <param name="mesh_path"                         value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
        <param name="contact_points_file"               value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
@@ -16,7 +16,9 @@
        <param name="contact_marker_r"                  value="1.0"/>
        <param name="contact_marker_g"                  value="0.0"/>
        <param name="contact_marker_b"                  value="0.0"/>
-       <param name="play_sequence"                     value="false"/>
+       <param name="play_sequence"                     value="true"/>
+       <param name="use_time_now"                      value="true"/>
+       <param name="vertex_gt_model"                   value="false"/>
     </node>
 
     <node name="jaco_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen">
