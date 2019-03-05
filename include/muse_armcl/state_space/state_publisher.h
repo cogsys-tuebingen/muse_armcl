@@ -50,6 +50,9 @@ protected:
     double contact_marker_r_;
     double contact_marker_g_;
     double contact_marker_b_;
+    double contact_marker_scale_x_;
+    double contact_marker_scale_y_;
+    double contact_marker_scale_z_;
     double no_contact_torque_threshold_;
     std::map<int, cslibs_kdl::KDLTransformation> labeled_contact_points_;
 
