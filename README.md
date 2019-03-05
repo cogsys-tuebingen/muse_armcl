@@ -1,6 +1,6 @@
 # MuSe ARMCL: ARM Contact point Localization via Monte Carlo Localization
 
-##Demonstartion 
+## Demonstartion 
 
 ![image](muse_armcl.jpg  "image")
 A video demonstration can be found on [youtube](https://youtu.be/2131Hu-yEuE) 
