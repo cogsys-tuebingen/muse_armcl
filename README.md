@@ -45,7 +45,7 @@ For surface model examples for the Kinova Jaco 2 see [here](https://github.com/c
 ## Measurements
 
 For measurements the particle filter requires a **sensor_msgs/JointState**.
-In this Joint State we have to **provide the current joint angles** and the **effort** field has to be set with the current **external torque estimates**.  To estimate external torques you can use your own method or the observer provided in  [**cslibs_kdl**](https://github.com/cogsys-tuebingen/cslibs_kdl). if you have torque sensor in your manipulator.
+In this Joint State we have to **provide the current joint angles** and the **effort** field has to be set with the current **external torque estimates**.  To estimate external torques you can use your own method or the observer provided in  [**cslibs_kdl**](https://github.com/cogsys-tuebingen/cslibs_kdl/blob/master/cslibs_kdl/launch/external_torque_observer.launch). if you have torque sensor in your manipulator.
 
 ## Confusion Matrix Plot Script
 
