@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
     std::cout << view.getBeginTime() << "\n";
 
-        muse_armcl::DataSet data_set;
+    muse_armcl::DataSet data_set;
     bool success = muse_armcl::DataSetLoader::loadFromBag(bag, topics[0], topics[1], data_set);
     std::cout << (success ? " loaded data successfully" : " loading data failed") << std::endl;
 
@@ -62,7 +62,8 @@ int main(int argc, char *argv[])
     double contact_marker_g = nh.param<double>("contact_marker_g", 0.0);
     double contact_marker_b = nh.param<double>("contact_marker_b", 0.0);
 
-    bool vertex_gt_model = nh.param<bool>("vertex_gt_model", true);
+    bool vertex_gt_model = nh.param<bool>("vertex_gt_model", false);
+    bool use_time_now = nh.param<bool>("use_time_now", true);
 
     std::map<int, cslibs_kdl::KDLTransformation> labeled_contact_points;
     cslibs_mesh_map::MeshMapTree tree;
@@ -70,10 +71,10 @@ int main(int argc, char *argv[])
 
         std::string path = nh.param<std::string>("contact_points_file", std::string(""));
         if(path != ""){
-            std::vector<cslibs_kdl::KDLTransformation> labeled_contact_points;
-            cslibs_kdl::load(path, labeled_contact_points);
+            std::vector<cslibs_kdl::KDLTransformation> contact_points;
+            cslibs_kdl::load(path, contact_points);
             labeled_contact_points.clear();
-            for(auto p : labeled_contact_points){
+            for(auto p : contact_points){
                 std::string name = p.name;
                 name.erase(0,1);
                 int label = std::stoi(name);
@@ -122,7 +123,7 @@ int main(int argc, char *argv[])
         ros::Duration delta = (current  - start);
         ros::spinOnce();
         rate.sleep();
-//        ROS_INFO_STREAM("duration: " << delta.toSec());
+        //        ROS_INFO_STREAM("duration: " << delta.toSec());
         ++counter;
         if(!play){
             if(counter % 10 == 0 ){
@@ -151,65 +152,78 @@ int main(int argc, char *argv[])
             }
             sample_id = seq_counter;
         }
-        const ContactSample& cs = it->data.entry(sample_id);
-        if(cs.label < 0){
-            continue;
-        }
-        if(counter % 10 == 0 ){
-            ROS_INFO_STREAM("Looping sample for the next " << loop_time - delta.toSec());
-            ROS_INFO_STREAM("Vertex " << cs.label << " at " << cs.contact_force.header.frame_id );
-        }
-        sensor_msgs::JointState state;
-        cslibs_kdl::JointStateConversion::data2ros(cs.state.data, state);
-        state.header.frame_id = cs.state.frameId();
-        state.header.stamp = current;
+//        ROS_INFO_STREAM(sample_id);
+        try{
+            const ContactSample& cs = it->data.entry(sample_id);
 
-        cslibs_kdl_msgs::ContactMessage contact;
-        contact.header.stamp = current;
-        cslibs_math_3d::Vector3d pos;
-        cslibs_math_3d::Vector3d actual_dir;
-        if(vertex_gt_model) {
-            cslibs_mesh_map::MeshMapTreeNode* map = tree.getNode(cs.contact_force.frameId());
-            contact.header.frame_id = cs.contact_force.frameId();
-            if(map){
-                cslibs_mesh_map::MeshMap::VertexHandle vh = map->map.vertexHandle(cs.label);
-                pos = map->map.getPoint(vh);
-                cslibs_math_3d::Vector3d n = map->map.getNormal(vh);
-                cslibs_math_3d::Vector3d z(0,0,1);
-                cslibs_math_3d::Vector3d  axis = z.cross(n);
-                double alpha = std::acos(z.dot(n));
-                cslibs_math_3d::Vector3d dir_local(-cs.contact_force(0),
-                                                   -cs.contact_force(1),
-                                                   -cs.contact_force(2));
-                dir_local = dir_local.normalized();
-                cslibs_math_3d::Quaternion q(alpha, axis);
-                actual_dir = q*dir_local;
-                msg.header.frame_id = cs.contact_force.frameId();
+
+            if(cs.label < 0){
+                continue;
             }
-        } else{
-            const cslibs_kdl::KDLTransformation& t = labeled_contact_points.at(cs.label);
-            pos(0) = t.frame.p.x();
-            pos(1) = t.frame.p.y();
-            pos(2) = t.frame.p.z();
-            KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
-            actual_dir(0) = dir.x();
-            actual_dir(1) = dir.y();
-            actual_dir(2) = dir.z();
-            msg.header.frame_id = t.parent;
+            if(counter % 10 == 0 ){
+                ROS_INFO_STREAM("Looping sample for the next " << loop_time - delta.toSec());
+                ROS_INFO_STREAM("Vertex " << cs.label << " at " << cs.contact_force.header.frame_id );
+            }
+            sensor_msgs::JointState state;
+            cslibs_kdl::JointStateConversion::data2ros(cs.state.data, state);
+            state.header.frame_id = cs.state.frameId();
+            state.header.stamp = current;
+
+            cslibs_kdl_msgs::ContactMessage contact;
+            contact.header.stamp = current;
+            cslibs_math_3d::Vector3d pos;
+            cslibs_math_3d::Vector3d actual_dir;
+            if(vertex_gt_model) {
+                cslibs_mesh_map::MeshMapTreeNode* map = tree.getNode(cs.contact_force.frameId());
+                contact.header.frame_id = cs.contact_force.frameId();
+                if(map){
+                    cslibs_mesh_map::MeshMap::VertexHandle vh = map->map.vertexHandle(cs.label);
+                    pos = map->map.getPoint(vh);
+                    cslibs_math_3d::Vector3d n = map->map.getNormal(vh);
+                    cslibs_math_3d::Vector3d z(0,0,1);
+                    cslibs_math_3d::Vector3d  axis = z.cross(n);
+                    double alpha = std::acos(z.dot(n));
+                    cslibs_math_3d::Vector3d dir_local(-cs.contact_force(0),
+                                                       -cs.contact_force(1),
+                                                       -cs.contact_force(2));
+                    dir_local = dir_local.normalized();
+                    cslibs_math_3d::Quaternion q(alpha, axis);
+                    actual_dir = q*dir_local;
+                    msg.header.frame_id = cs.contact_force.frameId();
+                }
+            } else{
+                const cslibs_kdl::KDLTransformation& t = labeled_contact_points.at(cs.label);
+                pos(0) = t.frame.p.x();
+                pos(1) = t.frame.p.y();
+                pos(2) = t.frame.p.z();
+                KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+                actual_dir(0) = dir.x();
+                actual_dir(1) = dir.y();
+                actual_dir(2) = dir.z();
+                contact.header.frame_id =t.parent;
+                msg.header.frame_id = t.parent;
+            }
+            contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(pos);
+            contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(actual_dir);
+            contact.force = cs.contact_force.norm();
+
+            msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(pos - actual_dir * 0.2 );
+            msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(pos);
+            msg.header.stamp = current;
+
+            if(use_time_now){
+                ros::Time now = ros::Time::now();
+                state.header.stamp = now;
+                contact.header.stamp = now;
+                msg.header.stamp = now;
+            }
+            pub_joint.publish(state);
+            pub_contacts.publish(contact);
+            pub_contacts_vis.publish(msg);
+        } catch(std::exception& ex){
+            ROS_WARN_STREAM(ex.what());
         }
-        contact.location = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(pos);
-        contact.direction = cslibs_math_ros::geometry_msgs::conversion_3d::toVector3(actual_dir);
-        contact.force = cs.contact_force.norm();
-
-        msg.points[0] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(pos - actual_dir * 0.2 );
-        msg.points[1] = cslibs_math_ros::geometry_msgs::conversion_3d::toPoint(pos);
-        msg.header.stamp = current;
-
-        pub_joint.publish(state);
-        pub_contacts.publish(contact);
-        pub_contacts_vis.publish(msg);
     }
-
 
 
     return 0;
