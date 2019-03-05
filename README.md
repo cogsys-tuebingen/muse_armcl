@@ -52,7 +52,7 @@ In this Joint State we have to **provide the current joint angles** and the **ef
 	rosrun muse_armcl plot_conf_mat.py -i <input file> -o <output file (optional)>
 
 
-## Citation
+## References
 * MuSe ARMCL:
 
 		@inproceedings{O:Zwiener:2019,
