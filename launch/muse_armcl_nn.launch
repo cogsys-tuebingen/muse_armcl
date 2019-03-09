@@ -6,8 +6,8 @@
     <arg name="minimum_sample_size" value="1500"/>
     <arg name="maximum_sample_size" value="5000"/>
     <arg name="contact_marker_r"    value="0.0"/>
-    <arg name="contact_marker_g"    value="1.0"/>
-    <arg name="contact_marker_b"    value="0.0"/>
+    <arg name="contact_marker_g"    value="0.0"/>
+    <arg name="contact_marker_b"    value="1.0"/>
 
 
     <group ns="muse_armcl_nn">
@@ -143,7 +143,7 @@
             <param name="weight_threshold"            value="0.002"/>
             <param name="clustering_weight_threshold" value="0.2"/>
             <param name="radius"                      value="0.02" />
-            <param name="number_of_contacts"          value="1"/>
+            <param name="number_of_contacts"          value="2"/>
             <parma name="ignore_weight"               value="false" />
         </group>
 
