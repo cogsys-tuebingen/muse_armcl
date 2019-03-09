@@ -31,8 +31,8 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
     contact_marker_scale_x_ = nh.param<double>("contact_marker_scale_x", 0.005 * 1.9);
-    contact_marker_scale_y_ = nh.param<double>("contact_marker_scale_y", 0.1 * 2.8);
-    contact_marker_scale_z_ = nh.param<double>("contact_marker_scale_z", 0.1 * 3.3);
+    contact_marker_scale_y_ = nh.param<double>("contact_marker_scale_y", 0.01 * 2.8);
+    contact_marker_scale_z_ = nh.param<double>("contact_marker_scale_z", 0.01 * 3.3);
 
     no_contact_torque_threshold_ = nh.param<double>("no_contact_threshold", 0.1);
 
