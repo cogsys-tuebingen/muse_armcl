@@ -19,7 +19,9 @@ def remove_header(data):
 
     return {'header': data[1:rows, 0], 'matrix': mat}
 
-
+def n_samples(mat):
+    count = sum(mat,0)
+    return sum(count)	
 def get_relative_conf_mat(mat):
     count = sum(mat, 0)
     return mat / count

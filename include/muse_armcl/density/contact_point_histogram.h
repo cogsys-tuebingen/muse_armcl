@@ -14,7 +14,9 @@ class EIGEN_ALIGN16 ContactPointHistogram : public muse_armcl::SampleDensity
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     using allocator_t = Eigen::aligned_allocator<ContactPointHistogram>;
+
     struct DiscreteCluster
     {
         DiscreteCluster() :
@@ -38,8 +40,8 @@ public:
         }
 
         std::string name;
-        KDL::Frame frame;
-        int label;
+        KDL::Frame  frame;
+        int         label;
     };
 
     using histogram_t = std::map<int, DiscreteCluster>;

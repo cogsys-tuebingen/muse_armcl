@@ -143,7 +143,6 @@ target_link_libraries(${PROJECT_NAME}_bag_file_data_publisher
 )
 
 
-
 install(FILES plugins.xml DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 install(TARGETS ${PROJECT_NAME}_lib

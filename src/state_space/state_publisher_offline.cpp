@@ -20,7 +20,7 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 {
     //        std::cout << "after resampling" << std::endl;
 
-    StatePublisher::publish(sample_set);
+    //    StatePublisher::publish(sample_set);
 
     std::unique_lock<std::recursive_mutex> lock(data_mutex_);
     using mesh_map_tree_t = cslibs_mesh_map::MeshMapTree;
@@ -35,7 +35,6 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
         return;
     }
 
-    //        std::cout << "evaluate" << std::endl;
 
     /// get the map
     const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
@@ -53,6 +52,15 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
     if(gt.state.torque.empty()) {
         std::cout << nsecs << std::endl;
         throw std::runtime_error("Empty data recieved");
+    }
+    // save all map base transfroms
+    std::vector<std::string> frame_ids;
+    map->getFrameIds(frame_ids);
+    std::map<std::string, std::shared_ptr< cslibs_math_3d::Transform3d>> transforms;
+    for(std::string& l : frame_ids){
+        std::shared_ptr<cslibs_math_3d::Transform3d> bTl(new cslibs_math_3d::Transform3d);
+        *bTl = map->getTranformToBase(l);
+        transforms[l] = bTl;
     }
 
     double tau_norm =  gt.state.norm(cslibs_kdl_data::JointStateData::DataType::JOINT_TORQUE);
@@ -81,9 +89,16 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
         } else if(vertex_gt_model_){
             std::cerr << "could not set label probably." << std::endl;
         }
-        cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
-        actual_pos = baseTactual * actual_pos;
-        actual_dir = baseTactual * actual_dir;
+        //        cslibs_math_3d::Transform3d baseTactual = map->getTranformToBase(actual_frame);
+        try {
+            const cslibs_math_3d::Transform3d& baseTactual = *transforms.at(actual_frame);
+            actual_pos = baseTactual * actual_pos;
+            actual_dir = baseTactual * actual_dir;
+
+        } catch (const std::exception& ex) {
+            std::cerr << "[StatePublisherOffline]: " << ex.what() <<" Cannot find transform for " << actual_frame << std::endl;
+        }
+
     }
 
 
@@ -101,8 +116,11 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
             double& e_ori)
     {
         e_dist = (p - actual_pos).length();
-        double tmp = v.dot(actual_dir) / v.length() / actual_dir.length();
+        double tmp = v.dot(actual_dir)/( v.length() * actual_dir.length() );
         e_ori = std::acos(tmp);
+        if(!std::isfinite(e_ori) && std::fabs(tmp) < 1e-8){
+            e_ori = 0;
+        }
     };
     ++n_samples_;
     /// density estimation
@@ -118,10 +136,26 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
                     cslibs_math_3d::Vector3d detected_pos;
                     cslibs_math_3d::Vector3d detected_dir;
                     std::string detected_frame = getDiscreteContact(event.closest_point, detected_pos, detected_dir);
-                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
-                    detected_pos = baseTdetect * detected_pos;
-                    detected_pos = baseTdetect * detected_pos;
+                    //                    cslibs_math_3d::Transform3d baseTdetect = map->getTranformToBase(detected_frame);
+                    try {
+                        const cslibs_math_3d::Transform3d& baseTdetect = *transforms.at(detected_frame);
+                        detected_pos = baseTdetect * detected_pos;
+                        detected_dir = baseTdetect * detected_dir;
+
+                    } catch (const std::exception& ex) {
+                       std::cerr << "[StatePublisherOffline]: " << ex.what() <<" Cannot find transform for " << detected_frame << std::endl;
+
+                    }
                     distanceMetric(detected_pos, detected_dir, event.error_dist, event.error_ori);
+                    if(event.closest_point == event.true_point){
+                        if(event.error_dist > 0){
+                            ROS_ERROR_STREAM("Detection: " << event.true_point <<
+                                             " " << event.closest_point <<
+                                             " errors: "<<  event.error_dist <<
+                                             " " << event.error_ori << " Expected are zero errors!");
+                            event.error_ori = 0;
+                        }
+                    }
                 }
             }
         }
@@ -133,30 +167,36 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
 
         for (const StateSpaceDescription::sample_t& p : states) {
             const mesh_map_tree_node_t* p_map = map->getNode(p.state.map_id);
-            cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
-            if (p_map && (tau_norm > no_contact_torque_threshold_)) {
-                if(use_force_threshold_ && (std::fabs(p.state.force) < force_threshold_)){
-                    continue;
+            //            cslibs_math_3d::Transform3d baseTpred= map->getTranformToBase(p_map->frameId());
+            try {
+                const cslibs_math_3d::Transform3d& baseTpred = *transforms.at(p_map->frameId());
+
+                if (p_map && (tau_norm > no_contact_torque_threshold_)) {
+                    if(use_force_threshold_ && (std::fabs(p.state.force) < force_threshold_)){
+                        continue;
+                    }
+                    std::string link = p_map->frameId();
+                    cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
+                    cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
+                    int prediction = -1;
+                    if(vertex_gt_model_){
+                        std::size_t vid = p.state.s > 0.5 ? p.state.goal_vertex.idx() : p.state.active_vertex.idx();
+                        prediction = p_map->mapId() * 100000 + vid;
+                    } else {
+                        prediction = getClosetPoint(link, point);
+                    }
+                    double dist_error;
+                    double angle;
+                    distanceMetric(point, direction, dist_error, angle);
+                    if(dist_error < event.error_dist){
+                        event.contact_force = p.state.force;
+                        event.closest_point = prediction;
+                        event.error_dist = dist_error;
+                        event.error_ori = angle;
+                    }
                 }
-                std::string link = p_map->frameId();
-                cslibs_math_3d::Vector3d point = baseTpred * p.state.getPosition(p_map->map);
-                cslibs_math_3d::Vector3d direction = baseTpred * p.state.getDirection(p_map->map);
-                int prediction = -1;
-                if(vertex_gt_model_){
-                    std::size_t vid = p.state.s > 0.5 ? p.state.goal_vertex.idx() : p.state.active_vertex.idx();
-                    prediction = p_map->mapId() * 100000 + vid;
-                } else {
-                    prediction = getClosetPoint(link, point);
-                }
-                double dist_error;
-                double angle;
-                distanceMetric(point, direction, dist_error, angle);
-                if(dist_error < event.error_dist){
-                    event.contact_force = p.state.force;
-                    event.closest_point = prediction;
-                    event.error_dist = dist_error;
-                    event.error_ori = angle;
-                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[StatePublisherOffline]: " << ex.what() <<" Cannot find transform for " << p_map->frameId() << std::endl;
             }
         }
     }
@@ -239,7 +279,7 @@ std::string StatePublisherOffline::getDiscreteContact(const cslibs_mesh_map::Mes
             direction = gt_node->map.getNormal(vh) * (-1.0);
             return gt_node->frameId();
         }
-        std::cerr << "Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
+        std::cerr << "[StatePublisherOffline]: Did not find ground truth point "<< gt.label << " frame_id: " << gt.contact_force.frameId() << std::endl;
         //        return map->front()->frameId();
         throw std::runtime_error("Did not find ground truth point");
     } else {
@@ -251,10 +291,8 @@ std::string StatePublisherOffline::getDiscreteContact(int label,
                                                       cslibs_math_3d::Vector3d& position,
                                                       cslibs_math_3d::Vector3d& direction) const
 {
-    try{
+    try {
         const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(label);
-
-
         position(0) = t.frame.p.x();
         position(1) = t.frame.p.y();
         position(2) = t.frame.p.z();
@@ -263,9 +301,9 @@ std::string StatePublisherOffline::getDiscreteContact(int label,
         direction(1) = dir.y();
         direction(2) = dir.z();
         return t.parent;
-    } catch(const std::out_of_range& ex){
-        std::cerr << ex.what() << "labled_contact_points at label " << label << ". #(labled contact points) " << labeled_contact_points_.size();
-        throw ex;
+    } catch(std::exception &e) {
+        std::cerr << "[StatePublisherOffline]: Could not find KLD transformation!" << std::endl;
+        throw e;
     }
 }
 
@@ -342,5 +380,10 @@ void StatePublisherOffline::reportLikelyHoodOfGt(const typename sample_set_t::Co
 
 const cslibs_kdl::KDLTransformation& StatePublisherOffline::getLabledPoint(int label) const
 {
-    return labeled_contact_points_.at(label);
+    try {
+        return labeled_contact_points_.at(label);
+    } catch(const std::exception &e) {
+        ROS_ERROR_STREAM("[StatePublisherOffline]: Did not find label '" << label << "'!" );
+        throw e;
+    }
 }

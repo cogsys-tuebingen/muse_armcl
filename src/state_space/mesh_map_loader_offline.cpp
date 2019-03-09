@@ -24,24 +24,24 @@ public:
 
     virtual ~MeshMapLoaderOffline()
     {
-        stop_waiting_you_son_of_a_bitch_ = true;
-        if(worker_.joinable())
-            worker_.join();
+//        stop_waiting_you_son_of_a_bitch_ = true;
+//        if(worker_.joinable())
+//            worker_.join();
     }
 
     state_space_t::ConstPtr getStateSpace() const override
     {
-        waitForStateSpace();
+//        waitForStateSpace();
 
-        std::unique_lock<std::mutex> l(map_mutex_);
+//        std::unique_lock<std::mutex> l(map_mutex_);
         return map_;
     }
 
     void waitForStateSpace() const override
     {
-        std::unique_lock<std::mutex> l(map_mutex_);
-        if (!map_)
-            notify_.wait(l);
+//        std::unique_lock<std::mutex> l(map_mutex_);
+//        if (!map_)
+//            notify_.wait(l);
     }
 
     void doSetup(ros::NodeHandle &nh) override
@@ -64,22 +64,19 @@ public:
                 /// load map
                 tree_.loadFromFile(path_, parent_ids_, frame_ids_, files_);
 
-                std::unique_lock<std::mutex> l(map_mutex_);
+//                std::unique_lock<std::mutex> l(map_mutex_);
                 map_.reset(new MeshMap(&tree_, frame_ids_.front()));
-                l.unlock();
+//                l.unlock();
 
                 /// update transformations
-                first_load_ = true;
-                updateTransformations();
-                first_load_ = false;
-
                 ROS_INFO_STREAM("[" << name_ << "]: Loaded map.");
 
-                notify_.notify_all();
+//                notify_.notify_all();
             }
         };
 
-        worker_ = std::thread(load);
+//        worker_ = std::thread(load);
+        load();
     }
 
     bool initializeTF(const std::vector<tf::StampedTransform>& transforms)
@@ -138,38 +135,6 @@ private:
 
     std::atomic_bool                        stop_waiting_you_son_of_a_bitch_;
     std::atomic_bool                        set_tf_;
-
-    inline void updateTransformations() const
-    {
-        const ros::Time now = ros::Time::now();
-        if (!map_ || (!first_load_ && (now == last_update_)))
-            return;
-
-        last_update_ = now;
-
-        std::cout << tf_timeout_ << std::endl;
-
-        for(mesh_map_tree_node_t::Ptr m : tree_){
-            std::string root;
-            std::string frame_id = m->frameId();
-            bool found = m->parentFrameId(root);
-            if (!found) root = frame_id;
-            cslibs_math_3d::Transform3d transform;
-
-            while(!tf_->lookupTransform(root, frame_id , now, transform, tf_timeout_)) {
-                if(set_tf_){
-                    return;
-                }
-                std::cout << "[MeshMapLoaderOffline]: I am waiting another round! \n";
-                if(stop_waiting_you_son_of_a_bitch_)
-                    break;
-            }
-            std::unique_lock<std::mutex> l(map_mutex_);
-            m->transform = transform;
-            l.unlock();
-
-        }
-    }
 };
 }
 

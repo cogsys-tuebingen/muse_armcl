@@ -2,29 +2,29 @@
 <launch>
     <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find jaco2_description)/robots/standalone_arm.urdf.xacro'" />
     <param name="robot_description" command="$(arg urdf_file)" />
-
-
+    <arg name="run_name" default="armcl_cp"/>
+    <arg name="u" default="0"/>
     <param name="/use_sim_time" value="false" />
-    <arg name="mesh_path"             value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
-    <arg name="joint_state_topic"     value="/joint_states"/>
-    <arg name="minimum_sample_size"   value="1500"/>
-    <arg name="maximum_sample_size"   value="5000"/>
-    <arg name="contact_marker_r"      value="0.0"/>
-    <arg name="contact_marker_g"      value="1.0"/>
-    <arg name="contact_marker_b"      value="0.0"/>
-    <arg name="bag"                   value="/home/zwiener/contact_detection/seed0_nol1_ext_t_valid.bag"/>
+    <arg name="mesh_path"             default="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+    <arg name="joint_state_topic"     default="/joint_states"/>
+    <arg name="minimum_sample_size"   default="1500"/>
+    <arg name="maximum_sample_size"   default="5000"/>
+    <arg name="contact_marker_r"      default="0.0"/>
+    <arg name="contact_marker_g"      default="1.0"/>
+    <arg name="contact_marker_b"      default="0.0"/>
+    <arg name="bag"                   default="/home/zwiener/contact_data/seed0_nol1_ext_t_valid.bag"/>
 <!--    <arg name="bag"                   value="/home/zwiener/contact_detection/surface_forces_20_traj_residual_valid.bag"/>-->
 <!--    <arg name="bag"                   value="/home/zwiener/contact_detection/static_moving_no_l1_valid_ext_torque.bag"/>-->
 <!--    <arg name="bag"                   value="/home/hanten/Workspace/localization/muse_armcl/data/test_bag.bag"/>-->
 <!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
-    <arg name="bag_joint_state_topic" value="/contact_data"/>
-    <arg name="bag_tf_topic"          value="/first_tf"/>
-    <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
-    <arg name="results_base_file"     value="/home/zwiener/Desktop/armcl_sim_nd_no_l1"/>
-    <arg name="no_contact_threshold"  value="1.3"/><!--0.24495-->
-    <arg name="vertex_gt_model"       value="false"/>
+    <arg name="bag_joint_state_topic" default="/contact_data"/>
+    <arg name="bag_tf_topic"          default="/first_tf"/>
+    <arg name="contact_points_file"   default="$(find jaco2_surface_model)/cfg/collision_points_no_fingers.yaml"/>
+    <arg name="results_base_file"     default="/home/zwiener/Desktop/armcl_sim_nd_no_l1"/>
+    <arg name="no_contact_threshold"  default="0.25"/><!--0.24495-->
+    <arg name="vertex_gt_model"       default="false"/>
 
-    <group ns="muse_armcl">
+    <group ns="$(arg run_name)">
         <!-- toplevel parameters -->
         <param name="map"                   value="mesh_map" />
         <param name="topic_particles"       value="particles"/>
@@ -54,7 +54,7 @@
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
             <param name="tf_timeout" value="0.5" />
-            <rosparam file="$(find jaco2_surface_model)/cfg/jaco2_surface_model.yaml" command="load"/>
+            <rosparam file="$(find jaco2_surface_model)/cfg/jaco2_surface_model_no_fingers.yaml" command="load"/>
         </group>
 
         <!-- prediction model -->
@@ -117,13 +117,13 @@
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.0"/>
             <param name="recovery_alpha_fast" value="0.0"/>
-            <param name="uniform_percent"     value="0.4" />
+            <param name="uniform_percent"     value="$(arg u)" />
             <param name="min_weight_ratio"    value="0.5" />
         </group>
 
         <!-- density estimation -->
         <group ns="density">
-            <param name="class"                       value="muse_armcl::ContactPointHistogramMin" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
+            <param name="class"                       value="muse_armcl::WeightedMeans" /><!--WeightedMeans, NearestNeighborDensity, ContactPointHistogram-->
             <param name="base_class"                  value="muse_armcl::SampleDensity" />
             <param name="maximum_sample_size"         value="$(arg maximum_sample_size)" />
             <param name="resolution"                  value="0.025" />
@@ -158,7 +158,7 @@
     launch-prefix="gdb -ex run" -->
     <!-- MuSe ARMCL node -->
     <node type="muse_armcl_offline_node"
-          name="muse_armcl" 
+          name="$(arg run_name)"
           pkg="muse_armcl"
           output="screen"/>
 </launch>
