@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>muse_armcl</name>
-  <version>0.0.4</version>
+  <version>0.0.6</version>
   <description>The muse_armcl package</description>
 
   <maintainer email="cornelia.schulz@uni-tuebingen.de">Cornelia Schulz</maintainer>
