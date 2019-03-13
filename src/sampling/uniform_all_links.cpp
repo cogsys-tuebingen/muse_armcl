@@ -9,7 +9,7 @@ class EIGEN_ALIGN16 UniformAllLinks : public UniformSampling
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     using allocator_t = Eigen::aligned_allocator<UniformAllLinks>;
-    using rng_t  = cslibs_math::random::Uniform<1>;
+    using rng_t  = cslibs_math::random::Uniform<double,1>;
 
     virtual bool update(const std::string &frame) override
     {

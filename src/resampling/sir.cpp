@@ -18,7 +18,7 @@ protected:
         const std::size_t size = p_t_1.size();
         assert(size != 0);
 
-        cslibs_math::random::Uniform<1> rng(0.0, 1.0);
+        cslibs_math::random::Uniform<double,1> rng(0.0, 1.0);
         double U = rng.get() / static_cast<double>(size);
         double Q = 0.0;
         std::size_t i = 0, j = 0, k = 0;
@@ -69,7 +69,7 @@ protected:
         const std::size_t size = p_t_1.size();
         assert(size != 0);
 
-        cslibs_math::random::Uniform<1> rng(0.0, 1.0);
+        cslibs_math::random::Uniform<double,1> rng(0.0, 1.0);
         double U = rng.get() / static_cast<double>(size);
         double Q = 0.0;
         std::size_t i = 0, j = 0, k = 0;

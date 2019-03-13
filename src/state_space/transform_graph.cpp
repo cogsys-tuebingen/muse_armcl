@@ -49,7 +49,7 @@ bool TransformGraph::setup(const std::vector<tf::StampedTransform> &transforms)
             Node::Ptr child_node(new Node);
             child_node->parent = node;
             child_node->frame_id = ct.child_frame_id_;
-            child_node->transform_to_parent = cslibs_math_ros::tf::conversion_3d::from(ct);
+            child_node->transform_to_parent = cslibs_math_ros::tf::conversion_3d::from<double>(ct);
             node->children[ct.child_frame_id_] = child_node;
 
             if(transform_map.find(ct.child_frame_id_) != transform_map.end())

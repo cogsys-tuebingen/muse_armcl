@@ -183,13 +183,13 @@ void StatePublisher::publishSet(const typename sample_set_t::ConstPtr &sample_se
             cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
             cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
             pos = T * pos;
-            cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
+            cslibs_math::color::Color<double> color(cslibs_math::color::interpolateColor<double>(p.state.last_update,0,1.0));
             cslibs_math_3d::PointRGB3d point(pos, 0.9f, color);
             part_cloud->insert(point);
         }
     }
     sensor_msgs::PointCloud2 cloud;
-    cslibs_math_ros::sensor_msgs::conversion_3d::from(part_cloud, cloud);
+    cslibs_math_ros::sensor_msgs::conversion_3d::from<double>(part_cloud, cloud);
     cloud.header.frame_id = map->front()->frameId();
     cloud.header.stamp = stamp;
     pub_particles_.publish(cloud);
