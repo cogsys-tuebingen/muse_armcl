@@ -72,7 +72,7 @@ public:
             cslibs_math_3d::Vector3d trans(p_T_li.p.x(),p_T_li.p.y(), p_T_li.p.z());
             double x,y,z,w;
             p_T_li.M.GetQuaternion(x,y,z,w);
-            cslibs_math_3d::Quaternion q(x,y,z,w);
+            cslibs_math_3d::Quaterniond q(x,y,z,w);
             cslibs_math_3d::Transform3d transform(trans,q);
             partial_map->update(transform);
             Eigen::MatrixXd jac;

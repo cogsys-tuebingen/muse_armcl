@@ -84,7 +84,7 @@ void StatePublisherOffline::publish(const typename sample_set_t::ConstPtr &sampl
                                                gt.contact_force(1),
                                                gt.contact_force(2));
             dir_local = dir_local.normalized();
-            cslibs_math_3d::Quaternion q(alpha, axis);
+            cslibs_math_3d::Quaterniond q(alpha, axis);
             actual_dir = q*dir_local;
         } else if(vertex_gt_model_){
             std::cerr << "could not set label probably." << std::endl;

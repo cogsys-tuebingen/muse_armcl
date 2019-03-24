@@ -29,7 +29,7 @@ struct EIGEN_ALIGN16  StateSpaceDescription
     using state_t                = cslibs_mesh_map::EdgeParticle;
     using state_space_boundary_t = cslibs_math_3d::Vector3d;
     using transform_t            = cslibs_math_3d::Transform3d;
-    using covariance_t           = cslibs_math_2d::Covariance3d;
+    using covariance_t           = cslibs_math_2d::Covariance2d;
 };
 }
 

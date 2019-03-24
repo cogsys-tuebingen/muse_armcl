@@ -13,7 +13,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     using vertex_t               = cslibs_mesh_map::MeshMap::VertexHandle;
-    using distribution_t         = cslibs_math::statistics::WeightedDistribution<3>;
+    using distribution_t         = cslibs_math::statistics::WeightedDistribution<double,3>;
 
     struct EIGEN_ALIGN16 vertex_distribution
     {
@@ -81,7 +81,7 @@ public:
         /// publish all particles
 
         for(auto &c : clusters_) {
-            cslibs_math::color::Color ccolor = cslibs_math::color::random();
+            cslibs_math::color::Color<double> ccolor = cslibs_math::color::random<double>();
             for(const sample_t* s : c.second->samples) {
                 if(c.second->samples.size() < min_cluster_size_)
                     continue;
@@ -97,7 +97,7 @@ public:
             }
         }
         sensor_msgs::PointCloud2 cloud;
-        cslibs_math_ros::sensor_msgs::conversion_3d::from(part_cloud, cloud);
+        cslibs_math_ros::sensor_msgs::conversion_3d::from<double>(part_cloud, cloud);
         cloud.header.frame_id = map->front()->frameId();
         cloud.header.stamp = ros::Time::now();
         pub_.publish(cloud);

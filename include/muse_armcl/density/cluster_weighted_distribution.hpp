@@ -28,7 +28,7 @@ struct EIGEN_ALIGN16 ClusterWeightedDistribution
                                                    std::hash<int>,
                                                    std::equal_to<int>,
                                                    Eigen::aligned_allocator<std::pair<int, sample_vector_t>>>;
-    using distribution_t      = cslibs_math::statistics::WeightedDistribution<3>;
+    using distribution_t      = cslibs_math::statistics::WeightedDistribution<double,3>;
     using distribution_map_t  = std::unordered_map<int,
                                                    distribution_t,
                                                    std::hash<int>,

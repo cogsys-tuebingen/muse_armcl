@@ -30,6 +30,10 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
     contact_marker_g_ = nh.param<double>("contact_marker_g", 0.0);
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
+    contact_marker_scale_x_ = nh.param<double>("contact_marker_scale_x", 0.005 * 1.9);
+    contact_marker_scale_y_ = nh.param<double>("contact_marker_scale_y", 0.01 * 2.8);
+    contact_marker_scale_z_ = nh.param<double>("contact_marker_scale_z", 0.01 * 3.3);
+
     no_contact_torque_threshold_ = nh.param<double>("no_contact_threshold", 0.1);
 
     std::string path;
@@ -90,9 +94,9 @@ void StatePublisher::publish(const sample_set_t::ConstPtr &sample_set, const boo
         msg.color.r = contact_marker_r_;
         msg.color.g = contact_marker_g_;
         msg.color.b = contact_marker_b_;
-        msg.scale.x = 0.005;
-        msg.scale.y = 0.01;
-        msg.scale.z = 0.01;
+        msg.scale.x = contact_marker_scale_x_;
+        msg.scale.y = contact_marker_scale_y_;
+        msg.scale.z = contact_marker_scale_z_;
         msg.ns = "contact";
         msg.type = visualization_msgs::Marker::ARROW;
         msg.action = visualization_msgs::Marker::MODIFY;
@@ -179,13 +183,13 @@ void StatePublisher::publishSet(const typename sample_set_t::ConstPtr &sample_se
             cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
             cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
             pos = T * pos;
-            cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
+            cslibs_math::color::Color<double> color(cslibs_math::color::interpolateColor<double>(p.state.last_update,0,1.0));
             cslibs_math_3d::PointRGB3d point(pos, 0.9f, color);
             part_cloud->insert(point);
         }
     }
     sensor_msgs::PointCloud2 cloud;
-    cslibs_math_ros::sensor_msgs::conversion_3d::from(part_cloud, cloud);
+    cslibs_math_ros::sensor_msgs::conversion_3d::from<double>(part_cloud, cloud);
     cloud.header.frame_id = map->front()->frameId();
     cloud.header.stamp = stamp;
     pub_particles_.publish(cloud);
