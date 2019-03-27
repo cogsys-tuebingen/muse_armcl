@@ -17,7 +17,7 @@ public:
     {
         /// draw random samples in 3D
         using Metric = cslibs_math::sampling::Metric;
-        using rng_t  = cslibs_math::sampling::Normal<Metric, Metric, Metric>;
+        using rng_t  = cslibs_math::sampling::Normal<double, Metric, Metric, Metric>;
 
         const muse_smc::StateSpace<StateSpaceDescription>::ConstPtr ss = map_provider_->getStateSpace();
         if (!ss->isType<MeshMap>())

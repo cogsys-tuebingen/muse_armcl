@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
                                                        -cs.contact_force(1),
                                                        -cs.contact_force(2));
                     dir_local = dir_local.normalized();
-                    cslibs_math_3d::Quaternion q(alpha, axis);
+                    cslibs_math_3d::Quaterniond q(alpha, axis);
                     actual_dir = q*dir_local;
                     msg.header.frame_id = cs.contact_force.frameId();
                 }

@@ -265,31 +265,18 @@ void MuseARMCLOfflineNode::start()
     cslibs_time::Time start_time = cslibs_time::Time::now();
     std::string file = results_file_base_name_ + "_send_messages.txt";
 
-    std::size_t counting = 0;
     for(ContactEvaluationSample& seq : *data_set_){
         std::ofstream of(file);
-
-        if(++counting < 4030)
-            continue;
 
         tf_transforms = std::make_shared<std::vector<tf::StampedTransform>>(seq.transforms);
 
         /// init map provider ...
         ROS_INFO_STREAM("Setting tf!");
-        std::cerr << tf_transforms->size() << std::endl;
-        for(tf::StampedTransform &t : *tf_transforms) {
-            std::cerr << t.child_frame_id_ << " " << t.frame_id_ << std::endl;
-        }
-
         for(auto map : map_providers_){
-            if(!map.second->initializeTF(*tf_transforms)){
-                for(tf::StampedTransform &t : *tf_transforms) {
-                    std::cerr << t.child_frame_id_ << " " << t.frame_id_ << std::endl;
-                }
-
-                ROS_ERROR_STREAM("Couldn't set initial tf transfroms!");
-                return;
-            }
+            if(!map.second->initializeTF(*tf_transforms) && count == 0){ // actually tf transforms are only required in the first iteration
+                ROS_ERROR_STREAM("Couldn't set initial tf transfroms!"); // to jump to correct links when the motion model is applied before.
+                return;                                                  // the first update is applied. The update model actually calulats FK
+            }                                                            // and updates the map transforms.
         }
 
         /// seq data

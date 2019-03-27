@@ -1,27 +1,43 @@
 <?xml version="1.0" ?>
 <launch>
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find jaco2_description)/robots/standalone_arm.urdf.xacro'" />
+    <param name="robot_description" command="$(arg urdf_file)" />
+    <arg name="run_name" default="armcl_cp"/>
+    <arg name="u" default="0"/>
     <param name="/use_sim_time" value="false" />
-    <arg name="mesh_path"           value="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
-    <arg name="joint_state_topic"   default="/estimated_ext_torque"/>
-    <arg name="minimum_sample_size" value="1500"/>
-    <arg name="maximum_sample_size" value="5000"/>
-    <arg name="contact_marker_r"    value="0.0"/>
-    <arg name="contact_marker_g"    value="0.0"/>
-    <arg name="contact_marker_b"    value="1.0"/>
-    <arg name="contact_points_file"   value="$(find jaco2_surface_model)/cfg/collision_points.yaml"/>
-    <arg name="no_contact_threshold"  default="0.3"/>
+    <arg name="mesh_path"             default="$(find jaco2_surface_model)/jaco2_surface_meshes/"/>
+    <arg name="joint_state_topic"     default="/joint_states"/>
+    <arg name="minimum_sample_size"   default="1500"/>
+    <arg name="maximum_sample_size"   default="5000"/>
+    <arg name="contact_marker_r"      default="0.0"/>
+    <arg name="contact_marker_g"      default="1.0"/>
+    <arg name="contact_marker_b"      default="0.0"/>
+    <arg name="bag"                   default="/home/zwiener/contact_data/seed0_nol1_ext_t_valid.bag"/>
+<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/surface_forces_20_traj_residual_valid.bag"/>-->
+<!--    <arg name="bag"                   value="/home/zwiener/contact_detection/static_moving_no_l1_valid_ext_torque.bag"/>-->
+<!--    <arg name="bag"                   value="/home/hanten/Workspace/localization/muse_armcl/data/test_bag.bag"/>-->
+<!--    <arg name="bag"                   value="/tmp/test_bag.bag"/>-->
+    <arg name="bag_joint_state_topic" default="/contact_data"/>
+    <arg name="bag_tf_topic"          default="/first_tf"/>
+    <arg name="contact_points_file"   default="$(find jaco2_surface_model)/cfg/collision_points_no_fingers.yaml"/>
+    <arg name="results_base_file"     default="/home/zwiener/Desktop/armcl_sim_nd_no_l1"/>
+    <arg name="no_contact_threshold"  default="0.25"/><!--0.24495-->
+    <arg name="vertex_gt_model"       default="false"/>
 
-    <group ns="muse_armcl">
+    <group ns="$(arg run_name)">
         <!-- toplevel parameters -->
-        <param name="map"             value="mesh_map" />
-        <param name="topic_particles" value="particles"/>
-        <param name="topic_contacts"  value="contacts"/>
-        <param name="node_rate"       value="0.0" />
-        <param name="contact_marker_r" value="$(arg contact_marker_r)"/>
-        <param name="contact_marker_g" value="$(arg contact_marker_g)"/>
-        <param name="contact_marker_b" value="$(arg contact_marker_b)"/>
+        <param name="map"                   value="mesh_map" />
+        <param name="topic_particles"       value="particles"/>
+        <param name="topic_contacts"        value="contacts"/>
+        <param name="node_rate"             value="5.0" />
+        <param name="bag_filename"          value="$(arg bag)"/>
+        <param name="bag_joint_state_topic" value="$(arg bag_joint_state_topic)"/>
+        <param name="bag_tf_topic"          value="$(arg bag_tf_topic)"/>
         <param name="contact_points_file"   value="$(arg contact_points_file)"/>
+        <param name="results_base_file"     value="$(arg results_base_file)"/>
         <param name="no_contact_threshold"  value="$(arg no_contact_threshold)"/>
+        <param name="vertex_gt_model"       value="$(arg vertex_gt_model)"/>
+        <param name="use_force_threshold"   value="true"/>
 
         <!-- data providers -->
         <group ns="joint_states">
@@ -34,39 +50,11 @@
 
         <!-- map providers -->
         <group ns="mesh_map">
-            <param name="class"      value="muse_armcl::MeshMapLoader" />
+            <param name="class"      value="muse_armcl::MeshMapLoaderOffline" />
             <param name="base_class" value="muse_armcl::MeshMapProvider" />
             <param name="path"       value="$(arg mesh_path)" />
-            <rosparam param="meshes">
-                ["jaco2_link_2.obj", 
-                 "jaco2_link_3.obj", 
-                 "jaco2_link_4_5.obj", 
-                 "jaco2_link_4_5.obj", 
-                 "jaco2_link_hand.obj", 
-                 "jaco2_link_finger.obj", 
-                 "jaco2_link_finger.obj", 
-                 "jaco2_link_finger.obj"]
-            </rosparam>
-            <rosparam param="frame_ids">
-                ["jaco_link_2", 
-                 "jaco_link_3", 
-                 "jaco_link_4", 
-                 "jaco_link_5", 
-                 "jaco_link_hand", 
-                 "jaco_link_finger_1", 
-                 "jaco_link_finger_2", 
-                 "jaco_link_finger_3"]
-            </rosparam>
-            <rosparam param="parent_ids">
-                ["jaco_link_2", 
-                 "jaco_link_2", 
-                 "jaco_link_3", 
-                 "jaco_link_4", 
-                 "jaco_link_5", 
-                 "jaco_link_hand", 
-                 "jaco_link_hand", 
-                 "jaco_link_hand"]
-            </rosparam>
+            <param name="tf_timeout" value="0.5" />
+            <rosparam file="$(find jaco2_surface_model)/cfg/jaco2_surface_model_no_fingers.yaml" command="load"/>
         </group>
 
         <!-- prediction model -->
@@ -92,19 +80,15 @@
             <param name="finger_1_tip"              value="jaco_link_finger_tip_1"/>
             <param name="finger_2_tip"              value="jaco_link_finger_tip_2"/>
             <param name="finger_3_tip"              value="jaco_link_finger_tip_3"/>
-            <param name="theta_max"                 value="0.5"/>
-            <param name="xtol_rel"                  value="0.001"/>
-            <param name="max_time"                  value="0.000013333"/>
             <!--No update is performed and set is initialized if external torque vector norm is
             less than update_threshold -->
             <param name="update_threshold"          value="$(arg no_contact_threshold)"/>
             <!--  -->
-            <param name="reset_particles_threshold" value="3.0"/>
+            <param name="reset_particles_threshold" value="1.1"/>
             <!-- information matrix of "update likelyhood": insert values column wise.
                   Matrix of dim. (#(joints) x #(joints)) if viewer valeues are provided only diagonal is set
                   and filled by last provided value-->
             <rosparam param="information_matrix">
-<!--            [1, 1, 1, 1, 1, 1.0]-->
                 [2.44, 4.83, 13.50, 13.50, 10, 6.25]
             </rosparam>
         </group>
@@ -133,7 +117,7 @@
             <param name="base_class"          value="muse_armcl::Resampling" />
             <param name="recovery_alpha_slow" value="0.0"/>
             <param name="recovery_alpha_fast" value="0.0"/>
-            <param name="uniform_percent"     value="0.025" />
+            <param name="uniform_percent"     value="$(arg u)" />
             <param name="min_weight_ratio"    value="0.5" />
         </group>
 
@@ -155,9 +139,9 @@
 
         <!-- scheduling -->
         <group ns="scheduler">
-            <param name="class"      value="muse_armcl::CFS" />
+            <param name="class"      value="muse_armcl::IntegrateAll" />
             <param name="base_class" value="muse_armcl::Scheduler" />
-            <param name="resampling_rate"       value="40" />
+            <param name="rate"       value="5.0" />
         </group>
 
         <!-- particle filter setup -->
@@ -166,15 +150,15 @@
 
             <param name="minimum_sample_size" value="$(arg minimum_sample_size)" />
             <param name="maximum_sample_size" value="$(arg maximum_sample_size)"/>
-
             <param name="enable_lag_correction"         value="false" />
         </group>
     </group>
 
+    <!--
+    launch-prefix="gdb -ex run" -->
     <!-- MuSe ARMCL node -->
-    <node type="muse_armcl_node" 
-          name="muse_armcl" 
-          pkg="muse_armcl" 
-          output="screen"  
-          clear_params="true"/>
+    <node type="muse_armcl_offline_node"
+          name="$(arg run_name)"
+          pkg="muse_armcl"
+          output="screen"/>
 </launch>

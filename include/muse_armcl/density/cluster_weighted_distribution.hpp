@@ -28,7 +28,7 @@ struct EIGEN_ALIGN16 ClusterWeightedDistribution
                                                    std::hash<int>,
                                                    std::equal_to<int>,
                                                    Eigen::aligned_allocator<std::pair<int, sample_vector_t>>>;
-    using distribution_t      = cslibs_math::statistics::WeightedDistribution<3>;
+    using distribution_t      = cslibs_math::statistics::WeightedDistribution<double,3>;
     using distribution_map_t  = std::unordered_map<int,
                                                    distribution_t,
                                                    std::hash<int>,
@@ -116,15 +116,21 @@ struct EIGEN_ALIGN16 ClusterWeightedDistribution
 
             const sample_t* res = NULL;
             double weight_sum = 0;
-            for (auto &s : samples.at(cluster)) {
-                const position_t pos = s.second;
-                const double d = (mean - pos).length();
-                weight_sum += s.first->weight;
-                if (d < dist) {
-                    dist = d;
-                    res = s.first;
+            try {
+                for (auto &s : samples.at(cluster)) {
+                    const position_t pos = s.second;
+                    const double d = (mean - pos).length();
+                    weight_sum += s.first->weight;
+                    if (d < dist) {
+                        dist = d;
+                        res = s.first;
+                    }
                 }
+            }  catch (const std::exception &e) {
+                std::cerr << "[ClusterWeightedDistribution]: cluster " << cluster << " not found." << std::endl;
+                throw e;
             }
+
             if(weight_sum > clustering_weight_threshold){
                 map[weight_sum].emplace_back(res);
             }

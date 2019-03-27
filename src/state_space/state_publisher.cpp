@@ -31,8 +31,8 @@ void StatePublisher::setup(ros::NodeHandle &nh, map_provider_map_t &map_provider
     contact_marker_b_ = nh.param<double>("contact_marker_b", 1.0);
 
     contact_marker_scale_x_ = nh.param<double>("contact_marker_scale_x", 0.005 * 1.9);
-    contact_marker_scale_y_ = nh.param<double>("contact_marker_scale_y", 0.1 * 2.8);
-    contact_marker_scale_z_ = nh.param<double>("contact_marker_scale_z", 0.1 * 3.3);
+    contact_marker_scale_y_ = nh.param<double>("contact_marker_scale_y", 0.01 * 2.8);
+    contact_marker_scale_z_ = nh.param<double>("contact_marker_scale_z", 0.01 * 3.3);
 
     no_contact_torque_threshold_ = nh.param<double>("no_contact_threshold", 0.1);
 
@@ -183,13 +183,13 @@ void StatePublisher::publishSet(const typename sample_set_t::ConstPtr &sample_se
             cslibs_math_3d::Transform3d T = map->getTranformToBase(p_map->map.frame_id_);
             cslibs_math_3d::Point3d pos = p.state.getPosition(p_map->map);
             pos = T * pos;
-            cslibs_math::color::Color color(cslibs_math::color::interpolateColor(p.state.last_update,0,1.0));
+            cslibs_math::color::Color<double> color(cslibs_math::color::interpolateColor<double>(p.state.last_update,0,1.0));
             cslibs_math_3d::PointRGB3d point(pos, 0.9f, color);
             part_cloud->insert(point);
         }
     }
     sensor_msgs::PointCloud2 cloud;
-    cslibs_math_ros::sensor_msgs::conversion_3d::from(part_cloud, cloud);
+    cslibs_math_ros::sensor_msgs::conversion_3d::from<double>(part_cloud, cloud);
     cloud.header.frame_id = map->front()->frameId();
     cloud.header.stamp = stamp;
     pub_particles_.publish(cloud);
@@ -207,32 +207,38 @@ void StatePublisher::publishDiscretePoints(const std::vector<std::pair<int, doub
             std::cerr << "[StatePublisher]: Got label "<< p.first << " clusering failed?? "<< "\n";
             continue; // no contact detected?
         }
-        cslibs_kdl_msgs::ContactMessage contact;
-        const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
-        contact.header.frame_id = t.parent;
-        msg.header.frame_id = t.parent;
-        contact.header.stamp = stamp;
-        contact.force = static_cast<float>(p.second);
-        contact.location.x = t.frame.p.x();
-        contact.location.y = t.frame.p.y();
-        contact.location.z = t.frame.p.z();
-        KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
-        contact.direction.x = dir.x();
-        contact.direction.y = dir.y();
-        contact.direction.z = dir.z();
-        geometry_msgs::Point p0;
-        p0.x = t.frame.p.x();
-        p0.y = t.frame.p.y();
-        p0.z = t.frame.p.z();
-        geometry_msgs::Point p1;
-        p1.x = t.frame.p.x()  - 0.2 * dir.x();
-        p1.y = t.frame.p.y()  - 0.2 * dir.y();
-        p1.z = t.frame.p.z()  - 0.2 * dir.z();
-        msg.points[0] = p1;
-        msg.points[1] = p0;
+        try {
+            cslibs_kdl_msgs::ContactMessage contact;
+            const cslibs_kdl::KDLTransformation& t = labeled_contact_points_.at(p.first);
+            contact.header.frame_id = t.parent;
+            msg.header.frame_id = t.parent;
+            contact.header.stamp = stamp;
+            contact.force = p.second;
+            contact.location.x = t.frame.p.x();
+            contact.location.y = t.frame.p.y();
+            contact.location.z = t.frame.p.z();
+            KDL::Vector dir = t.frame.M * KDL::Vector(-1,0,0);
+            contact.direction.x = dir.x();
+            contact.direction.y = dir.y();
+            contact.direction.z = dir.z();
+            geometry_msgs::Point p0;
+            p0.x = t.frame.p.x();
+            p0.y = t.frame.p.y();
+            p0.z = t.frame.p.z();
+            geometry_msgs::Point p1;
+            p1.x = t.frame.p.x()  - 0.2 * dir.x();
+            p1.y = t.frame.p.y()  - 0.2 * dir.y();
+            p1.z = t.frame.p.z()  - 0.2 * dir.z();
+            msg.points[0] = p1;
+            msg.points[1] = p0;
 
-        markers.markers.push_back(msg);
-        contact_msg.contacts.push_back(contact);
+            markers.markers.push_back(msg);
+            contact_msg.contacts.push_back(contact);
+        } catch (const std::exception &e) {
+            std::cerr << "[StatePublisher] : label " << p.first << " not found!" << std::endl;
+            throw e;
+        }
+
 
     }
     pub_contacts_.publish(contact_msg);

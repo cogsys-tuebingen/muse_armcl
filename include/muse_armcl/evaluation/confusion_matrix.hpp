@@ -58,8 +58,13 @@ public:
 
         for (int prediction : classes) {
             of << prediction;
-            for (int actual : classes) {
-                of << ',' << histogram.at(std::make_pair(actual, prediction));
+            try {
+                for (int actual : classes) {
+                    of << ',' << histogram.at(std::make_pair(actual, prediction));
+                }
+            } catch (std::exception &e) {
+                std::cerr << "[ConfusionMatrix]: Did not find entry!" << std::endl;
+                throw e;
             }
             of << '\n';
         }
